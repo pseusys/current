@@ -8,7 +8,7 @@ class list : public container<E> {
 private:
     class element {
     public:
-        std::shared_ptr<E> data = nullptr;
+        E data;
         std::shared_ptr<element> next = nullptr;
         std::shared_ptr<element> previous = nullptr;
     };
@@ -20,16 +20,15 @@ public:
     list();
     explicit list(int capacity);
 
-    std::shared_ptr<E> get(int pos);
-    void set(std::shared_ptr<E> item, int pos);
+    E& operator[](int pos) override;
 
-    void push_back(std::shared_ptr<E> item);
-    std::shared_ptr<E> pop_back();
-    std::shared_ptr<E> peek_back();
+    void push_back(E& item);
+    void pop_back();
+    E& peek_back();
 
-    void push_front(std::shared_ptr<E> item);
-    std::shared_ptr<E> pop_front();
-    std::shared_ptr<E> peek_front();
+    void push_front(E& item);
+    void pop_front();
+    E& peek_front();
 
     void remove(int pos);
     void clear() override;
@@ -57,7 +56,7 @@ list<E>::list(int capacity) {
 
 
 template<typename E>
-std::shared_ptr<E> list<E>::get(int pos) {
+E& list<E>::operator[](int pos) {
     if ((pos >= 0) && (pos < this->length)) {
         std::shared_ptr<element> first = head;
         for (int i = 0; i < pos; ++i) {
@@ -70,26 +69,12 @@ std::shared_ptr<E> list<E>::get(int pos) {
     }
 }
 
-template<typename E>
-void list<E>::set(std::shared_ptr<E> item, int pos) {
-    if ((pos >= 0) && (pos < this->length)) {
-        std::shared_ptr<element> first = std::shared_ptr<element>(head);
-        for (int i = 0; i < pos; ++i) {
-            first = first.get()->next;
-        }
-        first.get()->data = std::shared_ptr<E>(item);
-    } else {
-        log::report();
-        throw std::runtime_error("Index out of bounds!");
-    }
-}
-
 
 
 template<typename E>
-void list<E>::push_back(std::shared_ptr<E> item) {
+void list<E>::push_back(E& item) {
     std::shared_ptr<element> elem = std::shared_ptr<element>(new element());
-    elem.get()->data = std::shared_ptr<E>(item);
+    elem.get()->data = item;
     if (this->empty()) {
         head = tail = elem;
     } else {
@@ -101,21 +86,12 @@ void list<E>::push_back(std::shared_ptr<E> item) {
 }
 
 template<typename E>
-std::shared_ptr<E> list<E>::pop_back() {
-    if (!this->empty()) {
-        this->length--;
-        std::shared_ptr<E> item = std::shared_ptr<E>(tail.get()->data);
-        tail = tail.get()->previous;
-        tail.get()->next = nullptr;
-        return item;
-    } else {
-        log::report();
-        throw std::runtime_error("Array is empty!");
-    }
+void list<E>::pop_back() {
+    remove(this->length - 1);
 }
 
 template<typename E>
-std::shared_ptr<E> list<E>::peek_back() {
+E& list<E>::peek_back() {
     if (!this->empty()) {
         return tail.get()->data;
     } else {
@@ -127,9 +103,9 @@ std::shared_ptr<E> list<E>::peek_back() {
 
 
 template<typename E>
-void list<E>::push_front(std::shared_ptr<E> item) {
+void list<E>::push_front(E& item) {
     std::shared_ptr<element> elem = std::shared_ptr<element>(new element());
-    elem.get()->data = std::shared_ptr<E>(item);
+    elem.get()->data = item;
     if (this->empty()) {
         head = tail = elem;
     } else {
@@ -141,21 +117,12 @@ void list<E>::push_front(std::shared_ptr<E> item) {
 }
 
 template<typename E>
-std::shared_ptr<E> list<E>::pop_front() {
-    if (!this->empty()) {
-        this->length--;
-        std::shared_ptr<E> item = std::shared_ptr<E>(head.get()->data);
-        head = head.get()->next;
-        head.get()->previous = nullptr;
-        return item;
-    } else {
-        log::report();
-        throw std::runtime_error("Array is empty!");
-    }
+void list<E>::pop_front() {
+    remove(0);
 }
 
 template<typename E>
-std::shared_ptr<E> list<E>::peek_front() {
+E& list<E>::peek_front() {
     if (!this->empty()) {
         return head.get()->data;
     } else {
@@ -168,14 +135,21 @@ std::shared_ptr<E> list<E>::peek_front() {
 
 template<typename E>
 void list<E>::remove(int pos) {
-    std::shared_ptr<element> first = head;
-    for (int i = 0; i < pos; ++i) {
-        first = first.get()->next;
+    if ((pos >= 0) && (pos < this->length)) {
+        this->length--;
+        std::shared_ptr<element> first = head;
+        for (int i = 0; i < pos; ++i) {
+            first = first.get()->next;
+        }
+        if (first.get()->previous != nullptr) first.get()->previous.get()->next = first.get()->next;
+        else head = first.get()->next;
+        if (first.get()->next != nullptr) first.get()->next.get()->previous = first.get()->previous;
+        else tail = first.get()->previous;
+        first.reset();
+    } else {
+        log::report();
+        throw std::runtime_error("Index out of bounds!");
     }
-    first.get()->previous.get()->next = first.get()->next;
-    first.get()->next.get()->previous = first.get()->previous;
-    first.reset();
-    this->length--;
 }
 
 template<typename E>

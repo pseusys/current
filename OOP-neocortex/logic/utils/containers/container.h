@@ -9,9 +9,7 @@ class container {
 protected:
     int length = 0;
 public:
-    virtual std::shared_ptr<E> get(int pos) = 0;
-    virtual void set(std::shared_ptr<E> item, int pos) = 0;
-
+    virtual E& operator[](int pos) = 0;
     virtual void clear() = 0;
 
     int size();
