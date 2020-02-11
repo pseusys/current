@@ -1,11 +1,8 @@
 rem @echo off
 
-cd ../../../logic
-
-del /f /q .\libLogicDll.dll
+cd ../logic
 
 cmake -G "MinGW Makefiles" .
-
 mingw32-make LogicDll
 
 rmdir /s /q .\CMakeFiles
@@ -15,5 +12,6 @@ del /f /q .\libLogicDll.dll.a
 del /f /q .\Makefile
 
 copy /y libLogicDll.dll ..\interface\Assets\LogicDll.dll
+del /f /q .\libLogicDll.dll
 
 pause

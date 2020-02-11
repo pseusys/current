@@ -7,12 +7,13 @@
 
 #include "tiles/tile.h"
 #include "../utils/coords.h"
+#include "../utils/containers/container.h"
+#include "../utils/containers/array.h"
 
 
 class tilemap {
 private:
-    tile** map;
-    coords size;
+    std::shared_ptr<container<tile>> tiles;
 
 public:
 };

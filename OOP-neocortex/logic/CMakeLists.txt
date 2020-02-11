@@ -3,7 +3,7 @@ project(logic)
 
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB_RECURSE sources bridge/* gm/* map/* utils/*)
+file(GLOB_RECURSE sources bridge/* map/* utils/* other/* unit/*)
 
 add_executable(LogicExec ${sources} main.cpp)
 
