@@ -10,6 +10,7 @@ int game::seeded = 0;
 
 game::game(int seed) {
     this->map = std::make_shared<tilemap>(seed);
+    this->units = std::make_shared<std::vector<unit>>();
 }
 
 

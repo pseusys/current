@@ -33,7 +33,7 @@ tilemap::tilemap(int seed) {
     log::say("Game field initialized with ", this->width, " width and ", this->height, " height");
 
     coords size = coords(this->width, this->height);
-    *(this->tiles) = double_array<tile>(size);
+    this->tiles = std::make_shared<double_array<tile>>(size);
 }
 
 tilemap::tilemap(json &package) : serializable(package) {
