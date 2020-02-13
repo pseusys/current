@@ -6,6 +6,20 @@
 
 coords::coords(int x, int y) : x(x), y(y) {}
 
+coords::coords(json &package) : serializable(package) {
+    this->x = package["x"];
+    this->y = package["y"];
+}
+
+std::shared_ptr<json> coords::pack(int serializer) {
+    std::shared_ptr<json> package = std::make_shared<json>();
+    (*package)["x"] = this->x;
+    (*package)["y"] = this->y;
+    return package;
+}
+
+
+
 int coords::get_x() {
     return x;
 }
@@ -14,6 +28,8 @@ void coords::set_x(int x) {
     coords::x = x;
 }
 
+
+
 int coords::get_y() {
     return y;
 }
@@ -21,6 +37,8 @@ int coords::get_y() {
 void coords::set_y(int y) {
     coords::y = y;
 }
+
+
 
 bool coords::operator==(const coords &rhs) {
     return x == rhs.x && y == rhs.y;
