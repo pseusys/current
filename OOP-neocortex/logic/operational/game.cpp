@@ -20,6 +20,11 @@ std::shared_ptr<game> game::get(int seed) {
     return g;
 }
 
+std::shared_ptr<game> game::reset(json &package) {
+    g = std::shared_ptr<game>(new game(package));
+    return g;
+}
+
 game::game(json &package) : serializable(package) {
     this->map = std::make_shared<tilemap>(package["map"]);
     this->units = this->unpack_vector<unit>(package["units"]);

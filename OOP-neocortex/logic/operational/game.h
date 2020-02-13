@@ -10,13 +10,14 @@ private:
     static std::shared_ptr<game> g;
     static int seeded;
     explicit game(int seed);
+    explicit game(json &package);
 
     std::shared_ptr<tilemap> map;
     std::shared_ptr<std::vector<unit>> units;
 
 public:
     static std::shared_ptr<game> get(int seed = seeded);
-    explicit game(json &package);
+    static std::shared_ptr<game> reset(json &package);
     std::shared_ptr<json> pack(int serializer) override;
 };
 

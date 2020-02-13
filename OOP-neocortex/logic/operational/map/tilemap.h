@@ -13,7 +13,6 @@
 
 class tilemap : public serializable {
 private:
-    int width = 0, height = 0;
     std::shared_ptr<double_array<tile>> tiles;
 
 public:
