@@ -7,14 +7,14 @@
 
 #include "tiles/tile.h"
 #include "../../utils/coords.h"
-#include "../../utils/array.h"
+#include "../../utils/double_array.h"
 #include "../../utils/serializable.h"
 
 
 class tilemap : public serializable {
 private:
     int width = 0, height = 0;
-    std::shared_ptr<array<array<tile>>> tiles;
+    std::shared_ptr<double_array<tile>> tiles;
 
 public:
     explicit tilemap(int seed);

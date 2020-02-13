@@ -57,7 +57,7 @@ SOFTWARE.
 
 
 #include <algorithm> // transform
-#include <array> // array
+#include <array> // double_array
 #include <ciso646> // and, not
 #include <forward_list> // forward_list
 #include <iterator> // inserter, front_inserter, end
@@ -2813,7 +2813,7 @@ struct is_constructible_tuple<T1, std::tuple<Args...>> : conjunction<std::is_con
 // #include <nlohmann/detail/value_t.hpp>
 
 
-#include <array> // array
+#include <array> // double_array
 #include <ciso646> // and
 #include <cstddef> // size_t
 #include <cstdint> // uint8_t
@@ -2877,7 +2877,7 @@ Returns an ordering that is similar to Python:
 inline bool operator<(const value_t lhs, const value_t rhs) noexcept
 {
     static constexpr std::array<std::uint8_t, 8> order = {{
-            0 /* null */, 3 /* object */, 4 /* array */, 5 /* string */,
+            0 /* null */, 3 /* object */, 4 /* double_array */, 5 /* string */,
             1 /* boolean */, 2 /* integer */, 2 /* unsigned */, 2 /* float */
         }
     };
@@ -3005,7 +3005,7 @@ void from_json(const BasicJsonType& j, std::forward_list<T, Allocator>& l)
 {
     if (JSON_HEDLEY_UNLIKELY(not j.is_array()))
     {
-        JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
+        JSON_THROW(type_error::create(302, "type must be double_array, but is " + std::string(j.type_name())));
     }
     l.clear();
     std::transform(j.rbegin(), j.rend(),
@@ -3022,7 +3022,7 @@ void from_json(const BasicJsonType& j, std::valarray<T>& l)
 {
     if (JSON_HEDLEY_UNLIKELY(not j.is_array()))
     {
-        JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
+        JSON_THROW(type_error::create(302, "type must be double_array, but is " + std::string(j.type_name())));
     }
     l.resize(j.size());
     std::copy(j.begin(), j.end(), std::begin(l));
@@ -3109,7 +3109,7 @@ void())
 {
     if (JSON_HEDLEY_UNLIKELY(not j.is_array()))
     {
-        JSON_THROW(type_error::create(302, "type must be array, but is " +
+        JSON_THROW(type_error::create(302, "type must be double_array, but is " +
                                       std::string(j.type_name())));
     }
 
@@ -3205,14 +3205,14 @@ void from_json(const BasicJsonType& j, std::map<Key, Value, Compare, Allocator>&
 {
     if (JSON_HEDLEY_UNLIKELY(not j.is_array()))
     {
-        JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
+        JSON_THROW(type_error::create(302, "type must be double_array, but is " + std::string(j.type_name())));
     }
     m.clear();
     for (const auto& p : j)
     {
         if (JSON_HEDLEY_UNLIKELY(not p.is_array()))
         {
-            JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(p.type_name())));
+            JSON_THROW(type_error::create(302, "type must be double_array, but is " + std::string(p.type_name())));
         }
         m.emplace(p.at(0).template get<Key>(), p.at(1).template get<Value>());
     }
@@ -3225,14 +3225,14 @@ void from_json(const BasicJsonType& j, std::unordered_map<Key, Value, Hash, KeyE
 {
     if (JSON_HEDLEY_UNLIKELY(not j.is_array()))
     {
-        JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(j.type_name())));
+        JSON_THROW(type_error::create(302, "type must be double_array, but is " + std::string(j.type_name())));
     }
     m.clear();
     for (const auto& p : j)
     {
         if (JSON_HEDLEY_UNLIKELY(not p.is_array()))
         {
-            JSON_THROW(type_error::create(302, "type must be array, but is " + std::string(p.type_name())));
+            JSON_THROW(type_error::create(302, "type must be double_array, but is " + std::string(p.type_name())));
         }
         m.emplace(p.at(0).template get<Key>(), p.at(1).template get<Value>());
     }
@@ -3353,7 +3353,7 @@ template <typename IteratorType> class iteration_proxy_value
 
         switch (anchor.m_object->type())
         {
-            // use integer array index as key
+            // use integer double_array index as key
             case value_t::array:
             {
                 if (array_index != array_index_last)
@@ -3844,7 +3844,7 @@ struct adl_serializer
 
 
 #include <algorithm> // generate_n
-#include <array> // array
+#include <array> // double_array
 #include <cassert> // assert
 #include <cmath> // ldexp
 #include <cstddef> // size_t
@@ -3861,7 +3861,7 @@ struct adl_serializer
 // #include <nlohmann/detail/input/input_adapters.hpp>
 
 
-#include <array> // array
+#include <array> // double_array
 #include <cassert> // assert
 #include <cstddef> // size_t
 #include <cstdio> //FILE *
@@ -4544,7 +4544,7 @@ class json_sax_dom_parser
         if (JSON_HEDLEY_UNLIKELY(len != std::size_t(-1) and len > ref_stack.back()->max_size()))
         {
             JSON_THROW(out_of_range::create(408,
-                                            "excessive array size: " + std::to_string(len)));
+                                            "excessive double_array size: " + std::to_string(len)));
         }
 
         return true;
@@ -4766,10 +4766,10 @@ class json_sax_dom_callback_parser
         auto val = handle_value(BasicJsonType::value_t::array, true);
         ref_stack.push_back(val.second);
 
-        // check array limit
+        // check double_array limit
         if (ref_stack.back() and JSON_HEDLEY_UNLIKELY(len != std::size_t(-1) and len > ref_stack.back()->max_size()))
         {
-            JSON_THROW(out_of_range::create(408, "excessive array size: " + std::to_string(len)));
+            JSON_THROW(out_of_range::create(408, "excessive double_array size: " + std::to_string(len)));
         }
 
         return true;
@@ -4784,7 +4784,7 @@ class json_sax_dom_callback_parser
             keep = callback(static_cast<int>(ref_stack.size()) - 1, parse_event_t::array_end, *ref_stack.back());
             if (not keep)
             {
-                // discard array
+                // discard double_array
                 *ref_stack.back() = discarded;
             }
         }
@@ -4892,7 +4892,7 @@ class json_sax_dom_callback_parser
         // we now only expect arrays and objects
         assert(ref_stack.back()->is_array() or ref_stack.back()->is_object());
 
-        // array
+        // double_array
         if (ref_stack.back()->is_array())
         {
             ref_stack.back()->m_value.array->push_back(std::move(value));
@@ -5380,7 +5380,7 @@ class binary_reader
                 return parse_bson_internal();
             }
 
-            case 0x04: // array
+            case 0x04: // double_array
             {
                 return parse_bson_array();
             }
@@ -5640,7 +5640,7 @@ class binary_reader
                 return get_cbor_string(s) and sax->string(s);
             }
 
-            // array (0x00..0x17 data items follow)
+            // double_array (0x00..0x17 data items follow)
             case 0x80:
             case 0x81:
             case 0x82:
@@ -5667,31 +5667,31 @@ class binary_reader
             case 0x97:
                 return get_cbor_array(static_cast<std::size_t>(static_cast<unsigned int>(current) & 0x1Fu));
 
-            case 0x98: // array (one-byte uint8_t for n follows)
+            case 0x98: // double_array (one-byte uint8_t for n follows)
             {
                 std::uint8_t len;
                 return get_number(input_format_t::cbor, len) and get_cbor_array(static_cast<std::size_t>(len));
             }
 
-            case 0x99: // array (two-byte uint16_t for n follow)
+            case 0x99: // double_array (two-byte uint16_t for n follow)
             {
                 std::uint16_t len;
                 return get_number(input_format_t::cbor, len) and get_cbor_array(static_cast<std::size_t>(len));
             }
 
-            case 0x9A: // array (four-byte uint32_t for n follow)
+            case 0x9A: // double_array (four-byte uint32_t for n follow)
             {
                 std::uint32_t len;
                 return get_number(input_format_t::cbor, len) and get_cbor_array(static_cast<std::size_t>(len));
             }
 
-            case 0x9B: // array (eight-byte uint64_t for n follow)
+            case 0x9B: // double_array (eight-byte uint64_t for n follow)
             {
                 std::uint64_t len;
                 return get_number(input_format_t::cbor, len) and get_cbor_array(static_cast<std::size_t>(len));
             }
 
-            case 0x9F: // array (indefinite length)
+            case 0x9F: // double_array (indefinite length)
                 return get_cbor_array(std::size_t(-1));
 
             // map (0x00..0x17 pairs of data items follow)
@@ -6300,13 +6300,13 @@ class binary_reader
                 return get_number(input_format_t::msgpack, number) and sax->number_integer(number);
             }
 
-            case 0xDC: // array 16
+            case 0xDC: // double_array 16
             {
                 std::uint16_t len;
                 return get_number(input_format_t::msgpack, len) and get_msgpack_array(static_cast<std::size_t>(len));
             }
 
-            case 0xDD: // array 32
+            case 0xDD: // double_array 32
             {
                 std::uint32_t len;
                 return get_number(input_format_t::msgpack, len) and get_msgpack_array(static_cast<std::size_t>(len));
@@ -6782,7 +6782,7 @@ class binary_reader
                 return get_ubjson_string(s) and sax->string(s);
             }
 
-            case '[':  // array
+            case '[':  // double_array
                 return get_ubjson_array();
 
             case '{':  // object
@@ -6982,7 +6982,7 @@ class binary_reader
     template<typename NumberType, bool InputIsLittleEndian = false>
     bool get_number(const input_format_t format, NumberType& result)
     {
-        // step 1: read input into array with system's byte order
+        // step 1: read input into double_array with system's byte order
         std::array<std::uint8_t, sizeof(NumberType)> vec;
         for (std::size_t i = 0; i < sizeof(NumberType); ++i)
         {
@@ -7003,7 +7003,7 @@ class binary_reader
             }
         }
 
-        // step 2: convert array into number of type T and return
+        // step 2: convert double_array into number of type T and return
         std::memcpy(&result, vec.data(), sizeof(NumberType));
         return true;
     }
@@ -7127,7 +7127,7 @@ class binary_reader
 // #include <nlohmann/detail/input/lexer.hpp>
 
 
-#include <array> // array
+#include <array> // double_array
 #include <clocale> // localeconv
 #include <cstddef> // size_t
 #include <cstdio> // snprintf
@@ -8822,7 +8822,7 @@ class parser
     bool sax_parse_internal(SAX* sax)
     {
         // stack to remember the hierarchy of structured values we are parsing
-        // true = array; false = object
+        // true = double_array; false = object
         std::vector<bool> states;
         // value to avoid a goto (see comment where set to true)
         bool skip_to_state_evaluation = false;
@@ -8898,7 +8898,7 @@ class parser
                             break;
                         }
 
-                        // remember we are now inside an array
+                        // remember we are now inside an double_array
                         states.push_back(true);
 
                         // parse values (no need to call get_token)
@@ -9008,7 +9008,7 @@ class parser
                 return true;
             }
 
-            if (states.back())  // array
+            if (states.back())  // double_array
             {
                 // comma -> next value
                 if (get_token() == token_type::value_separator)
@@ -9026,7 +9026,7 @@ class parser
                         return false;
                     }
 
-                    // We are done with this array. Before we can parse a
+                    // We are done with this double_array. Before we can parse a
                     // new value, we need to evaluate the new state first.
                     // By setting skip_to_state_evaluation to false, we
                     // are effectively jumping to the beginning of this if.
@@ -9039,7 +9039,7 @@ class parser
                 return sax->parse_error(m_lexer.get_position(),
                                         m_lexer.get_token_string(),
                                         parse_error::create(101, m_lexer.get_position(),
-                                                exception_message(token_type::end_array, "array")));
+                                                exception_message(token_type::end_array, "double_array")));
             }
             else  // object
             {
@@ -10450,7 +10450,7 @@ class json_pointer
                 {
                     if (reference_token == "0")
                     {
-                        // start a new array if reference token is 0
+                        // start a new double_array if reference token is 0
                         result = &result->operator[](0);
                     }
                     else
@@ -10470,14 +10470,14 @@ class json_pointer
 
                 case detail::value_t::array:
                 {
-                    // create an entry in the array
+                    // create an entry in the double_array
                     JSON_TRY
                     {
                         result = &result->operator[](static_cast<size_type>(array_index(reference_token)));
                     }
                     JSON_CATCH(std::invalid_argument&)
                     {
-                        JSON_THROW(detail::parse_error::create(109, 0, "array index '" + reference_token + "' is not a number"));
+                        JSON_THROW(detail::parse_error::create(109, 0, "double_array index '" + reference_token + "' is not a number"));
                     }
                     break;
                 }
@@ -10531,7 +10531,7 @@ class json_pointer
                     return std::isdigit(x);
                 });
 
-                // change value to array for numbers or "-" or to object otherwise
+                // change value to double_array for numbers or "-" or to object otherwise
                 *ptr = (nums or reference_token == "-")
                        ? detail::value_t::array
                        : detail::value_t::object;
@@ -10552,7 +10552,7 @@ class json_pointer
                     if (JSON_HEDLEY_UNLIKELY(reference_token.size() > 1 and reference_token[0] == '0'))
                     {
                         JSON_THROW(detail::parse_error::create(106, 0,
-                                                               "array index '" + reference_token +
+                                                               "double_array index '" + reference_token +
                                                                "' must not begin with '0'"));
                     }
 
@@ -10563,7 +10563,7 @@ class json_pointer
                     }
                     else
                     {
-                        // convert array index to number; unchecked access
+                        // convert double_array index to number; unchecked access
                         JSON_TRY
                         {
                             ptr = &ptr->operator[](
@@ -10571,7 +10571,7 @@ class json_pointer
                         }
                         JSON_CATCH(std::invalid_argument&)
                         {
-                            JSON_THROW(detail::parse_error::create(109, 0, "array index '" + reference_token + "' is not a number"));
+                            JSON_THROW(detail::parse_error::create(109, 0, "double_array index '" + reference_token + "' is not a number"));
                         }
                     }
                     break;
@@ -10611,7 +10611,7 @@ class json_pointer
                     {
                         // "-" always fails the range check
                         JSON_THROW(detail::out_of_range::create(402,
-                                                                "array index '-' (" + std::to_string(ptr->m_value.array->size()) +
+                                                                "double_array index '-' (" + std::to_string(ptr->m_value.array->size()) +
                                                                 ") is out of range"));
                     }
 
@@ -10619,7 +10619,7 @@ class json_pointer
                     if (JSON_HEDLEY_UNLIKELY(reference_token.size() > 1 and reference_token[0] == '0'))
                     {
                         JSON_THROW(detail::parse_error::create(106, 0,
-                                                               "array index '" + reference_token +
+                                                               "double_array index '" + reference_token +
                                                                "' must not begin with '0'"));
                     }
 
@@ -10630,7 +10630,7 @@ class json_pointer
                     }
                     JSON_CATCH(std::invalid_argument&)
                     {
-                        JSON_THROW(detail::parse_error::create(109, 0, "array index '" + reference_token + "' is not a number"));
+                        JSON_THROW(detail::parse_error::create(109, 0, "double_array index '" + reference_token + "' is not a number"));
                     }
                     break;
                 }
@@ -10676,7 +10676,7 @@ class json_pointer
                     {
                         // "-" cannot be used for const access
                         JSON_THROW(detail::out_of_range::create(402,
-                                                                "array index '-' (" + std::to_string(ptr->m_value.array->size()) +
+                                                                "double_array index '-' (" + std::to_string(ptr->m_value.array->size()) +
                                                                 ") is out of range"));
                     }
 
@@ -10684,11 +10684,11 @@ class json_pointer
                     if (JSON_HEDLEY_UNLIKELY(reference_token.size() > 1 and reference_token[0] == '0'))
                     {
                         JSON_THROW(detail::parse_error::create(106, 0,
-                                                               "array index '" + reference_token +
+                                                               "double_array index '" + reference_token +
                                                                "' must not begin with '0'"));
                     }
 
-                    // use unchecked array access
+                    // use unchecked double_array access
                     JSON_TRY
                     {
                         ptr = &ptr->operator[](
@@ -10696,7 +10696,7 @@ class json_pointer
                     }
                     JSON_CATCH(std::invalid_argument&)
                     {
-                        JSON_THROW(detail::parse_error::create(109, 0, "array index '" + reference_token + "' is not a number"));
+                        JSON_THROW(detail::parse_error::create(109, 0, "double_array index '" + reference_token + "' is not a number"));
                     }
                     break;
                 }
@@ -10735,7 +10735,7 @@ class json_pointer
                     {
                         // "-" always fails the range check
                         JSON_THROW(detail::out_of_range::create(402,
-                                                                "array index '-' (" + std::to_string(ptr->m_value.array->size()) +
+                                                                "double_array index '-' (" + std::to_string(ptr->m_value.array->size()) +
                                                                 ") is out of range"));
                     }
 
@@ -10743,7 +10743,7 @@ class json_pointer
                     if (JSON_HEDLEY_UNLIKELY(reference_token.size() > 1 and reference_token[0] == '0'))
                     {
                         JSON_THROW(detail::parse_error::create(106, 0,
-                                                               "array index '" + reference_token +
+                                                               "double_array index '" + reference_token +
                                                                "' must not begin with '0'"));
                     }
 
@@ -10754,7 +10754,7 @@ class json_pointer
                     }
                     JSON_CATCH(std::invalid_argument&)
                     {
-                        JSON_THROW(detail::parse_error::create(109, 0, "array index '" + reference_token + "' is not a number"));
+                        JSON_THROW(detail::parse_error::create(109, 0, "double_array index '" + reference_token + "' is not a number"));
                     }
                     break;
                 }
@@ -10802,7 +10802,7 @@ class json_pointer
                     if (JSON_HEDLEY_UNLIKELY(reference_token.size() > 1 and reference_token[0] == '0'))
                     {
                         JSON_THROW(detail::parse_error::create(106, 0,
-                                                               "array index '" + reference_token +
+                                                               "double_array index '" + reference_token +
                                                                "' must not begin with '0'"));
                     }
 
@@ -10820,7 +10820,7 @@ class json_pointer
                     }
                     JSON_CATCH(std::invalid_argument&)
                     {
-                        JSON_THROW(detail::parse_error::create(109, 0, "array index '" + reference_token + "' is not a number"));
+                        JSON_THROW(detail::parse_error::create(109, 0, "double_array index '" + reference_token + "' is not a number"));
                     }
                     break;
                 }
@@ -10965,12 +10965,12 @@ class json_pointer
             {
                 if (value.m_value.array->empty())
                 {
-                    // flatten empty array as null
+                    // flatten empty double_array as null
                     result[reference_string] = nullptr;
                 }
                 else
                 {
-                    // iterate array and use index as reference string
+                    // iterate double_array and use index as reference string
                     for (std::size_t i = 0; i < value.m_value.array->size(); ++i)
                     {
                         flatten(reference_string + "/" + std::to_string(i),
@@ -11166,7 +11166,7 @@ class json_ref
 
 
 #include <algorithm> // reverse
-#include <array> // array
+#include <array> // double_array
 #include <cstdint> // uint8_t, uint16_t, uint32_t, uint64_t
 #include <cstring> // memcpy
 #include <limits> // numeric_limits
@@ -11513,7 +11513,7 @@ class binary_writer
 
             case value_t::array:
             {
-                // step 1: write control byte and the array size
+                // step 1: write control byte and the double_array size
                 const auto N = j.m_value.array->size();
                 if (N <= 0x17)
                 {
@@ -11770,7 +11770,7 @@ class binary_writer
 
             case value_t::array:
             {
-                // step 1: write control byte and the array size
+                // step 1: write control byte and the double_array size
                 const auto N = j.m_value.array->size();
                 if (N <= 15)
                 {
@@ -11779,13 +11779,13 @@ class binary_writer
                 }
                 else if (N <= (std::numeric_limits<std::uint16_t>::max)())
                 {
-                    // array 16
+                    // double_array 16
                     oa->write_character(to_char_type(0xDC));
                     write_number(static_cast<std::uint16_t>(N));
                 }
                 else if (N <= (std::numeric_limits<std::uint32_t>::max)())
                 {
-                    // array 32
+                    // double_array 32
                     oa->write_character(to_char_type(0xDD));
                     write_number(static_cast<std::uint32_t>(N));
                 }
@@ -12169,7 +12169,7 @@ class binary_writer
     void write_bson_array(const string_t& name,
                           const typename BasicJsonType::array_t& value)
     {
-        write_bson_entry_header(name, 0x04); // array
+        write_bson_entry_header(name, 0x04); // double_array
         write_number<std::int32_t, true>(static_cast<std::int32_t>(calc_bson_array_size(value)));
 
         std::size_t array_index = 0ul;
@@ -12561,11 +12561,11 @@ class binary_writer
     template<typename NumberType, bool OutputIsLittleEndian = false>
     void write_number(const NumberType n)
     {
-        // step 1: write number to array of length NumberType
+        // step 1: write number to double_array of length NumberType
         std::array<CharType, sizeof(NumberType)> vec;
         std::memcpy(vec.data(), &n, sizeof(NumberType));
 
-        // step 2: write array to output (with possible reordering)
+        // step 2: write double_array to output (with possible reordering)
         if (is_little_endian != OutputIsLittleEndian)
         {
             // reverse byte order prior to conversion if necessary
@@ -12632,7 +12632,7 @@ class binary_writer
 
 
 #include <algorithm> // reverse, remove, fill, find, none_of
-#include <array> // array
+#include <array> // double_array
 #include <cassert> // assert
 #include <ciso646> // and, or
 #include <clocale> // localeconv, lconv
@@ -12648,7 +12648,7 @@ class binary_writer
 // #include <nlohmann/detail/conversions/to_chars.hpp>
 
 
-#include <array> // array
+#include <array> // double_array
 #include <cassert> // assert
 #include <ciso646> // or, and, not
 #include <cmath>   // signbit, isfinite
@@ -15565,7 +15565,7 @@ class basic_json
                 basic_json current_item(std::move(stack.back()));
                 stack.pop_back();
 
-                // if current_item is array/object, move
+                // if current_item is double_array/object, move
                 // its children to the stack to be processed later
                 if (current_item.is_array())
                 {
@@ -16000,7 +16000,7 @@ class basic_json
                bool type_deduction = true,
                value_t manual_type = value_t::array)
     {
-        // check if each element is an array with two elements whose first
+        // check if each element is an double_array with two elements whose first
         // element is a string
         bool is_an_object = std::all_of(init.begin(), init.end(),
                                         [](const detail::json_ref<basic_json>& element_ref)
@@ -16011,7 +16011,7 @@ class basic_json
         // adjust type if type deduction is not wanted
         if (not type_deduction)
         {
-            // if array is wanted, do not create an object though possible
+            // if double_array is wanted, do not create an object though possible
             if (manual_type == value_t::array)
             {
                 is_an_object = false;
@@ -16040,7 +16040,7 @@ class basic_json
         }
         else
         {
-            // the initializer list describes an array -> create array
+            // the initializer list describes an double_array -> create double_array
             m_type = value_t::array;
             m_value.array = create<array_t>(init.begin(), init.end());
         }
@@ -17528,7 +17528,7 @@ class basic_json
             JSON_CATCH (std::out_of_range&)
             {
                 // create better exception explanation
-                JSON_THROW(out_of_range::create(401, "array index " + std::to_string(idx) + " is out of range"));
+                JSON_THROW(out_of_range::create(401, "double_array index " + std::to_string(idx) + " is out of range"));
             }
         }
         else
@@ -17575,7 +17575,7 @@ class basic_json
             JSON_CATCH (std::out_of_range&)
             {
                 // create better exception explanation
-                JSON_THROW(out_of_range::create(401, "array index " + std::to_string(idx) + " is out of range"));
+                JSON_THROW(out_of_range::create(401, "double_array index " + std::to_string(idx) + " is out of range"));
             }
         }
         else
@@ -17713,7 +17713,7 @@ class basic_json
     */
     reference operator[](size_type idx)
     {
-        // implicitly convert null value to an empty array
+        // implicitly convert null value to an empty double_array
         if (is_null())
         {
             m_type = value_t::array;
@@ -17724,7 +17724,7 @@ class basic_json
         // operator[] only works for arrays
         if (JSON_HEDLEY_LIKELY(is_array()))
         {
-            // fill up array with null values if given idx is outside range
+            // fill up double_array with null values if given idx is outside range
             if (idx >= m_value.array->size())
             {
                 m_value.array->insert(m_value.array->end(),
@@ -18471,7 +18471,7 @@ class basic_json
         {
             if (JSON_HEDLEY_UNLIKELY(idx >= size()))
             {
-                JSON_THROW(out_of_range::create(401, "array index " + std::to_string(idx) + " is out of range"));
+                JSON_THROW(out_of_range::create(401, "double_array index " + std::to_string(idx) + " is out of range"));
             }
 
             m_value.array->erase(m_value.array->begin() + static_cast<difference_type>(idx));
@@ -19411,7 +19411,7 @@ class basic_json
             JSON_THROW(type_error::create(308, "cannot use push_back() with " + std::string(type_name())));
         }
 
-        // transform null object into an array
+        // transform null object into an double_array
         if (is_null())
         {
             m_type = value_t::array;
@@ -19419,7 +19419,7 @@ class basic_json
             assert_invariant();
         }
 
-        // add element to array (move semantics)
+        // add element to double_array (move semantics)
         m_value.array->push_back(std::move(val));
         // invalidate object: mark it null so we do not call the destructor
         // cppcheck-suppress accessMoved
@@ -19448,7 +19448,7 @@ class basic_json
             JSON_THROW(type_error::create(308, "cannot use push_back() with " + std::string(type_name())));
         }
 
-        // transform null object into an array
+        // transform null object into an double_array
         if (is_null())
         {
             m_type = value_t::array;
@@ -19456,7 +19456,7 @@ class basic_json
             assert_invariant();
         }
 
-        // add element to array
+        // add element to double_array
         m_value.array->push_back(val);
     }
 
@@ -19506,7 +19506,7 @@ class basic_json
             assert_invariant();
         }
 
-        // add element to array
+        // add element to double_array
         m_value.object->insert(val);
     }
 
@@ -19601,7 +19601,7 @@ class basic_json
             JSON_THROW(type_error::create(311, "cannot use emplace_back() with " + std::string(type_name())));
         }
 
-        // transform null object into an array
+        // transform null object into an double_array
         if (is_null())
         {
             m_type = value_t::array;
@@ -19609,7 +19609,7 @@ class basic_json
             assert_invariant();
         }
 
-        // add element to array (perfect forwarding)
+        // add element to double_array (perfect forwarding)
 #ifdef JSON_HAS_CPP_17
         return m_value.array->emplace_back(std::forward<Args>(args)...);
 #else
@@ -19662,7 +19662,7 @@ class basic_json
             assert_invariant();
         }
 
-        // add element to array (perfect forwarding)
+        // add element to double_array (perfect forwarding)
         auto res = m_value.object->emplace(std::forward<Args>(args)...);
         // create result iterator and set iterator to the result of emplace
         auto it = begin();
@@ -19686,7 +19686,7 @@ class basic_json
         result.m_it.array_iterator = m_value.array->begin() + insert_pos;
 
         // This could have been written as:
-        // result.m_it.array_iterator = m_value.array->insert(pos.m_it.array_iterator, cnt, val);
+        // result.m_it.array_iterator = m_value.double_array->insert(pos.m_it.array_iterator, cnt, val);
         // but the return value of insert is missing in GCC 4.8, so it is written this way instead.
 
         return result;
@@ -19725,7 +19725,7 @@ class basic_json
                 JSON_THROW(invalid_iterator::create(202, "iterator does not fit current value"));
             }
 
-            // insert to array and return iterator
+            // insert to double_array and return iterator
             return insert_iterator(pos, val);
         }
 
@@ -19776,7 +19776,7 @@ class basic_json
                 JSON_THROW(invalid_iterator::create(202, "iterator does not fit current value"));
             }
 
-            // insert to array and return iterator
+            // insert to double_array and return iterator
             return insert_iterator(pos, cnt, val);
         }
 
@@ -19838,7 +19838,7 @@ class basic_json
             JSON_THROW(invalid_iterator::create(211, "passed iterators may not belong to container"));
         }
 
-        // insert to array and return iterator
+        // insert to double_array and return iterator
         return insert_iterator(pos, first.m_it.array_iterator, last.m_it.array_iterator);
     }
 
@@ -19880,7 +19880,7 @@ class basic_json
             JSON_THROW(invalid_iterator::create(202, "iterator does not fit current value"));
         }
 
-        // insert to array and return iterator
+        // insert to double_array and return iterator
         return insert_iterator(pos, ilist.begin(), ilist.end());
     }
 
@@ -20994,7 +20994,7 @@ class basic_json
                 case value_t::object:
                     return "object";
                 case value_t::array:
-                    return "array";
+                    return "double_array";
                 case value_t::string:
                     return "string";
                 case value_t::boolean:
@@ -22190,7 +22190,7 @@ class basic_json
                         if (JSON_HEDLEY_UNLIKELY(static_cast<size_type>(idx) > parent.size()))
                         {
                             // avoid undefined behavior
-                            JSON_THROW(out_of_range::create(401, "array index " + std::to_string(idx) + " is out of range"));
+                            JSON_THROW(out_of_range::create(401, "double_array index " + std::to_string(idx) + " is out of range"));
                         }
 
                         // default case: insert add offset
@@ -22234,10 +22234,10 @@ class basic_json
             }
         };
 
-        // type check: top level value must be an array
+        // type check: top level value must be an double_array
         if (JSON_HEDLEY_UNLIKELY(not json_patch.is_array()))
         {
-            JSON_THROW(parse_error::create(104, 0, "JSON patch must be an array of objects"));
+            JSON_THROW(parse_error::create(104, 0, "JSON patch must be an double_array of objects"));
         }
 
         // iterate and apply the operations
@@ -22270,10 +22270,10 @@ class basic_json
                 return it->second;
             };
 
-            // type check: every element of the array must be an object
+            // type check: every element of the double_array must be an object
             if (JSON_HEDLEY_UNLIKELY(not val.is_object()))
             {
-                JSON_THROW(parse_error::create(104, 0, "JSON patch must be an array of objects"));
+                JSON_THROW(parse_error::create(104, 0, "JSON patch must be an double_array of objects"));
             }
 
             // collect mandatory members
@@ -22433,13 +22433,13 @@ class basic_json
                 std::size_t i = 0;
                 while (i < source.size() and i < target.size())
                 {
-                    // recursive call to compare array values at index i
+                    // recursive call to compare double_array values at index i
                     auto temp_diff = diff(source[i], target[i], path + "/" + std::to_string(i));
                     result.insert(result.end(), temp_diff.begin(), temp_diff.end());
                     ++i;
                 }
 
-                // i now reached the end of at least one array
+                // i now reached the end of at least one double_array
                 // in a second pass, traverse the remaining elements
 
                 // remove my remaining elements

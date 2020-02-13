@@ -2,7 +2,7 @@
 // Created by miles on 2/10/2020.
 //
 
-#include "utils/array.h"
+#include "utils/double_array.h"
 #include "operational/game.h"
 
 int main() {

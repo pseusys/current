@@ -32,16 +32,14 @@ tilemap::tilemap(int seed) {
     }
     log::say("Game field initialized with ", this->width, " width and ", this->height, " height");
 
-    *(this->tiles) = array<array<tile>>(this->height); //DEBUG: sum error happens here!
-    for (int i = 0; i < this->height; ++i) {
-        (*(this->tiles))[i] = array<tile>(this->width);
-    }
+    coords size = coords(this->width, this->height);
+    *(this->tiles) = double_array<tile>(size);
 }
 
 tilemap::tilemap(json &package) : serializable(package) {
     this->width = package["width"];
     this->height = package["height"];
-    this->tiles = std::make_shared<array<array<tile>>>(package["map"]);
+    this->tiles = std::make_shared<double_array<tile>>(package["map"]);
 }
 
 std::shared_ptr<json> tilemap::pack(int serializer) {
