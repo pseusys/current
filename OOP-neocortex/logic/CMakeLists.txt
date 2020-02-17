@@ -3,7 +3,7 @@ project(logic)
 
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB_RECURSE sources bridge/* operational/* utils/* other/* libs/* omni_header.hpp)
+file(GLOB_RECURSE sources bridge/* operational/* utils/* other/* libs/*)
 
 add_executable(LogicExec ${sources} main.cpp)
 

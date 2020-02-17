@@ -1,12 +1,10 @@
-//
-// Created by miles on 2/10/2020.
-//
-
 #include "tile.hpp"
+#include "../../units/unit.hpp"
+#include "../../game.hpp"
 
 
 tile::tile(bool passable) : passable(passable) {
-
+    placeholder_id = -1;
 }
 
 tile::tile(json &package) : serializable(package) {

@@ -1,6 +1,8 @@
 #include "choreographer.hpp"
 
 
+std::shared_ptr<choreographer> choreographer::instance = nullptr;
+
 void choreographer::init(std::shared_ptr<tilemap>& tilemap) {
     instance = std::make_shared<choreographer>();
     instance->map = tilemap;

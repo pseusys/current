@@ -6,6 +6,7 @@
 #include "serializable.hpp"
 #include "coords.hpp"
 
+
 template <class T>
 class double_array : public serializable {
 private:

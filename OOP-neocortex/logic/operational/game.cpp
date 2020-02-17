@@ -1,8 +1,5 @@
-//
-// Created by miles on 2/12/2020.
-//
-
 #include "game.hpp"
+#include "map/choreographer.hpp"
 
 
 std::shared_ptr<game> game::g = nullptr;

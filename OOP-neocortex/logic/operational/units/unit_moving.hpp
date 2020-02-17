@@ -1,9 +1,7 @@
 #ifndef LOGIC_UNIT_MOVING_HPP
 #define LOGIC_UNIT_MOVING_HPP
 
-#include "../../omni_header.hpp"
 #include "unit.hpp"
-
 
 class unit_moving : public unit {
 private:

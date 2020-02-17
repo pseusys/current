@@ -49,6 +49,6 @@ std::shared_ptr<json> tilemap::pack(int serializer) {
 
 
 
-std::shared_ptr<unit>& tilemap::get_unit(coords& tile) {
+std::shared_ptr<unit> tilemap::get_unit(coords& tile) {
     return (*tiles)[tile].get_placeholder();
 }

@@ -1,7 +1,3 @@
-//
-// Created by miles on 2/10/2020.
-//
-
 #ifndef LOGIC_LOG_HPP
 #define LOGIC_LOG_HPP
 

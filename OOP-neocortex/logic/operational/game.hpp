@@ -1,7 +1,6 @@
 #ifndef LOGIC_GAME_HPP
 #define LOGIC_GAME_HPP
 
-#include "../omni_header.hpp"
 #include "players/player.hpp"
 #include "map/tilemap.hpp"
 #include <stack>

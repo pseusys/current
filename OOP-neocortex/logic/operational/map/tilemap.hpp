@@ -5,11 +5,12 @@
 #ifndef LOGIC_TILEMAP_HPP
 #define LOGIC_TILEMAP_HPP
 
-#include "../../omni_header.hpp"
+#include <memory>
 #include "tiles/tile.hpp"
 #include "../../utils/coords.hpp"
 #include "../../utils/double_array.hpp"
 #include "../../utils/serializable.hpp"
+#include "../units/unit.hpp"
 
 
 class tilemap : public serializable {
@@ -23,7 +24,7 @@ public:
     explicit tilemap(json &package);
     std::shared_ptr<json> pack(int serializer) override;
 
-    std::shared_ptr<unit>& get_unit(coords &tile);
+    std::shared_ptr<unit> get_unit(coords &tile);
 };
 
 

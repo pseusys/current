@@ -1,7 +1,3 @@
-//
-// Created by miles on 2/10/2020.
-//
-
 #include "coords.hpp"
 
 

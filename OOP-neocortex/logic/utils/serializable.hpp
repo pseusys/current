@@ -5,6 +5,7 @@
 
 using json = nlohmann::json;
 
+
 class serializable {
 protected:
     serializable() = default;

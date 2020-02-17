@@ -1,4 +1,3 @@
-#include "omni_header.hpp"
 #include "operational/game.hpp"
 
 int main() {
