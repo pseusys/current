@@ -1,5 +1,5 @@
-#ifndef LOGIC_SERIALIZABLE_H
-#define LOGIC_SERIALIZABLE_H
+#ifndef LOGIC_SERIALIZABLE_HPP
+#define LOGIC_SERIALIZABLE_HPP
 
 #include "../libs/json.hpp"
 
@@ -44,4 +44,4 @@ std::shared_ptr<std::vector<T>> serializable::unpack_vector(json& package) {
 }
 
 
-#endif //LOGIC_SERIALIZABLE_H
+#endif //LOGIC_SERIALIZABLE_HPP

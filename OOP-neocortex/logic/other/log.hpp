@@ -2,8 +2,8 @@
 // Created by miles on 2/10/2020.
 //
 
-#ifndef LOGIC_LOG_H
-#define LOGIC_LOG_H
+#ifndef LOGIC_LOG_HPP
+#define LOGIC_LOG_HPP
 
 #include <iostream>
 
@@ -28,4 +28,4 @@ void log::report() {
 }
 
 
-#endif //LOGIC_LOG_H
+#endif //LOGIC_LOG_HPP

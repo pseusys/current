@@ -2,8 +2,8 @@
 // Created by miles on 2/10/2020.
 //
 
-#ifndef LOGIC_COMMAND_H
-#define LOGIC_COMMAND_H
+#ifndef LOGIC_COMMAND_HPP
+#define LOGIC_COMMAND_HPP
 
 
 class command {
@@ -21,4 +21,4 @@ public:
 };
 
 
-#endif //LOGIC_COMMAND_H
+#endif //LOGIC_COMMAND_HPP

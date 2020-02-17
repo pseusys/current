@@ -2,17 +2,18 @@
 // Created by miles on 2/10/2020.
 //
 
-#ifndef LOGIC_TILE_H
-#define LOGIC_TILE_H
+#ifndef LOGIC_TILE_HPP
+#define LOGIC_TILE_HPP
 
 #include <memory>
-#include "../../unit/unit.h"
-#include "../../../utils/serializable.h"
+#include "../../units/unit.hpp"
+#include "../../../utils/serializable.hpp"
+#include "../../game.hpp"
 
 
 class tile : public serializable {
 private:
-    int placeholder_id; // and destination
+    int placeholder_id;
     bool passable;
     int square_pivot_anchor;
     int decoration_type;
@@ -25,6 +26,8 @@ public:
     int get_placeholder_id();
     void set_placeholder_id(int id);
 
+    std::shared_ptr<unit> get_placeholder();
+
     bool is_passable();
     bool is_occupied();
 
@@ -35,4 +38,4 @@ public:
 };
 
 
-#endif //LOGIC_TILE_H
+#endif //LOGIC_TILE_HPP

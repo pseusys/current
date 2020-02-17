@@ -1,8 +1,8 @@
-#ifndef LOGIC_GAME_H
-#define LOGIC_GAME_H
+#ifndef LOGIC_GAME_HPP
+#define LOGIC_GAME_HPP
 
-#include "unit/unit.h"
-#include "map/tilemap.h"
+#include "players/player.hpp"
+#include "map/tilemap.hpp"
 
 
 class game : public serializable {
@@ -13,15 +13,17 @@ private:
     explicit game(json &package);
 
     std::shared_ptr<tilemap> map;
-    std::shared_ptr<std::vector<unit>> units;
+    std::shared_ptr<std::vector<player>> players;
 
 public:
     static std::shared_ptr<game> get(int seed = seeded);
     static std::shared_ptr<game> reset(json &package);
     std::shared_ptr<json> pack(int serializer) override;
+
+    std::shared_ptr<unit> get_unit_by_id(int id);
 };
 
 enum serialization_mods{pre_game, on_game, post_game};
 
 
-#endif //LOGIC_GAME_H
+#endif //LOGIC_GAME_HPP

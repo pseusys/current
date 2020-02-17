@@ -1,18 +1,32 @@
-//
-// Created by miles on 2/11/2020.
-//
+#include "unit.hpp"
 
-#include "unit.h"
+
+int unit::get_id() {
+    return id;
+}
+
 
 
 unit::unit(json &package) : serializable(package) {
-    this->health = std::make_shared<ability>(package["health"]);
-    this->abilities = unpack_vector<ability>(package["abilities"]);
 }
 
 std::shared_ptr<json> unit::pack(int serializer) {
     std::shared_ptr<json> package = std::make_shared<json>();
-    (*package)["health"] = *(this->health->pack(serializer));
-    (*package)["abilities"] = *(pack_vector(*(this->abilities), serializer));
     return std::shared_ptr<json>();
+}
+
+
+
+std::shared_ptr<coords>& unit::get_pivot_position() {
+    return pivot_position;
+}
+
+int unit::get_size() {
+    return size;
+}
+
+
+
+void unit::update() {
+    if (health <= 0) choreographer::get()->kill(std::shared_ptr<unit>(this));
 }

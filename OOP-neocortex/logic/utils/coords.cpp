@@ -2,7 +2,8 @@
 // Created by miles on 2/10/2020.
 //
 
-#include "coords.h"
+#include "coords.hpp"
+
 
 coords::coords(int x, int y) : x(x), y(y) {}
 
@@ -46,4 +47,14 @@ bool coords::operator==(const coords &rhs) {
 
 bool coords::operator!=(coords &rhs) {
     return !(rhs == *this);
+}
+
+
+
+void coords::reset() {
+    this->x = this->y = -1;
+}
+
+bool coords::is_null() {
+    return ((this->x == -1) && (this->y == -1));
 }

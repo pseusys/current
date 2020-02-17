@@ -2,7 +2,7 @@
 // Created by miles on 2/10/2020.
 //
 
-#include "tile.h"
+#include "tile.hpp"
 
 
 tile::tile(bool passable) : passable(passable) {
@@ -33,6 +33,12 @@ int tile::get_placeholder_id() {
 
 void tile::set_placeholder_id(int id) {
     this->placeholder_id = id;
+}
+
+
+
+std::shared_ptr<unit> tile::get_placeholder() {
+    return game::get()->get_unit_by_id(placeholder_id);
 }
 
 

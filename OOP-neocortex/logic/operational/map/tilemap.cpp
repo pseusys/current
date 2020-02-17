@@ -2,7 +2,7 @@
 // Created by miles on 2/10/2020.
 //
 
-#include "tilemap.h"
+#include "tilemap.hpp"
 
 tilemap::tilemap(int seed) {
     int width, height;
@@ -45,4 +45,10 @@ std::shared_ptr<json> tilemap::pack(int serializer) {
     std::shared_ptr<json> package = std::make_shared<json>();
     (*package)["map"] = *((this->tiles)->pack(serializer));
     return package;
+}
+
+
+
+std::shared_ptr<unit>& tilemap::get_unit(coords& tile) {
+    return (*tiles)[tile].get_placeholder();
 }

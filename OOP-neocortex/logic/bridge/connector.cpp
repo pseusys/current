@@ -1,6 +1,6 @@
-#include "command.h"
-#include "../other/log.h"
-#include "../operational/game.h"
+#include "command.hpp"
+#include "../other/log.hpp"
+#include "../operational/game.hpp"
 
 
 // is called when game is initialized;

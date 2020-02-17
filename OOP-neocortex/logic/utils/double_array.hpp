@@ -1,10 +1,10 @@
-#ifndef LOGIC_ARRAY_H
-#define LOGIC_ARRAY_H
+#ifndef LOGIC_ARRAY_HPP
+#define LOGIC_ARRAY_HPP
 
 #include <memory>
-#include "../other/log.h"
-#include "serializable.h"
-#include "coords.h"
+#include "../other/log.hpp"
+#include "serializable.hpp"
+#include "coords.hpp"
 
 template <class T>
 class double_array : public serializable {
@@ -83,7 +83,7 @@ T& double_array<T>::operator[](coords& index) {
 template <class T>
 T& double_array<T>::operator[](std::shared_ptr<coords> index) {
     if (((index->get_x() >= 0) && (index->get_x() < width)) || ((index->get_y() >= 0) && (index->get_y() < height))) {
-        return *(arr[index->get_y() * index->get_x()]);
+        return *(arr[index->get_y() * height + index->get_x()]);
     } else {
         log::report();
         throw std::runtime_error("Index out of bounds!");
@@ -110,4 +110,4 @@ bool double_array<T>::empty() {
 }
 
 
-#endif //LOGIC_ARRAY_H
+#endif //LOGIC_ARRAY_HPP
