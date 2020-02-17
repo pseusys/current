@@ -1,6 +1,7 @@
 #ifndef LOGIC_UNIT_H
 #define LOGIC_UNIT_H
 
+#include "../../omni_header.hpp"
 #include "../abilities/ability.hpp"
 #include "../../utils/coords.hpp"
 #include "../map/choreographer.hpp"

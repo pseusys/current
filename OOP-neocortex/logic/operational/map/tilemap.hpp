@@ -5,6 +5,7 @@
 #ifndef LOGIC_TILEMAP_HPP
 #define LOGIC_TILEMAP_HPP
 
+#include "../../omni_header.hpp"
 #include "tiles/tile.hpp"
 #include "../../utils/coords.hpp"
 #include "../../utils/double_array.hpp"

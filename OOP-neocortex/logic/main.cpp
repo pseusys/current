@@ -1,8 +1,4 @@
-//
-// Created by miles on 2/10/2020.
-//
-
-#include "utils/double_array.hpp"
+#include "omni_header.hpp"
 #include "operational/game.hpp"
 
 int main() {

@@ -1,6 +1,7 @@
 #ifndef LOGIC_ABILITY_HPP
 #define LOGIC_ABILITY_HPP
 
+#include "../../omni_header.hpp"
 #include <memory>
 #include "../../utils/serializable.hpp"
 #include "../units/unit.hpp"

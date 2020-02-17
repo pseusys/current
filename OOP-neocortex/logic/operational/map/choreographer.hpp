@@ -1,6 +1,7 @@
 #ifndef LOGIC_CHOREOGRAPHER_HPP
 #define LOGIC_CHOREOGRAPHER_HPP
 
+#include "../../omni_header.hpp"
 #include <memory>
 #include "../units/unit_moving.hpp"
 #include "../../utils/coords.hpp"

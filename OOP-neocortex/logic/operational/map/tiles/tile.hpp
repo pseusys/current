@@ -5,6 +5,7 @@
 #ifndef LOGIC_TILE_HPP
 #define LOGIC_TILE_HPP
 
+#include "../../../omni_header.hpp"
 #include <memory>
 #include "../../units/unit.hpp"
 #include "../../../utils/serializable.hpp"

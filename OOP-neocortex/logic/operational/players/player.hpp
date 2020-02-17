@@ -1,10 +1,11 @@
 #ifndef LOGIC_PLAYER_H
 #define LOGIC_PLAYER_H
 
-
+#include "../../omni_header.hpp"
 #include <memory>
 #include <vector>
 #include "../units/unit.hpp"
+
 
 class player {
 private:
