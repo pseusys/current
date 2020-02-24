@@ -1,6 +1,6 @@
 package classes;
 
-import java.util.Scanner;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
@@ -22,8 +22,8 @@ public class Main {
             System.out.println(div_count + " divs.");
         }*/
 
-        FieldCoverage fc = new FieldCoverage(7);
-        System.out.println(fc.fillEmptySquareNormally());
-        int k = 0;
+        FieldCoverage fc = new FieldCoverage(13);
+        List<Square> ls = fc.fillEmptySquareNormally();
+        System.out.println(ls + " " + ls.size());
     }
 }

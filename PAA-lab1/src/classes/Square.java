@@ -1,10 +1,10 @@
 package classes;
 
-public class Square {
-    protected int x, y, size;
-    protected boolean xVector, yVector;
+class Square {
+    private int x, y, size;
+    private boolean xVector, yVector;
 
-    public Square(int x, int y, int size, boolean xVector, boolean yVector) {
+    Square(int x, int y, int size, boolean xVector, boolean yVector) {
         this.x = x;
         this.y = y;
         this.size = size;
@@ -12,27 +12,35 @@ public class Square {
         this.yVector = yVector;
     }
 
-    public int getX() {
+    int getX() {
         return x;
     }
 
-    public int getY() {
+    void setX(int x) {
+        this.x = x;
+    }
+
+    int getY() {
         return y;
     }
 
-    public int getSize() {
+    void setY(int y) {
+        this.y = y;
+    }
+
+    int getSize() {
         return size;
     }
 
-    public boolean isEmpty() {
-        return size == 0;
+    void setSize(int size) {
+        this.size = size;
     }
 
-    public boolean getXDirection() {
+    boolean getXDirection() {
         return xVector;
     }
 
-    public boolean getYDirection() {
+    boolean getYDirection() {
         return yVector;
     }
 
@@ -44,10 +52,23 @@ public class Square {
         return this;
     }
 
+    Square reflect() {
+        int prevX = x;
+        x = -y;
+        y = -prevX;
+        yVector = !yVector;
+        xVector = !xVector;
+        return this;
+    }
+
     Square subSquare(int xOffset, int yOffset, int subSize) {
         int subX = x + (xVector ? xOffset : -xOffset);
         int subY = y + (yVector ? yOffset : -yOffset);
         return new Square(subX, subY, subSize, xVector, yVector);
+    }
+
+    Square copy() {
+        return new Square(x, y, size, xVector, yVector);
     }
 
     @Override
