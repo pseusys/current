@@ -38,12 +38,23 @@ std::shared_ptr<json> game::pack(int serializer) {
 
 
 
-std::shared_ptr<unit> game::get_unit_by_id(int id) {
-    for (int i = 0; i < players->size(); ++i) {
-        for (int j = 0; j < (*players)[i].get_units()->size(); ++j) {
-            std::shared_ptr<unit> current = (*(*players)[i].get_units())[j];
-            if (current->get_id() == id) return current;
-        }
+int game::add_unit(std::shared_ptr<unit> newcomer) {
+    if (!units_pool.empty()) {
+        int id = units_pool.top();
+        units_pool.pop();
+        units[id] = newcomer;
+        return id;
+    } else {
+        log::report();
+        throw std::runtime_error("Array of units is full!");
     }
-    return nullptr;
+}
+
+std::shared_ptr<unit> game::get_unit_by_id(int id) {
+    return units[id];
+}
+
+void game::kill_unit(int id) {
+    units[id].reset();
+    units_pool.push(id);
 }

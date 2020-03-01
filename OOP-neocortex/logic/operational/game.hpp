@@ -13,7 +13,7 @@ private:
     explicit game(int seed);
     explicit game(json &package);
 
-    std::vector<unit> units;
+    std::vector<std::shared_ptr<unit>> units;
     int filled_until;
     std::stack<int> units_pool;
     int upper_id;
@@ -26,7 +26,9 @@ public:
     static std::shared_ptr<game> reset(json &package);
     std::shared_ptr<json> pack(int serializer) override;
 
+    int add_unit(std::shared_ptr<unit> newcomer);
     std::shared_ptr<unit> get_unit_by_id(int id);
+    void kill_unit(int id);
 };
 
 enum serialization_mods{pre_game, on_game, post_game};
