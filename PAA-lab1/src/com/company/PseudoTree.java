@@ -6,13 +6,15 @@ import java.util.Collections;
 import java.util.LinkedList;
 
 public class PseudoTree {
-    private static final int [] smp = new int [] {97, 89, 83, 79, 73, 71, 67, 61, 59, 53, 47, 43, 41, 37, 31, 29, 23, 19, 17, 13, 11, 7, 5, 3, 2};
+    public static final int [] smp = new int [] {97, 89, 83, 79, 73, 71, 67, 61, 59, 53, 47, 43, 41, 37, 31, 29, 23, 19, 17, 13, 11, 7, 5, 3, 2};
 
     private int multiplier = 1;
     private LinkedList<Square> head;
     private TableCoverage root;
     private boolean hasTail;
     private int tailOffset;
+
+    public int leavesNumber = 0;
 
     public PseudoTree(int sz) {
         for (int i = 0; i < smp.length; i++) {
@@ -83,7 +85,7 @@ public class PseudoTree {
                 if (children.isEmpty()) {
                     finalContainer = leaf;
                     break;
-                }
+                } else leavesNumber += children.size();
                 for (Square square : children) newRow.add(new TableCoverage(leaf, square));
             }
             currentRow = newRow;
