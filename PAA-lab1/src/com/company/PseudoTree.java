@@ -4,6 +4,7 @@ package com.company;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.Stack;
 
 public class PseudoTree {
     public static final int [] smp = new int [] {97, 89, 83, 79, 73, 71, 67, 61, 59, 53, 47, 43, 41, 37, 31, 29, 23, 19, 17, 13, 11, 7, 5, 3, 2};
@@ -49,13 +50,8 @@ public class PseudoTree {
         for (Square sq : head) answer.push(sq);
 
         if (hasTail) {
-            TableCoverage complete = iterateRowsUntilSuccess();
-            LinkedList<Square> tail = new LinkedList<>();
-
-            while (complete.getParent() != null) {
-                tail.push(complete.getPayload());
-                complete = complete.getParent();
-            }
+            Stack<Square> tail = backtrackRows();
+            //Stack<Square> tail = getIteration();
 
             for (Square sq : tail) {
                 sq.setX(2*tailOffset - sq.getSize() - sq.getX() - 1);
@@ -74,6 +70,55 @@ public class PseudoTree {
         return answer;
     }
 
+    private Stack<Square> backtrackRows() {
+        Stack<Square> filling = new Stack<>();
+        int maxSize = root.getSize() * root.getSize();
+        Stack<Square> idealFilling = new Stack<>();
+
+        while (maxSize > 1) {
+            Square novus = root.addSquare();
+            root.setSize(maxSize);
+
+            while (novus != null) {
+                filling.push(novus);
+                root.cover(novus);
+                if ((!idealFilling.isEmpty()) && (filling.size() > idealFilling.size())) break;
+                novus = root.addSquare();
+            }
+
+            if ((filling.size() < idealFilling.size()) || (idealFilling.isEmpty())) {
+                idealFilling.clear();
+                idealFilling.addAll(filling);
+            }
+
+            Square top;
+            maxSize = 1;
+            while (!filling.isEmpty()) {
+                top = filling.pop();
+                maxSize = top.getSize();
+                root.uncover(top);
+                if (maxSize > 1) {
+                    root.setSize(maxSize - 1);
+                    break;
+                }
+            }
+        }
+
+        return idealFilling;
+    }
+
+    private Stack<Square> getIteration() {
+        TableCoverage complete = iterateRowsUntilSuccess();
+        Stack<Square> tail = new Stack<>();
+
+        while (complete.getParent() != null) {
+            tail.push(complete.getPayload());
+            complete = complete.getParent();
+        }
+
+        return tail;
+    }
+
     private TableCoverage iterateRowsUntilSuccess() {
         LinkedList<TableCoverage> currentRow = new LinkedList<>(Collections.singletonList(root));
         LinkedList<TableCoverage> newRow = new LinkedList<>();
@@ -81,7 +126,7 @@ public class PseudoTree {
 
         while (finalContainer == null) {
             for (TableCoverage leaf : currentRow) {
-                LinkedList<Square> children = leaf.variateSquares();
+                LinkedList<Square> children = leaf.addSquares();
                 if (children.isEmpty()) {
                     finalContainer = leaf;
                     break;

@@ -39,6 +39,10 @@ public class MonoBitArray {
         data[num] += line;
     }
 
+    public void deleteLine(int num, int line) {
+        data[num] -= line;
+    }
+
 
 
     int size() {

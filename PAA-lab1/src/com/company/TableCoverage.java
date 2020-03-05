@@ -34,6 +34,30 @@ public class TableCoverage {
         }
     }
 
+    public void cover(Square additional) {
+        for (int i = additional.getY(); i < additional.getY() + additional.getSize(); i++) {
+            for (int j = additional.getX(); j < additional.getX() + additional.getSize(); j++) {
+                table.addLine(i, 1 << (table.size() - 1 - j));
+            }
+        }
+    }
+
+    public void uncover(Square additional) {
+        for (int i = additional.getY(); i < additional.getY() + additional.getSize(); i++) {
+            for (int j = additional.getX(); j < additional.getX() + additional.getSize(); j++) {
+                table.deleteLine(i, 1 << (table.size() - 1 - j));
+            }
+        }
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
     public TableCoverage getParent() {
         return parent;
     }
@@ -44,18 +68,14 @@ public class TableCoverage {
 
 
 
-    LinkedList<Square> variateSquares() {
-        return addSquare();
-    }
-
-    private LinkedList<Square> addSquare() {
+    public LinkedList<Square> addSquares() {
         LinkedList<Square> tp = new LinkedList<>();
 
         Coords pos = table.findFirstEmpty();
         if (pos == null) return tp;
 
-        int maxY = Math.min(table.size(), pos.getY() + size + 1);
-        int maxX = Math.min(table.size(), pos.getX() + size + 1);
+        int maxY = Math.min(table.size(), pos.getY() + size);
+        int maxX = Math.min(table.size(), pos.getX() + size);
         int occupiedX = maxX, occupiedY = maxY, topSize;
 
         for (int k = pos.getY() + 1; k < maxY; k++) {
@@ -76,6 +96,11 @@ public class TableCoverage {
         for (int k = 1; k <= topSize; k++) tp.push(new Square(pos.getX(), pos.getY(), k));
 
         return tp;
+    }
+
+    public Square addSquare() {
+        LinkedList<Square> added = addSquares();
+        return added.isEmpty() ? null : added.pop();
     }
 
 
