@@ -1,6 +1,5 @@
 package com.company;
 
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -45,13 +44,14 @@ public class PseudoTree {
 
 
 
-    public LinkedList<Square> buildAndParseTree() {
+    public LinkedList<Square> buildAndParseTree(boolean useTree) {
         LinkedList<Square> answer = new LinkedList<>();
         for (Square sq : head) answer.push(sq);
 
         if (hasTail) {
-            Stack<Square> tail = backtrackRows();
-            //Stack<Square> tail = getIteration();
+            Stack<Square> tail;
+            if (useTree) tail = getIteration();
+            else tail = backtrackRows();
 
             for (Square sq : tail) {
                 sq.setX(2*tailOffset - sq.getSize() - sq.getX() - 1);
@@ -84,6 +84,7 @@ public class PseudoTree {
                 root.cover(novus);
                 if ((!idealFilling.isEmpty()) && (filling.size() > idealFilling.size())) break;
                 novus = root.addSquare();
+                leavesNumber++;
             }
 
             if ((filling.size() < idealFilling.size()) || (idealFilling.isEmpty())) {

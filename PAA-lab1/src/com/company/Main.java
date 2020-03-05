@@ -7,19 +7,17 @@ import java.util.Scanner;
 public class Main {
 
     public static void main(String[] args) {
-        /*for (int i = 2; i <= 100; i++) {
+        for (int i = 2; i <= 100; i++) {
             PseudoTree tree = new PseudoTree(i);
 
             int finalI = i;
-            if ((i > 23) && (Arrays.stream(PseudoTree.smp).anyMatch(j -> j == finalI))) {
-                System.out.println("Square " + i + "*" + i + " skipped.");
-            } else {
-                tree.buildAndParseTree();
-                System.out.println("For " + i + "*" + i + " square it took " + tree.leavesNumber + " operations.");
+            if ((i < 50) && (Arrays.stream(PseudoTree.smp).anyMatch(j -> j == finalI))) {
+                LinkedList<Square> tros = tree.buildAndParseTree(false);
+                System.out.println("For " + i + "*" + i + " square it took " + tree.leavesNumber + " operations. Number of squares: " + tros.size());
             }
-        }*/
+        }
 
-        Scanner sc = new Scanner(System.in);
+        /*Scanner sc = new Scanner(System.in);
         int size = sc.nextInt();
 
         PseudoTree tree = new PseudoTree(size);
@@ -31,6 +29,8 @@ public class Main {
         }
 
         System.out.println();
-        System.out.println(PseudoTree.checkList(ans, size));
+        System.out.println(tree.leavesNumber);
+        System.out.println();
+        System.out.println(PseudoTree.checkList(ans, size));*/
     }
 }
