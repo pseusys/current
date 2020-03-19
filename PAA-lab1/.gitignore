@@ -1,4 +1,4 @@
 # Project exclude paths
-out/*
-.idea/*
-ev.iml
+./out/*
+./.idea/*
+./paa_labs.iml

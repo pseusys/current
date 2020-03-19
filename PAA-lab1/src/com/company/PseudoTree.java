@@ -13,6 +13,8 @@ public class PseudoTree {
     private TableCoverage root;
     private boolean hasTail;
     private int tailOffset;
+    private int halfSize;
+    private int absolute;
 
     public int leavesNumber = 0;
 
@@ -26,7 +28,7 @@ public class PseudoTree {
         }
 
         head = new LinkedList<>();
-        int halfSize = sz / 2 + (sz == 2 ? 0 : 1);
+        halfSize = sz / 2 + (sz == 2 ? 0 : 1);
 
         head.add(new Square(0, 0, halfSize));
         head.add(new Square(halfSize, 0, sz / 2));
@@ -40,6 +42,8 @@ public class PseudoTree {
             root = new TableCoverage(halfSize);
             hasTail = true;
         }
+
+        absolute = sz;
     }
 
 
@@ -72,12 +76,12 @@ public class PseudoTree {
 
     private Stack<Square> backtrackRows() {
         Stack<Square> filling = new Stack<>();
-        int maxSize = root.getSize() * root.getSize();
+        int maxSize = halfSize * halfSize;
         Stack<Square> idealFilling = new Stack<>();
 
         while (maxSize > 1) {
             Square novus = root.addSquare();
-            root.setSize(maxSize);
+            root.setSize(halfSize);
 
             while (novus != null) {
                 filling.push(novus);
@@ -90,6 +94,7 @@ public class PseudoTree {
             if ((filling.size() < idealFilling.size()) || (idealFilling.isEmpty())) {
                 idealFilling.clear();
                 idealFilling.addAll(filling);
+                prove(idealFilling);
             }
 
             Square top;
@@ -158,5 +163,26 @@ public class PseudoTree {
             sb.append(Arrays.toString(chars)).append("\n");
         }
         return sb.toString();
+    }
+
+    public void prove(Stack<Square> stack) {
+        LinkedList<Square> answer = new LinkedList<>();
+        for (Square sq : head) answer.push(new Square(sq.getX(), sq.getY(), sq.getSize()));
+
+        for (Square sq : stack) {
+            Square square = new Square(sq.getX(), sq.getY(), sq.getSize());
+            square.setX(2*tailOffset - sq.getSize() - sq.getX() - 1);
+            square.setY(2*tailOffset - sq.getSize() - sq.getY() - 1);
+            answer.add(square);
+        }
+
+        for (Square sq : answer) {
+            sq.setX(1 + sq.getX() * multiplier);
+            sq.setY(1 + sq.getY() * multiplier);
+            sq.setSize(sq.getSize() * multiplier);
+        }
+
+        System.out.println(checkList(answer, absolute));
+        System.out.println();
     }
 }

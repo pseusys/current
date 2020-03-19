@@ -1,9 +1,6 @@
 package com.over;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.Scanner;
+import java.util.*;
 
 public class Overclass {
     private static class Coords {
@@ -60,7 +57,7 @@ public class Overclass {
             data = new int [size];
         }
 
-        public Overclass.Coords findFirstEmpty() {
+        public Coords findFirstEmpty() {
             int full = Integer.MAX_VALUE % (1 << data.length);
 
             for (int i = 0; i < data.length; i++) {
@@ -71,14 +68,14 @@ public class Overclass {
                         diff >>= 1;
                         counter++;
                     }
-                    return new Overclass.Coords(data.length - 1 - counter, i);
+                    return new Coords(data.length - 1 - counter, i);
                 }
             }
 
             return null;
         }
 
-        public boolean isOccupied(Overclass.Coords coords) {
+        public boolean isOccupied(Coords coords) {
             int k = data[coords.getY()];
             int l = (data.length - 1 - coords.getX());
             return (k >> l) % 2 != 0;
@@ -90,6 +87,10 @@ public class Overclass {
 
         public void addLine(int num, int line) {
             data[num] += line;
+        }
+
+        public void deleteLine(int num, int line) {
+            data[num] -= line;
         }
 
 
@@ -114,22 +115,22 @@ public class Overclass {
     private static class TableCoverage {
         private TableCoverage parent;
 
-        private Overclass.MonoBitArray table;
-        private Overclass.Square lastAdded;
+        private MonoBitArray table;
+        private Square lastAdded;
         private int size;
 
         public TableCoverage(int sz) {
             parent = null;
 
-            table = new Overclass.MonoBitArray(sz);
+            table = new MonoBitArray(sz);
             table.addLine(sz - 1, 1);
             size = sz / 2 + 1;
         }
 
-        public TableCoverage(TableCoverage parental, Overclass.Square additional) {
+        public TableCoverage(TableCoverage parental, Square additional) {
             parent = parental;
 
-            table = new Overclass.MonoBitArray(parental.table.size());
+            table = new MonoBitArray(parental.table.size());
             for (int i = 0; i < parental.table.size(); i++) {
                 table.addLine(i, parental.table.getLine(i));
             }
@@ -143,48 +144,73 @@ public class Overclass {
             }
         }
 
+        public void cover(Square additional) {
+            for (int i = additional.getY(); i < additional.getY() + additional.getSize(); i++) {
+                for (int j = additional.getX(); j < additional.getX() + additional.getSize(); j++) {
+                    table.addLine(i, 1 << (table.size() - 1 - j));
+                }
+            }
+        }
+
+        public void uncover(Square additional) {
+            for (int i = additional.getY(); i < additional.getY() + additional.getSize(); i++) {
+                for (int j = additional.getX(); j < additional.getX() + additional.getSize(); j++) {
+                    table.deleteLine(i, 1 << (table.size() - 1 - j));
+                }
+            }
+        }
+
+        public void setSize(int size) {
+            this.size = size;
+        }
+
+        public int getSize() {
+            return size;
+        }
+
         public TableCoverage getParent() {
             return parent;
         }
 
-        public Overclass.Square getPayload() {
+        public Square getPayload() {
             return lastAdded;
         }
 
 
 
-        LinkedList<Overclass.Square> variateSquares() {
-            return addSquare();
-        }
+        public LinkedList<Square> addSquares() {
+            LinkedList<Square> tp = new LinkedList<>();
 
-        private LinkedList<Overclass.Square> addSquare() {
-            LinkedList<Overclass.Square> tp = new LinkedList<>();
-
-            Overclass.Coords pos = table.findFirstEmpty();
+            Coords pos = table.findFirstEmpty();
             if (pos == null) return tp;
 
-            int maxY = Math.min(table.size(), pos.getY() + size + 1);
-            int maxX = Math.min(table.size(), pos.getX() + size + 1);
+            int maxY = Math.min(table.size(), pos.getY() + size);
+            int maxX = Math.min(table.size(), pos.getX() + size);
             int occupiedX = maxX, occupiedY = maxY, topSize;
 
             for (int k = pos.getY() + 1; k < maxY; k++) {
-                if (table.isOccupied(new Overclass.Coords(pos.getX(), k))) {
+                if (table.isOccupied(new Coords(pos.getX(), k))) {
                     occupiedY = k;
                     break;
                 }
             }
             for (int l = pos.getX() + 1; l < maxX; l++) {
-                if (table.isOccupied(new Overclass.Coords(l, pos.getY()))) {
+                if (table.isOccupied(new Coords(l, pos.getY()))) {
                     occupiedX = l;
                     break;
                 }
             }
             topSize = Math.min(occupiedX - pos.getX(), occupiedY - pos.getY());
-            if (table.isOccupied(new Overclass.Coords(pos.getX() + topSize - 1, pos.getY() + topSize - 1))) topSize--;
+            if (table.isOccupied(new Coords(pos.getX() + topSize - 1, pos.getY() + topSize - 1))) topSize--;
 
-            for (int k = 1; k <= topSize; k++) tp.push(new Overclass.Square(pos.getX(), pos.getY(), k));
+            for (int k = 1; k <= topSize; k++) tp.push(new Square(pos.getX(), pos.getY(), k));
 
             return tp;
+        }
+
+        public Square addSquare() {
+            LinkedList<Square> added = addSquares();
+            return added.isEmpty() ? null : added.pop();
         }
 
 
@@ -195,14 +221,17 @@ public class Overclass {
         }
     }
 
-    public static class PseudoTree {
-        private static final int [] smp = new int [] {97, 89, 83, 79, 73, 71, 67, 61, 59, 53, 47, 43, 41, 37, 31, 29, 23, 19, 17, 13, 11, 7, 5, 3, 2};
+    private static class PseudoTree {
+        public static final int [] smp = new int [] {97, 89, 83, 79, 73, 71, 67, 61, 59, 53, 47, 43, 41, 37, 31, 29, 23, 19, 17, 13, 11, 7, 5, 3, 2};
 
         private int multiplier = 1;
-        private LinkedList<Overclass.Square> head;
-        private Overclass.TableCoverage root;
+        private LinkedList<Square> head;
+        private TableCoverage root;
         private boolean hasTail;
         private int tailOffset;
+        private int halfSize;
+
+        public int leavesNumber = 0;
 
         public PseudoTree(int sz) {
             for (int i = 0; i < smp.length; i++) {
@@ -214,38 +243,34 @@ public class Overclass {
             }
 
             head = new LinkedList<>();
-            int halfSize = sz / 2 + (sz == 2 ? 0 : 1);
+            halfSize = sz / 2 + (sz == 2 ? 0 : 1);
 
-            head.add(new Overclass.Square(0, 0, halfSize));
-            head.add(new Overclass.Square(halfSize, 0, sz / 2));
-            head.add(new Overclass.Square(0, halfSize, sz / 2));
+            head.add(new Square(0, 0, halfSize));
+            head.add(new Square(halfSize, 0, sz / 2));
+            head.add(new Square(0, halfSize, sz / 2));
 
             if (sz == 2) {
-                head.add(new Overclass.Square(halfSize, halfSize, halfSize));
+                head.add(new Square(halfSize, halfSize, halfSize));
                 hasTail = false;
             } else {
                 tailOffset = halfSize;
-                root = new Overclass.TableCoverage(halfSize);
+                root = new TableCoverage(halfSize);
                 hasTail = true;
             }
         }
 
 
 
-        public LinkedList<Overclass.Square> buildAndParseTree() {
-            LinkedList<Overclass.Square> answer = new LinkedList<>();
-            for (Overclass.Square sq : head) answer.push(sq);
+        public LinkedList<Square> buildAndParseTree(boolean useTree) {
+            LinkedList<Square> answer = new LinkedList<>();
+            for (Square sq : head) answer.push(sq);
 
             if (hasTail) {
-                Overclass.TableCoverage complete = iterateRowsUntilSuccess();
-                LinkedList<Overclass.Square> tail = new LinkedList<>();
+                Stack<Square> tail;
+                if (useTree) tail = getIteration();
+                else tail = backtrackRows();
 
-                while (complete.getParent() != null) {
-                    tail.push(complete.getPayload());
-                    complete = complete.getParent();
-                }
-
-                for (Overclass.Square sq : tail) {
+                for (Square sq : tail) {
                     sq.setX(2*tailOffset - sq.getSize() - sq.getX() - 1);
                     sq.setY(2*tailOffset - sq.getSize() - sq.getY() - 1);
                 }
@@ -253,7 +278,7 @@ public class Overclass {
                 answer.addAll(tail);
             }
 
-            for (Overclass.Square sq : answer) {
+            for (Square sq : answer) {
                 sq.setX(1 + sq.getX() * multiplier);
                 sq.setY(1 + sq.getY() * multiplier);
                 sq.setSize(sq.getSize() * multiplier);
@@ -262,19 +287,69 @@ public class Overclass {
             return answer;
         }
 
-        private Overclass.TableCoverage iterateRowsUntilSuccess() {
-            LinkedList<Overclass.TableCoverage> currentRow = new LinkedList<>(Collections.singletonList(root));
-            LinkedList<Overclass.TableCoverage> newRow = new LinkedList<>();
-            Overclass.TableCoverage finalContainer = null;
+        private Stack<Square> backtrackRows() {
+            Stack<Square> filling = new Stack<>();
+            int maxSize = halfSize * halfSize;
+            Stack<Square> idealFilling = new Stack<>();
+
+            while (maxSize > 1) {
+                Square novus = root.addSquare();
+                root.setSize(halfSize);
+
+                while (novus != null) {
+                    filling.push(novus);
+                    root.cover(novus);
+                    if ((!idealFilling.isEmpty()) && (filling.size() > idealFilling.size())) break;
+                    novus = root.addSquare();
+                    leavesNumber++;
+                }
+
+                if ((filling.size() < idealFilling.size()) || (idealFilling.isEmpty())) {
+                    idealFilling.clear();
+                    idealFilling.addAll(filling);
+                }
+
+                Square top;
+                maxSize = 1;
+                while (!filling.isEmpty()) {
+                    top = filling.pop();
+                    maxSize = top.getSize();
+                    root.uncover(top);
+                    if (maxSize > 1) {
+                        root.setSize(maxSize - 1);
+                        break;
+                    }
+                }
+            }
+
+            return idealFilling;
+        }
+
+        private Stack<Square> getIteration() {
+            TableCoverage complete = iterateRowsUntilSuccess();
+            Stack<Square> tail = new Stack<>();
+
+            while (complete.getParent() != null) {
+                tail.push(complete.getPayload());
+                complete = complete.getParent();
+            }
+
+            return tail;
+        }
+
+        private TableCoverage iterateRowsUntilSuccess() {
+            LinkedList<TableCoverage> currentRow = new LinkedList<>(Collections.singletonList(root));
+            LinkedList<TableCoverage> newRow = new LinkedList<>();
+            TableCoverage finalContainer = null;
 
             while (finalContainer == null) {
-                for (Overclass.TableCoverage leaf : currentRow) {
-                    LinkedList<Overclass.Square> children = leaf.variateSquares();
+                for (TableCoverage leaf : currentRow) {
+                    LinkedList<Square> children = leaf.addSquares();
                     if (children.isEmpty()) {
                         finalContainer = leaf;
                         break;
-                    }
-                    for (Overclass.Square square : children) newRow.add(new Overclass.TableCoverage(leaf, square));
+                    } else leavesNumber += children.size();
+                    for (Square square : children) newRow.add(new TableCoverage(leaf, square));
                 }
                 currentRow = newRow;
                 newRow = new LinkedList<>();
@@ -284,8 +359,7 @@ public class Overclass {
         }
 
 
-
-        public static String checkList(LinkedList<Overclass.Square> squares, int size) {
+        public static String checkList(LinkedList<Square> squares, int size) {
             char [][] form = new char [size][size];
 
             for (int k = 0; k < squares.size(); k++) {
@@ -304,19 +378,27 @@ public class Overclass {
         }
     }
 
+
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
+        /*Scanner sc = new Scanner(System.in);
         int size = sc.nextInt();
 
         Overclass.PseudoTree tree = new Overclass.PseudoTree(size);
-        LinkedList<Overclass.Square> ans = tree.buildAndParseTree();
+        LinkedList<Overclass.Square> ans = tree.buildAndParseTree(false);
 
         System.out.println(ans.size());
         for (Overclass.Square sq : ans) {
             System.out.println(sq.toString());
-        }
+        }*/
 
-        //System.out.println();
-        //System.out.println(PseudoTree.checkList(ans, size));
+        for (int i = 2; i < 45; i++) {
+            Overclass.PseudoTree tree = new Overclass.PseudoTree(i);
+            LinkedList<Overclass.Square> ans = tree.buildAndParseTree(false);
+            System.out.println(ans.size());
+            for (Overclass.Square sq : ans) {
+                System.out.println(sq.toString());
+            }
+            System.out.println();
+        }
     }
 }

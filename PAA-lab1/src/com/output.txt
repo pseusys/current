@@ -1,0 +1,15 @@
+For 2*2 square it took 0 operations. Number of squares: 4
+For 3*3 square it took 3 operations. Number of squares: 6
+For 5*5 square it took 16 operations. Number of squares: 8
+For 7*7 square it took 62 operations. Number of squares: 9
+For 11*11 square it took 958 operations. Number of squares: 11
+For 13*13 square it took 2203 operations. Number of squares: 11
+For 17*17 square it took 14723 operations. Number of squares: 12
+For 19*19 square it took 61514 operations. Number of squares: 13
+For 23*23 square it took 225139 operations. Number of squares: 13
+For 29*29 square it took 1916934 operations. Number of squares: 14
+For 31*31 square it took 7303437 operations. Number of squares: 15
+For 37*37 square it took 26868495 operations. Number of squares: 15
+For 41*41 square it took 138858048 operations. Number of squares: 16
+For 43*43 square it took 182646040 operations. Number of squares: 16
+For 47*47 square it took 391413761 operations. Number of squares: 16
