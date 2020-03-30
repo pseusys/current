@@ -13,9 +13,6 @@ public abstract class Pathfinder {
 
         int len = (int) last - (int) first;
         nodes = new HashMap<>(len);
-        for (char i = 'a'; i <= 'z'; i++) {
-            nodes.put(i, new HashMap<>());
-        }
 
         char source;
         char target;
@@ -23,6 +20,8 @@ public abstract class Pathfinder {
         while (sc.hasNextLine()) {
             source = sc.next().charAt(0);
             target = sc.next().charAt(0);
+            if (!nodes.containsKey(source)) nodes.put(source, new HashMap<>());
+            if (!nodes.containsKey(target)) nodes.put(target, new HashMap<>());
             weight = Double.parseDouble(sc.next());
             nodes.get(source).put(target, weight);
         }
