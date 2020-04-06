@@ -27,6 +27,9 @@ public abstract class Pathfinder {
         }
         sc.close();
 
+        Visualizer vis = new Visualizer();
+        vis.draw(nodes);
+
         Path shortest = find(first, last);
         return (shortest != null) ? shortest.getLiteral() : null;
     }
