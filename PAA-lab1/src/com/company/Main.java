@@ -29,8 +29,8 @@ public class Main {
         }
 
         System.out.println();
-        System.out.println(tree.leavesNumber);
-        System.out.println();
+        System.out.println("Number of operations: " + tree.leavesNumber);
+        System.out.println("\nResulting coverage:");
         System.out.println(PseudoTree.checkList(ans, size));
     }
 }

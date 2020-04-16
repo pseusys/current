@@ -29,6 +29,7 @@ public class AStar extends Pathfinder {
 
         Path beginning = new Path(first, 0);
         opened.put(f(beginning), beginning);
+        out.print("Checking: " + beginning.getEnd());
 
         while (!opened.isEmpty()) {
             Map.Entry<Double, Path> current = opened.firstEntry();
@@ -42,7 +43,8 @@ public class AStar extends Pathfinder {
                 Path vertex = new Path(current.getValue().getLiteral(), current.getValue().getLength())
                         .addBack(near.getKey(), near.getValue());
 
-                if (!contains(closed, vertex))
+                if (!contains(closed, vertex)) {
+                    out.print("\nChecking: " + vertex.getEnd());
                     if (contains(opened, vertex)) {
                         double prevDist = getDistance(opened, vertex);
                         if (prevDist > f(vertex)) {
@@ -52,6 +54,7 @@ public class AStar extends Pathfinder {
                     } else {
                         opened.put(f(vertex), vertex);
                     }
+                }
             }
         }
 

@@ -1,4 +1,4 @@
-package com.company;
+package classes;
 
 import java.io.PrintStream;
 import java.util.Scanner;
@@ -29,23 +29,12 @@ public class Main {
             ps = Filer.writeToFile(inp);
         }
 
-        System.out.print("Press Y to check out greedy pathfinder, Z to check out A*: ");
-        char alg = sc.next().charAt(0);
-        Pathfinder PF;
+        Pathfinder pf = new Pathfinder(src);
+        pf.solve(ps);
 
-        if (alg == 'Y') PF = new Greedy();
-        else if (alg == 'Z')PF = new AStar();
-        else {
-            System.out.println("Wrong letter, sorry :/");
-            return;
-        }
-
-        String ans = PF.solve(src, ps);
-        ps.println();
-        if (ans != null) ps.println("Answer is: " + ans);
-        else ps.println("There's no path available!");
-
+        src.close();
+        sc.close();
         ps.flush();
-        System.out.println("Operation successful!");
+        System.out.println("Operation finished!");
     }
 }

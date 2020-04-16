@@ -1,13 +1,16 @@
 package com.company;
 
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Scanner;
 
 public abstract class Pathfinder {
     HashMap<Character, HashMap<Character, Double>> nodes = new HashMap<>();
+    PrintStream out;
 
-    public String solve() {
-        Scanner sc = new Scanner(System.in);
+    public String solve(Scanner sc, PrintStream ps) {
+        out = ps;
+
         char first = sc.next().charAt(0);
         char last = sc.next().charAt(0);
 
@@ -27,11 +30,13 @@ public abstract class Pathfinder {
         }
         sc.close();
 
-        Visualizer vis = new Visualizer();
-        vis.draw(nodes);
-
         Path shortest = find(first, last);
-        return (shortest != null) ? shortest.getLiteral() : null;
+
+        Visualizer vis = new Visualizer();
+        vis.draw(nodes, shortest.getLiteral());
+        vis.print();
+
+        return shortest.getLiteral();
     }
 
     protected abstract Path find(char first, char last);

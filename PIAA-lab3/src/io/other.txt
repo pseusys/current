@@ -1,0 +1,49 @@
+7
+a
+f
+a b 7
+a c 6
+b d 6
+c f 9
+d e 3
+d f 4
+e c 2
+
+16
+a
+e
+a b 20
+b a 20
+a d 10
+d a 10
+a c 30
+c a 30
+b c 40
+c b 40
+c d 10
+d c 10
+c e 20
+e c 20
+b e 30
+e b 30
+d e 10
+e d 10
+
+wrong!
+60
+a b 20
+a c 30
+a d 10
+b a 0
+b c 20
+b e 30
+c a 0
+c b 30
+c d 10
+c e 20
+d a 0
+d c 10
+d e 10
+e b 0
+e c 0
+e d 0

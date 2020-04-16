@@ -43,7 +43,7 @@ public class PseudoTree {
             hasTail = true;
         }
 
-        absolute = sz;
+        absolute = sz * multiplier;
     }
 
 

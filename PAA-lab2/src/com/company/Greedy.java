@@ -5,7 +5,10 @@ import java.util.*;
 public class Greedy extends Pathfinder {
     @Override
     protected Path find(char start, char end) {
+        out.print(start);
         if (start == end) return new Path(start, 0);
+        else out.print(" -> ");
+
         if (nodes.get(start).isEmpty()) return null;
 
         double shortestLength = Collections.min(nodes.get(start).values());

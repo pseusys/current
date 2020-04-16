@@ -1,87 +1,68 @@
-package com.company;
+package classes;
+
+import classes.graphic.Net;
+import classes.graphic.Path;
 
 import java.io.PrintStream;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.Scanner;
 
-public abstract class Pathfinder {
-    HashMap<Character, HashMap<Character, Double>> nodes = new HashMap<>();
-    PrintStream out;
+public class Pathfinder {
+    private Net net;
 
-    public String solve(Scanner sc, PrintStream ps) {
-        out = ps;
+    public Pathfinder(Scanner sc) {
+        int arks = Integer.parseInt(sc.next());
 
         char first = sc.next().charAt(0);
         char last = sc.next().charAt(0);
 
-        int len = (int) last - (int) first;
-        nodes = new HashMap<>(len);
+        this.net = new Net(first, last);
 
         char source;
         char target;
-        double weight;
+        int capacity;
         while (sc.hasNextLine()) {
             source = sc.next().charAt(0);
             target = sc.next().charAt(0);
-            if (!nodes.containsKey(source)) nodes.put(source, new HashMap<>());
-            if (!nodes.containsKey(target)) nodes.put(target, new HashMap<>());
-            weight = Double.parseDouble(sc.next());
-            nodes.get(source).put(target, weight);
+            capacity = Integer.parseInt(sc.next());
+            net.putArk(source, target, capacity);
         }
-        sc.close();
-
-        Path shortest = find(first, last);
-
-        Visualizer vis = new Visualizer();
-        vis.draw(nodes, shortest.getLiteral());
-        vis.print();
-
-        return shortest.getLiteral();
     }
 
-    protected abstract Path find(char first, char last);
-
-
-
-    public static class Path {
-        private String literal;
-        private double length;
-
-        public Path(String literal, double length) {
-            this.literal = literal;
-            this.length = length;
+    public void solve(PrintStream ps) {
+        Path path = new Path(net, net.getSource());
+        int lastVisitedPos = -1;
+        while (!path.isDeadEnd()) {
+            if (path.getEnd().getNode() == net.getExit()) {
+                operate(path);
+            }
+            ArrayList<Path.DirectedNode> neighbours = path.getTopNeighbours();
+            if ((lastVisitedPos + 1 == neighbours.size()) || (path.getEnd().getNode() == net.getExit())) {
+                Path.DirectedNode lastVisited = path.popNode();
+                if (path.isDeadEnd()) break;
+                lastVisitedPos = path.findLastInNeighbours(lastVisited);
+            } else {
+                Path.DirectedNode next = neighbours.get(++lastVisitedPos);
+                if (path.pushNode(next)) lastVisitedPos = -1;
+            }
         }
 
-        public Path(char literal, int length) {
-            this.literal = "";
-            this.literal += literal;
-            this.length = length;
-        }
+        net.optimizeArks();
 
-        public Path addFront(char node, double length) {
-            StringBuilder sb = new StringBuilder(this.literal);
-            sb.insert(0, node);
-            this.literal = sb.toString();
-            this.length += length;
-            return this;
-        }
+        if (net.check()) {
+            ps.println(net.getResultThrough());
+            Map<Character, Map<Character, Integer>> oldGraph = net.getOldStyleGraph();
+            for (Map.Entry<Character, Map<Character, Integer>> node: oldGraph.entrySet()) {
+                for (Map.Entry<Character, Integer> ark : node.getValue().entrySet()) {
+                    ps.println(node.getKey() + " " + ark.getKey() + " " + ark.getValue());
+                }
+            }
+        } else ps.println("Operation failure, aborting.");
+    }
 
-        public Path addBack(char node, double length) {
-            this.literal += node;
-            this.length += length;
-            return this;
-        }
-
-        public String getLiteral() {
-            return literal;
-        }
-
-        public double getLength() {
-            return length;
-        }
-
-        public char getEnd() {
-            return literal.charAt(literal.length() - 1);
-        }
+    private void operate(Path path) {
+        int minCapacity = path.getMinCapacity();
+        path.modifyFilled(() -> minCapacity);
     }
 }
