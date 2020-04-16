@@ -1,5 +1,0 @@
-Checking: a
-Checking: b
-Checking: d
-Checking: e
-Answer is: ade
