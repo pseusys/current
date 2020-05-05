@@ -16,7 +16,11 @@ int isCyclic(std::string& a, std::string& b) {
     int counter = 0;
     for (int i = 0; i < a.size() * 2; ++i) {
         if (counter > 0 && a[i % a.size()] != b[counter]) counter = prf[counter - 1];
-        if (a[i % a.size()] == b[counter]) counter++;
+        if (a[i % a.size()] == b[counter]) {
+            if (!counter) std::cout << "Entry found at pos: " << i % (a.size())  + 1 << std::endl;
+            if (counter == a.size() - 1) std::cout << "Entry confirmed!" << std::endl;
+            counter++;
+        }
         if (counter == b.size()) {
             return i - a.size() + 1;
         }

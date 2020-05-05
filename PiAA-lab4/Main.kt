@@ -20,12 +20,16 @@ private fun String.prefix() : IntArray {
     return pi
 }
 
-private fun String.findAll(mark : String, prf : IntArray) : ListAndInt {
+private fun String.findAll(mark : String, prf : IntArray, offset : Int) : ListAndInt {
     val answer = mutableListOf<Int>()
     var counter = 0
     for (i in this.indices) {
         while (counter > 0 && this[i] != mark[counter]) counter = prf[counter - 1]
-        if (this[i] == mark[counter]) counter++
+        if (this[i] == mark[counter]) {
+            if (counter == 0) println("Entry found at pos ${i + offset + 1}")
+            if (counter == mark.length - 1) println("Entry confirmed!")
+            counter++
+        }
         if (counter == mark.length) {
             answer.add(i - mark.length + 1)
             counter = prf[counter - 1]
@@ -37,21 +41,21 @@ private fun String.findAll(mark : String, prf : IntArray) : ListAndInt {
 fun String.findAllSync(mark : String) : IntArray {
     val prefixes = mark.prefix()
     return if (mark.length > this.length / 100) {
-        findAll(mark, prefixes).list.toIntArray()
+        findAll(mark, prefixes, 0).list.toIntArray()
     } else {
         val ptL = mark.length * 100
         val answer = mutableListOf<Int>()
         for (i in 0 until (this.length / ptL)) {
             var subs = this.substring(i * ptL, (i + 1) * ptL)
-            var result = subs.findAll(mark, prefixes)
+            var result = subs.findAll(mark, prefixes, i * ptL)
             answer.addAll(result.list.map { it + i * ptL })
             val offset = result.int
             val tailLen = offset + mark.length - 1
             subs = this.substring((i + 1) * ptL - offset, ((i + 1) * ptL - offset + tailLen).coerceAtMost(this.length))
-            result = subs.findAll(mark, prefixes)
+            result = subs.findAll(mark, prefixes, (i + 1) * ptL - offset)
             answer.addAll(result.list.map { it + i * ptL + ptL - offset })
         }
-        val result = this.substring(this.length - (this.length % ptL)).findAll(mark, prefixes)
+        val result = this.substring(this.length - (this.length % ptL)).findAll(mark, prefixes, this.length - (this.length % ptL))
         answer.addAll(result.list.map { it + this.length - (this.length % ptL) })
         answer.toIntArray()
     }
