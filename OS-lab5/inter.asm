@@ -1,24 +1,22 @@
-ASSUME  CS:CODE,    DS:DATA,    SS:ASTACK
+ASSUME  CS:CODE,    DS:DATA,    ss:ASTACK
 
 CODE    SEGMENT
 
 INTERRUPT    PROC    FAR
         jmp     INT_START
-
     INT_DATA:
         SUB_STACK             dw  128 dup(0)
 
-        INTERRUPTIONS_INFO    db  " interruptions     "
-        INT_CODE              dw  42025
-        INTERRUPTIONS         dw  0
+        INT_CODE    dw  42025
 
-        KEEP_IP               dw  0
-        KEEP_CS 	          dw  0
-		KEEP_PSP           	  dw  0
-        KEEP_SS               dw  0
-        KEEP_SP               dw  0
+        KEEP_IP 	dw  0
+        KEEP_CS 	dw  0
+        KEEP_SS		dw  0
+        KEEP_SP 	dw  0
+        KEEP_PSP 	dw	0
 
-        TEMP                  dw  0
+        SYMB 		db 	0
+        TEMP        dw  0
 
     INT_START:
         mov     KEEP_SS, ss
@@ -28,105 +26,78 @@ INTERRUPT    PROC    FAR
         mov     sp, offset SUB_STACK
         add     sp, 256
 
-		push	ax
-		push    bx
-		push    cx
-		push    dx
-		push    si
+        push	ax
+        push    bx
+        push    cx
+        push    dx
+        push    si
         push    es
         push    ds
-        push    bp
 
-    INT_SETUP:
-		mov 	ax, seg INTERRUPT
-		mov 	ds, ax
-        mov     es, ax
+        mov 	ax, SEG INTERRUPT
+        mov 	ds, ax
 
-    INT_SAVE_CURSOR:
-        mov     ah, 03h
-		mov     bh, 0h
-		int     10h
-        push    dx
+        in 		al, 60h
+        cmp 	al, 2Eh ; replace 'C'
+        je 		INT_PASS_S
+        cmp 	al, 18h ; replace 'O'
+        je 		INT_PASS_A
+        cmp 	al, 20h ; replace 'D'
+        je 		INT_PASS_T
 
-	INT_ADD:
-		mov 	si, offset INTERRUPTIONS
-		mov 	ah, [si]
-        mov     al, [si + 1]
-		inc 	ax
-		mov 	[si], ah
-		mov 	[si + 1], al
+        pushf
+        call 	DWORD PTR KEEP_IP
+        jmp 	INT_END
 
-	INT_PREP_TO_DEC:
-        xor     dx, dx
-        mov 	bx, 10
-    	xor 	cx, cx
+    INT_PASS_S:
+        mov		SYMB, 'S'
+        jmp		INT_PASS
+    INT_PASS_A:
+        mov		SYMB, 'A'
+        jmp		INT_PASS
+    INT_PASS_T:
+        mov		SYMB, 'T'
+        jmp		INT_PASS
 
-    INT_TO_DEC_CYCLE:
-    	div 	bx
-    	push	dx
-    	xor 	dx, dx
-    	inc 	cx
-    	cmp 	ax, 0h
-    	jnz 	INT_TO_DEC_CYCLE
+    INT_PASS:
+        in 		al, 61h
+        mov 	ah, al
+        or 		al, 80h
+        out 	61h, al
+        xchg	al, al
+        out 	61h, al
+        mov 	al, 20h
+        out 	20h, al
 
-        mov     ah, 2
-        mov     bh, 0
-        mov     dh, 23
-        mov     dl, 0
-        int     10h
+    INT_PRINT:
+        mov 	ah, 05h
+        mov 	cl, SYMB
+        mov 	ch, 00h
+        int 	16h
+        or 		al, al
+        jz 		INT_END
 
-    INT_PRINT_NUM:
-    	pop 	ax
-    	or 		al, 30h
-
-        push    cx
-
-        mov     ah, 09h
-        mov 	bl, 2h
-        mov     bh, 0
-        mov     cx, 1
-        int     10h
-
-        mov     ah, 2
-        mov     bh, 0
-        add     dx, 1
-        int     10h
-
-        pop     cx
-
-    	loop 	INT_PRINT_NUM
-
-	INT_PRINT_STRING:
-		mov     bp, offset INTERRUPTIONS_INFO
-		mov     ah, 13h
-		mov     al, 1h
-		mov 	bl, 2h
-		mov     bh, 0
-		mov     cx, 19
-		int     10h
-
-    INT_LOAD_CURSOR:
-        pop     dx
-        mov     ah, 02h
-		mov     bh, 0h
-		int     10h
+        mov 	ax, 0040h
+        mov 	es, ax
+        mov 	ax, es:[1Ah]
+        mov 	es:[1Ch], ax
+        jmp 	INT_PRINT
 
     INT_END:
-        pop     bp
-		pop     ds
-		pop     es
-		pop		si
-		pop     dx
-		pop     cx
-		pop     bx
-		pop		ax
+        pop     ds
+        pop     es
+        pop		si
+        pop     dx
+        pop     cx
+        pop     bx
+        pop     ax
 
         mov     ss, KEEP_SS
         mov     sp, KEEP_SP
 
-		mov     al, 20h
-		out     20h, al
-        iret
+        mov 	al, 20h
+        out 	20h, al
+        IRET
 INTERRUPT    ENDP
     LAST_BYTE:
 
@@ -141,7 +112,7 @@ LOAD        PROC
 		push    ds
 
         mov     ah, 35h
-		mov     al, 1Ch
+		mov     al, 09h
 		int     21h
         mov     KEEP_IP, bx
 		mov     KEEP_CS, es
@@ -150,7 +121,7 @@ LOAD        PROC
         mov     ax, seg INTERRUPT
 		mov     ds, ax
 		mov     ah, 25h
-		mov     al, 1Ch
+		mov     al, 09h
 		int     21h
 		pop		ds
 
@@ -182,10 +153,10 @@ UNLOAD      PROC
 		push    si
 
 		mov     ah, 35h
-		mov     al, 1Ch
+		mov     al, 09h
 		int     21h
 
-		mov 	si, offset KEEP_IP
+        mov 	si, offset KEEP_IP
         sub     si, offset INTERRUPT
 		mov 	dx, es:[bx + si]
         mov 	si, offset KEEP_CS
@@ -195,7 +166,7 @@ UNLOAD      PROC
 		push 	ds
 		mov     ds, ax
 		mov     ah, 25h
-		mov     al, 1Ch
+		mov     al, 09h
 		int     21h
 		pop 	ds
 
@@ -232,10 +203,10 @@ INT_CHECK       PROC
 		push    si
 
 		mov     ah, 35h
-		mov     al, 1Ch
+		mov     al, 09h
 		int     21h
 
-		mov     si, offset INT_CODE
+        mov     si, offset INT_CODE
         sub     si, offset INTERRUPT
 		mov     ax, es:[bx + si]
 		cmp	    ax, INT_CODE
@@ -333,8 +304,8 @@ ASTACK  SEGMENT STACK
 ASTACK  ENDS
 
 DATA    SEGMENT
-    LOADED_INFO         db  "Interruption was loaded", 10, 13, "$"
-	IS_LOADED_INFO      db  "Interruption is loaded", 10, 13, "$"
+    LOADED_INFO         db  "Interruption was loaded$"
+	IS_LOADED_INFO      db  "Interruption is loaded$"
     NOT_LOADED_INFO		db  "Interruption was unloaded$"
 	IS_NOT_LOADED_INFO	db  "Interruption is not loaded$"
     INT_LOADED          db  0
