@@ -155,7 +155,7 @@ ALLOC_MEM PROC NEAR
 	mov     bx, 1000h
 	mov     ah, 48h
 	int     21h
-	jnc		FREE_SUCCESS
+	jnc		ALLOC_SUCCESS
 
 ALLOC_ERROR:
 	mov    dx, offset ALLOCATING_ERROR
