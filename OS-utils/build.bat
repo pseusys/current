@@ -1,4 +1,4 @@
-:: syntax: build.bat <filename with no extension> <file type - exe/com>
+:: syntax: build.bat <filename with no extension> <file type - exe/com/ovl>
 
 @echo off
 
@@ -7,7 +7,6 @@ set @name=%1
 set @asm=%@name%.asm
 set @obj=%@name%.obj
 set @exe=%@name%.exe
-set @com=%@name%.com
 
 @echo on
 
@@ -17,8 +16,9 @@ link %@obj%;
 @echo off
 
 set @type=%2
-if %@type%==com exe2bin %@exe% %@com%
-if %@type%==com del %@exe%
+set @form=%@name%.%@type%
+if not %@type%==exe exe2bin %@exe% %@form%
+if not %@type%==exe del %@exe%
 
 del %@obj%
 
