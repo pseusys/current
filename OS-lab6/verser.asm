@@ -201,17 +201,15 @@ BEGIN:
 
 		mov 	dx, offset END_STRING
 		call 	PRINT_STRING
-		mov 	ah, 01h
-		int 	21h
-
-		mov 	dx, offset ENDL_LINE
-		call 	PRINT_STRING
 
 ENDING:
 		pop		ax
 		pop 	dx
 
-		xor		al, al
+		mov 	ah, 01h
+		int 	21h
+		mov 	dx, offset ENDL_LINE
+		call 	PRINT_STRING
 		mov 	ah, 4ch
 		int		21h
 		ret
