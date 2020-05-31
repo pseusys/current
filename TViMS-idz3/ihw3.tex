@@ -1,0 +1,253 @@
+\problemset{Теория вероятностей и математическая статистика}
+\problemset{Индивидуальное домашнее задание №3}
+\problemset{Вариант №21}
+
+\renewcommand*{\proofname}{Решение}
+
+Случайная величина ($\xi, \eta$) имеет равномерное распределение в области
+\[ 
+	\begin{pmatrix}
+		4x - 2y \leq -2,\\
+		x \geq 0, y \leq 5
+	\end{pmatrix}
+\]
+$\zeta = 3\xi^2 + 3, \nu = [5\eta], \mu = -8\xi + 4\eta$.
+
+\begin{problem}
+	Найти $p_{\xi, \eta}$, функции и плотности распределения компонент. Будут ли компоненты независимыми?
+\end{problem}
+
+\begin{proof}
+	Построим график:
+	\begin{center}
+		\begin{tikzpicture}
+		\begin{axis}[
+			xmin=-1.5, xmax=3.5,
+			ymin=-0.5, ymax=6.5,
+			axis lines=middle,
+			xlabel=$x$,
+			ylabel=$y$,
+			extra y ticks={1,3},
+			extra x ticks={0.5,1.5},
+			minor tick num=1
+		]
+			\addplot [color=gray, thick, domain=-5:5, name path=A] {2*x + 1};
+			\addplot [color=gray, thick, domain=-5:5, name path=B] {5};
+			\addplot [color=gray, thick] coordinates {(0, -5)(0, 10)};
+			\addplot [dashed, color=gray, thick] coordinates {(2, 0)(2, 10)};
+			\addplot [dashed, color=gray, thick, domain=0:5] {1};
+			\tikzfillbetween[of=A and B, soft clip={domain=0:2}]{gray, opacity=0.2};
+		\end{axis}
+		\end{tikzpicture}
+	\end{center}
+	\[
+		p_{\xi, \eta}(x, y) = \frac{1}{S} = \frac{1}{4}
+	\]
+	Плотность распределения компоненты $\xi$:
+	\[
+		p_\xi(x) = \int p_{\xi, \eta}(x, y) dy = \int_{2x+1}^{5} \frac{1}{4}dy = 1 - 0.5x
+	\]
+	Плотность распределения компоненты $\eta$:
+	\[
+		p_\eta(y) = \int p_{\xi, \eta}(x, y) dx = \int_{0}^{0.5(y-1)} \frac{1}{4}dx = \frac{1}{8} \cdot (y - 1)
+	\]
+	Функция распределения компоненты $\xi$:
+	\[
+		F_\xi(x) =
+		\begin{dcases}
+			0, \; x < 0\\
+			x - 0.25x^2, \; 0 \le x \le 2\\
+			1, \; x > 2
+		\end{dcases}
+	\]
+	Функция распределения компоненты $\eta$:
+	\[
+		F_\eta(y) =
+		\begin{dcases}
+			0, \; y < 1\\
+			\frac{1}{16} \cdot (y - 1)^2, \; 1 \le y \le 5\\
+			1, \; y > 5
+		\end{dcases}
+	\]
+	Величины зависимы, так как $p_\xi(x) \cdot p_\eta(y) \neq p_{\xi, \eta}$.
+\end{proof}
+
+\begin{problem}
+	Найти распределение случайных величин $\zeta$ и $\nu$; $E\zeta$, $E\nu$, $D\zeta$, $D\nu$.
+\end{problem}
+
+\begin{proof}
+	Плотность распределения $\zeta$:
+	\[
+		p_\zeta(x) = P(\zeta < x) = P(3\xi^2 + 3 < x) = P(\xi < \sqrt{\frac{x - 3}{3}}) = p_\xi(\sqrt{\frac{x - 3}{3}}) =
+		\begin{dcases}
+			0, \; x < 3\\
+			\sqrt{\frac{x - 3}{3}} - \frac{x - 3}{12}, \; 3 \le x \le 15\\
+			1, \; x > 15
+		\end{dcases}
+	\]
+	Функция распределения $\zeta$:
+	\[
+		F_\zeta(x) =
+		\begin{dcases}
+			0, \; x < 3\\
+			\frac{1}{12} \cdot (\frac{2 \sqrt{3}}{\sqrt{x - 3}} - 1), \; 3 \le x \le 15\\
+			0, \; x > 15
+		\end{dcases}
+	\]
+	Функция распределения $\nu$:
+	\[
+		F_\nu(y) = \sum_{i = 5}^{i < y} (P(\eta \in [\frac{i}{5}; \frac{i + 1}{5}])) = \sum_{i = 5}^{i < y} (F_\eta(\frac{i + 1}{5}) - F_\eta(\frac{i}{5})) =
+		\begin{dcases}
+			0, \; y < 5\\
+			\frac{1}{16} \cdot \sum_{i = 5}^{i < y} (\frac{2i-9}{25}), \; 5 \le y \le 25\\
+			1, \; y > 25
+		\end{dcases}
+	\]
+	Математическое ожидание $\zeta$:
+	\[
+		E_\zeta = \int x \cdot p_\zeta(x) dx = \int_{3}^{15} \frac{x}{12} \cdot (\frac{2 \sqrt{3}}{\sqrt{x - 3}} - 1) dx = 5
+	\]
+	Математическое ожидание $\nu$:
+	\[
+		E_\nu = \frac{1}{16} \cdot \sum_{i = 5}^{25} (i \cdot \frac{2i-9}{25}) = 17.825
+	\]
+	Дисперсия $\zeta$:
+	\[
+		D_\zeta = \int x^2 \cdot p_\zeta(x) dx - E_\zeta^2 = \int_{3}^{15} \frac{x^2}{12} \cdot (\frac{2 \sqrt{3}}{\sqrt{x - 3}} - 1) dx - 25 = \frac{153}{5} - 16 = 14.6
+	\]
+	Дисперсия $\nu$:
+	\[
+		D_\nu = \frac{1}{16} \cdot \sum_{i = 5}^{25} (i^2 \cdot \frac{2i-9}{25}) - 17.825^2 \approx 22.194
+	\]
+\end{proof}
+
+\begin{problem}
+	Вычислить вектор математических ожиданий и ковариационные характеристики вектора $(\xi, \eta)$. Найти условное распределение $\xi$ при условии $\eta$; $E(\xi | \eta)$, $D(\xi | \eta)$.
+\end{problem}
+
+\begin{proof}
+	Вектор математического ожидания ($\xi$, $\eta$):
+	\[
+		E_{\xi, \eta} = (E_\xi, E_\eta) = (\int x \cdot p_\xi(x) dx, \int y \cdot p_\eta(y) dy) = (\int_{0}^{2} x \cdot (1 - 0.5x) dx, \int_{1}^{5} \frac{y}{8} \cdot (y - 1) dy) = (\frac{2}{3}, \frac{11}{3})
+	\]
+	Ковариационная матрица вектора ($\alpha$, $\beta$) представляет из себя:
+	$\begin{pmatrix}
+		D_\alpha & Cov(\alpha, \beta)\\
+		Cov(\beta, \alpha) & D_\beta
+	\end{pmatrix}$, где $Cov(\alpha, \beta) = Cov(\beta, \alpha) = E_{\alpha, \beta} - E_\alpha \cdot E_\beta$.
+	\newline
+	Дисперсия $\xi$:
+	\[
+		D_\xi = \int x^2 \cdot p_\xi(x) dx - E_\xi^2 = \int_{0}^{2} x^2 \cdot (1 - 0.5x) dx - \frac{4}{9} = \frac{2}{9}
+	\]
+	Дисперсия $\eta$:
+	\[
+		D_\eta = \int y^2 \cdot p_\eta(y) dy - E_\eta^2 = \int_{1}^{5} \frac{y^2}{8} \cdot (y - 1) dy - \frac{121}{9} = \frac{8}{9}
+	\]
+	Математическое ожидание $\xi$ и $\eta$:
+	\[
+		E_{\xi, \eta} = \int \int yx \cdot p_{\xi, \eta}(x, y) dxdy = \int_{1}^{5} \int_{0}^{0.5(y-1)} yx \cdot \frac{1}{4} dxdy = \int_{1}^{5} 0.03125y \cdot (1 - y)^2 dy = \frac{8}{3}
+	\]
+	Ковариация $\xi$ и $\eta$:
+	\[
+		Cov(\xi, \eta) = E_{\xi, \eta} - E_\xi \cdot E_\eta = \frac{8}{3} - \frac{2}{3} \cdot \frac{11}{3} = \frac{2}{9}
+	\]
+	Ковариационная матрица вектора ($\xi$, $\eta$):
+	\[
+		\frac{2}{9} \cdot
+		\begin{pmatrix}
+			1 & 1\\
+			1 & 4
+		\end{pmatrix}
+	\]
+	Условное распределение $\xi$ при условии $\eta$:
+	\[
+		p_{\xi|\eta = y_0}(x) = \frac{p_{\xi, \eta}(x, y)}{p_\eta(y)} =
+		\begin{dcases}
+			0, \; x < 0\\
+			\frac{2}{y_0 - 1}, \; 0 \le x \le \frac{y_0 - 1}{2}\\
+			0, \; x > \frac{y_0 - 1}{2}
+		\end{dcases}
+	\]
+	Условное математическое ожидание $\xi$ при условии $\eta$:
+	\[
+		E_{\xi|\eta = y_0}(y_0) = \int x \cdot p_{\xi|\eta = y_0}(x) dx =
+		\begin{dcases}
+			0, \; y_0 < 1\\
+			\frac{y_0 - 1}{4}, \; 1 \le y_0 \le 5\\
+			0, \; y_0 > 5
+		\end{dcases}
+	\]
+	Условная дисперсия $\xi$ при условии $\eta$:
+	\[
+		D_{\xi|\eta = y_0}(y_0) = \int x^2 \cdot p_{\xi|\eta = y_0}(x) dx - E_{\xi|\eta = y_0}^2(y_0) =
+		\begin{dcases}
+			0, \; y_0 < 1\\
+			\frac{(y_0 - 1)^2}{12} - \frac{(y_0 - 1)^2}{16}, \; 1 \le y_0 \le 5\\
+			0, \; y_0 > 5
+		\end{dcases} =
+		\begin{dcases}
+			0, \; y_0 < 1\\
+			\frac{y_0^2 - 2y_0^2 + 1}{48}, \; 1 \le y_0 \le 5\\
+			0, \; y_0 > 5
+		\end{dcases}
+	\]
+\end{proof}
+
+\begin{problem}
+	Найти распределение $\mu$; $E_\mu$; $D_\mu$.
+\end{problem}
+
+\begin{proof}
+	$F_\mu$ зависит от переменной $z = -8x + 4y$.
+	\begin{center}
+		\begin{tikzpicture}
+			\begin{axis}[
+				xmin=-1.5, xmax=4,
+				ymin=-0.5, ymax=6.5,
+				axis lines=middle,
+				xlabel=$x$,
+				ylabel=$y$,
+				extra y ticks={1,3},
+				extra x ticks={0.5,1.5},
+				minor tick num=1
+			]
+				\addplot [color=gray, thick, domain=-5:5, name path=A] {2*x + 1};
+				\addplot [color=gray, thick, domain=-5:5, name path=B] {5};
+				\addplot [color=gray, thick] coordinates {(0, -5)(0, 10)};
+				\addplot [dashed, color=gray, thick] coordinates {(2, 0)(2, 10)};
+				\addplot [dashed, color=gray, thick, domain=0:5] {1};
+				\addplot [color=red, thick, domain=-1:2.8] {2*x + 1} node[below right,pos=1] {$z = 8$};
+				\addplot [color=red, thick, domain=-2:0.8] {2*x + 5} node[below right,pos=1] {$z = 40$};
+				\tikzfillbetween[of=A and B, soft clip={domain=0:2}]{gray, opacity=0.2};
+			\end{axis}
+		\end{tikzpicture}
+	\end{center}
+	Распределение $\mu$:
+	\[
+		F_\mu(z) = \int \int p_{\xi, \eta}(x, y) dxdy = \int_{0}^{\frac{z - 20}{-8}} dx \int_{2x + \frac{z}{4}}^{5} p_{\xi, \eta}(x, y) dy =
+		\begin{dcases}
+			0, \; z < 4\\
+			1 - \frac{(z - 20)^2}{256}, \; 4 < z < 20\\
+			1, \; z > 20\\
+		\end{dcases}
+	\]
+	Плотность распределения $\mu$:
+	\[
+	p_\mu(z) =
+	\begin{dcases}
+		0, \; z < 4\\
+		\frac{20 - z}{128}, \; 4 < z < 20\\
+		0, \; z > 20\\
+	\end{dcases}
+	\]
+	Математическое ожидание $\mu$:
+	\[
+		E_\mu = \int z \cdot p_\mu(z) dz = \int_{4}^{20} \frac{20z - z^2}{128} dz = \frac{28}{3} \approx 9.33
+	\]
+	Дисперсия $\mu$:
+	\[
+		D_\mu = \int z^2 \cdot p_\mu(z) dz - E_\mu^2 = \int_{4}^{20} \frac{20z - z^2}{128} dz - \frac{784}{9} = \frac{128}{9} \approx 14.22
+	\]
+\end{proof}
