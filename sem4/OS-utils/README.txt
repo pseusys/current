@@ -1,0 +1,1 @@
+To use this folder contents you have to copy them to your building folder
