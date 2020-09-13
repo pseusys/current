@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tetris</title>
+    <script src="tetris.js" type="module"></script>
+</head>
+<body>
+    <div id="filler">
+        <div class = "placeholder" id="canvas_holder">
+            <label id="level"></label>
+            <label id="status"></label>
+            <label id="score"></label>
+            <canvas id="next" width="70" height="70"></canvas>
+            <canvas id="canvas" width="160" height="240"></canvas>
+        </div>
+        <div class = "placeholder" id="rating_holder">
+            <label>Scoreboard:</label>
+            <ol id="scores"></ol>
+        </div>
+    </div>
+    <div>
+        <button id="back">Back</button>
+        <button id="start">Start game</button>
+    </div>
+</body>
+</html>
