@@ -1,8 +1,9 @@
-import {Tetramino} from './tetramino.js';
-import {generate} from './tetramino.js';
-import {print_next} from './tetramino.js';
-import {fill_records} from './ratings.js';
-import {set_record} from './ratings.js';
+import {Tetramino} from "./tetramino.js";
+import {generate} from "./tetramino.js";
+import {print_next} from "./tetramino.js";
+import {fill_records} from "./general.js";
+import {set_record} from "./general.js";
+import {music, notify_check} from "./general.js";
 
 
 let field;
@@ -46,9 +47,11 @@ function generate_next() {
 }
 
 function pause() {
+    (new Audio("./sounds/hush.mp3")).play();
     paused = !paused;
     if (paused) document.getElementById("status").innerText = "Paused";
     else document.getElementById("status").innerText = "";
+    if (notify_check()) music(!paused);
 }
 
 function score(plus) {
@@ -69,9 +72,7 @@ window.onload = function() {
         window.location = "index.html";
     }
     document.getElementById("start").onclick = function () {start_game()};
-
     document.getElementById("rating_holder").style.display = "none";
-    document.getElementById("canvas_holder").style.display = "flex";
 
     const canvas = document.getElementById("canvas");
     const context = canvas.getContext("2d");
@@ -103,6 +104,9 @@ function start_game() {
     document.getElementById("start").style.display = "none";
     document.getElementById("rating_holder").style.display = "none";
     document.getElementById("canvas_holder").style.display = "flex";
+    document.getElementById("controls").style.display = "flex";
+
+    if (notify_check()) music(true);
 }
 
 function stop_game() {
@@ -117,6 +121,9 @@ function stop_game() {
     document.getElementById("start").style.display = "flex";
     document.getElementById("rating_holder").style.display = "flex";
     document.getElementById("canvas_holder").style.display = "none";
+    document.getElementById("controls").style.display = "none";
+
+    if (notify_check()) music(false);
 }
 
 function playing_event_handler(event) {
@@ -135,6 +142,7 @@ function game_step() {
     if (!paused) {
         current.shift(field);
         if (current.touching(field)) {
+            (new Audio("./sounds/stab.mp3")).play();
             const dots = current.points;
             generate_next();
             score(1);
@@ -162,40 +170,31 @@ function game_step() {
 
 
 function conditional_check() {
-    let rows = [];
+    let row = undefined;
     for (let j = 4; j < cup_height; j++) {
         let filled = true;
         for (let i = 0; i < 16; i++) {
             filled &= field[i][j];
         }
-        if (filled) rows.push(j);
+        if (filled) row = j;
     }
 
-    if (rows.length > 4) {
-        console.log("Impossible row deletion condition.");
-        return;
-    }
+    if (row) {
+        (new Audio("./sounds/close.mp3")).play();
 
-    if (rows.length > 0) {
         context.fillStyle = highlight_color;
-        for (let i = 0; i < rows.length; i++) {
-            for (let j = 0; j < cup_width; j++) {
-                context.fillRect(j * block_width + w_margin, (rows[i] - 4) * block_height + h_margin,
-                    block_width - w_margin, block_height - h_margin);
-            }
+        for (let i = 0; i < cup_width; i++) {
+            context.fillRect(i * block_width + w_margin, (row - 4) * block_height + h_margin,
+                block_width - w_margin, block_height - h_margin);
         }
 
         let skip = 0;
-        for (let i = 0; i < rows.length; i++) {
-            for (let j = cup_height - 1; j > 4; j--) {
-                if (rows[i] === j) skip = 1;
-                for (let i = 0; i < 16; i++) {
-                    field[i][j] = field[i][j - skip];
-                }
-            }
+        for (let j = cup_height - 1; j > 4; j--) {
+            if (row === j) skip = 1;
+            for (let i = 0; i < 16; i++) field[i][j] = field[i][j - skip];
         }
 
-        score(10 * rows.length);
+        score(10);
     }
 }
 

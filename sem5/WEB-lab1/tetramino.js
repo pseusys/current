@@ -1,5 +1,5 @@
-import {cup_height} from './tetris.js'
-import {cup_width} from './tetris.js'
+import {cup_height} from "./tetris.js"
+import {cup_width} from "./tetris.js"
 
 
 
