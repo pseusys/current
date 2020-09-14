@@ -1,0 +1,56 @@
+body {
+    min-height: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #FFBB00;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body * {
+    display: flex;
+    margin: 3px;
+}
+
+html {
+    height: 100%;
+}
+
+
+
+form.login {
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+
+
+div.body {
+    flex-direction: column;
+}
+
+div.info {
+    flex-direction: column;
+}
+
+div.filler {
+    flex-grow: 1;
+}
+
+
+
+div.score_placeholder {
+    flex-direction: column;
+}
+
+ol.score {
+    flex-direction: column;
+}
+
+li {
+    display: list-item;
+}

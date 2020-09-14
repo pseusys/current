@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Tetris Gate</title>
+    <link rel="stylesheet" href="main.css">
     <script src="index.js"></script>
 </head>
 <body>
-    <form method="get" id="gate">
-        <label>
-            Enter user name:<br>
-            <input id="input" placeholder="Username"><br>
-        </label>
+    <form class="login" method="get" id="gate">
+        <label for="input" class="header">Enter user name:</label>
+        <input id="input" placeholder="Username">
         <input type="submit" id="submit" value="Enter">
     </form>
 </body>

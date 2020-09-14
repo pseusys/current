@@ -54,8 +54,8 @@ function pause() {
 function score(plus) {
     points += plus;
     timeout = Math.floor((1/(points/500 + 5/4) + 0.2) * 1000);
-    document.getElementById("score").innerText = points.toString();
-    document.getElementById("level").innerText = timeout.toString();
+    document.getElementById("score").innerText = "Score: ".concat(points.toString());
+    document.getElementById("level").innerText = "Speed: ".concat(timeout.toString());
 }
 
 
@@ -71,7 +71,7 @@ window.onload = function() {
     document.getElementById("start").onclick = function () {start_game()};
 
     document.getElementById("rating_holder").style.display = "none";
-    document.getElementById("canvas_holder").style.display = "block";
+    document.getElementById("canvas_holder").style.display = "flex";
 
     const canvas = document.getElementById("canvas");
     const context = canvas.getContext("2d");
@@ -102,7 +102,7 @@ function start_game() {
 
     document.getElementById("start").style.display = "none";
     document.getElementById("rating_holder").style.display = "none";
-    document.getElementById("canvas_holder").style.display = "block";
+    document.getElementById("canvas_holder").style.display = "flex";
 }
 
 function stop_game() {
@@ -114,8 +114,8 @@ function stop_game() {
     timeout = 1000;
     points = 0;
 
-    document.getElementById("start").style.display = "block";
-    document.getElementById("rating_holder").style.display = "block";
+    document.getElementById("start").style.display = "flex";
+    document.getElementById("rating_holder").style.display = "flex";
     document.getElementById("canvas_holder").style.display = "none";
 }
 

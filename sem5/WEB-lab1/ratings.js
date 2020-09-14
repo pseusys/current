@@ -28,6 +28,7 @@ export function fill_records() {
     const ratings = get_records();
     ratings.sort((a, b) => (Number.parseInt(a.score) > Number.parseInt(b.score)) ? 1 : -1);
     scores.innerHTML = "";
+    if (ratings.length > 15) ratings.length = 15;
     for (let i = 0; i < ratings.length; i++) {
         scores.innerHTML = scores.innerHTML.concat('<li>' + ratings[i].time.toString() + ': ' + ratings[i].score.toString() + '</li>' );
     }

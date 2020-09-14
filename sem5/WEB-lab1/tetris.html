@@ -3,25 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Tetris</title>
+    <link rel="stylesheet" href="main.css">
     <script src="tetris.js" type="module"></script>
 </head>
 <body>
-    <div id="filler">
-        <div class = "placeholder" id="canvas_holder">
-            <label id="level"></label>
-            <label id="status"></label>
-            <label id="score"></label>
-            <canvas id="next" width="70" height="70"></canvas>
-            <canvas id="canvas" width="160" height="240"></canvas>
+    <div class="body">
+        <div id="filler">
+            <div class = "canvas_placeholder" id="canvas_holder">
+                <div class="info">
+                    <canvas id="next" width="70" height="70"></canvas>
+                    <div class="filler"></div>
+                    <label id="level"></label>
+                    <label id="status"></label>
+                    <label id="score"></label>
+                </div>
+                <canvas id="canvas" width="160" height="240"></canvas>
+            </div>
+            <div class = "score_placeholder" id="rating_holder">
+                <label>Scoreboard:</label>
+                <ol class="score" id="scores"></ol>
+            </div>
         </div>
-        <div class = "placeholder" id="rating_holder">
-            <label>Scoreboard:</label>
-            <ol id="scores"></ol>
+        <div>
+            <button id="back">Back</button>
+            <button id="start">Start game</button>
         </div>
-    </div>
-    <div>
-        <button id="back">Back</button>
-        <button id="start">Start game</button>
     </div>
 </body>
 </html>
