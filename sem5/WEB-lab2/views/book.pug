@@ -1,0 +1,36 @@
+extends base
+
+block header
+    title= book_name
+
+block scripts
+    script(src="pagescripts/book.js")
+    script(src="scripts/book_manager.js")
+
+block content
+    div(class="row" style="height:100vh")
+        div(class="col-2")
+            button(class="btn btn-sm btn-block btn-secondary texteous" id="back") В библиотеку
+            img(class="img-fluid rounded" style="min-width:100%" src=cover_img)
+            if taken
+                h5 &#128994; В наличии
+            else
+                h5 &#128308; На руках
+            if taken_by_me
+                button(class="btn btn-sm btn-block btn-danger texteous" id="return") Вернуть
+            else if not_taken
+                button(class="btn btn-sm btn-block btn-success texteous" id="take") Взять
+                if is_admin
+                    button(class="btn btn-sm btn-block btn-warn texteous" id="edit") Редактировать
+
+            if is_admin
+                button(class="btn btn-sm btn-block btn-danger texteous" id="delete") Удалить
+        div(class="col-10")
+            div(class="row" style="height:20vh")
+                div(class="col-12")
+                    h1= book_name
+                    h3= book_author
+            div(class="row" style="height:70vh; overflow-y: auto")
+                h6= book_desc
+            div(class="row" style="height:10vh")
+                h6 Дата публикации #{publication_date}

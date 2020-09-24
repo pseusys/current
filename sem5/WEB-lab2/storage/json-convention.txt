@@ -1,0 +1,29 @@
+Following objects are transmitted via app:
+
+BOOK OBJECT:
+{
+    "name": "STRING",                                   // book name
+    "cover": "PATH",                                    // path to book cover picture relative to static folder root
+    "code": "NUMBER",                                   // book authentication code
+    "author": "STRING",                                 // author name
+    "publication":"DATE",                               // date of publication
+    "description": "STRING",                            // description of the book
+    "taken": {                                          // if book is taken
+        "reader": "STRING",                             // name of the reader
+        "taken": "DATE",                                // taken date
+        "return": "DATE"                                // promised return date (set automatically to the next month)
+    } OR false                                          // if book available
+}
+
+USER OBJECT:
+{
+    "name": "STRING",
+    "profile": "PATH",
+    "registration": "DATE",
+    "status": "STRING",
+    "books": [
+        "book1": "NUMBER",
+        ...
+        "bookN": "NUMBER"
+    ]
+}

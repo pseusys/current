@@ -1,0 +1,27 @@
+extends base
+
+block header
+    title Библиотека
+
+block scripts
+    script(src="pagescripts/lib.js")
+    script(src="scripts/accounter.js")
+    if is_admin
+        script(src="scripts/recovery.js")
+        script(src="scripts/book_manager.js")
+
+block content
+    div(class="row" style="height:15vh")
+        div(class="col-2")
+            if is_admin
+                button(class="btn btn-sm btn-block btn-warning texteous" id="reader") Архивировать
+                button(class="btn btn-sm btn-block btn-danger texteous" id="logout") Восстановить
+                button(class="btn btn-sm btn-block btn-danger texteous" id="add") Добавить
+        div(class="col-8 my-auto")
+            h1(class="text-center") Библиотека
+        div(class="col-2")
+            h5(class="text-center")= user
+            button(class="btn btn-sm btn-block btn-primary texteous" id="reader") Читатель
+            button(class="btn btn-sm btn-block btn-secondary texteous" id="logout") Выйти
+    div(class="row" style="height:85vh; overflow-y: auto")
+        div(class="col" id="librarian")
