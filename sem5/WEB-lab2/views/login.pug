@@ -11,9 +11,11 @@ block content
     div(class="row" style="height:100vh")
         div(class="col-6 offset-3 my-auto")
             div(class="row justify-content-center")
-                h3(class="text-center align-self-center") Войдите или зарегестрируйтесь
+                h3(class="text-center") Войдите или зарегестрируйтесь
                 div(class="input-group mb-3")
                     input(type="text" id="username" class="form-control" placeholder="Имя пользователя" aria-label="Имя пользователя")
                 div(class="input-group mb-3")
                     input(type="password" id="password" class="form-control" placeholder="Пароль" aria-label="Пароль")
-                button(class="btn btn-primary texteous" id="login") Ввод
+                div(class="align-self-center")
+                    button(class="btn btn-primary texteous" id="signin") Регистрация
+                    button(class="btn btn-primary texteous" id="login") Вход

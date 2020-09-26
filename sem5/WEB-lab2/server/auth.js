@@ -1,10 +1,11 @@
 module.exports.configure = function (server) {
-    const bodyParser = require('body-parser');
     const passport = require('passport');
     const LocalStrategy = require('passport-local').Strategy;
 
+    const population = require('./population');
+    const library = require('./library');
+
     server.use(require('cookie-parser')());
-    server.use(bodyParser.urlencoded({extended: true}));
     server.use(require('express-session')({
         secret: 'secret',
         resave: true,
@@ -23,26 +24,96 @@ module.exports.configure = function (server) {
         done(null, user);
     });
 
-    passport.use("local", new LocalStrategy(
+    passport.use("login-local", new LocalStrategy(
         function(username, password, done) {
-            console.log("Authing")
-            return done(null, {name: username, password: password});
+            console.log("Logging in user:", username);
+            const user = population.get_user(username, password);
+            if (user) return done(null, user);
+            else return done("Пользователь не найден или пароль не верен.", null);
+        }
+    ));
+
+    passport.use("signin-local", new LocalStrategy(
+        function(username, password, done) {
+            console.log("Signing in user:", username);
+            const user = population.set_user(username, password);
+            if (user) return done(null, user);
+            else return done("Пользователь уже существует.", null);
         }
     ));
 
 
-
-    server.post('/login', (req, res, next) => {
-        passport.authenticate('local', {}, function(err, user, info) {
-            if (err) return res.res.status(500).end(err.toString());
+    /** Accepts:
+     * @param username = user name
+     * @param password = password
+     */
+    server.post("/login", (req, res) => {
+        const callback = function(err, user, info) {
+            if (err) return res.status(500).end(err.toString());
             req.logIn(user, function(err) {
-                if (err) return res.res.status(500).end(err.toString());
+                if (err) return res.status(500).end("Не удалось войти.");
                 return res.end();
             });
-        })(req, res, next);
+        };
+        passport.authenticate('login-local', {}, callback)(req, res);
     });
 
-    server.get('/logout', function(req, res){
+    server.delete("/login", (req, res) => {
+        req.logout();
+        res.end();
+    });
+
+
+
+    /** Accepts:
+     * @param username = user name
+     * @param password = password
+     */
+    server.post("/user", (req, res) => {
+        const callback = function(err, user, info) {
+            if (err) return res.status(500).end(err.toString());
+            req.logIn(user, function(err) {
+                if (err) return res.status(500).end("Не удалось зарегистрироваться.");
+                return res.end();
+            });
+        };
+        passport.authenticate('signin-local', {}, callback)(req, res);
+    });
+
+    /** Accepts:
+     * @param take-book = the book user has taken
+     * @param give-book = the book user has returned
+     */
+    server.put("/user", (req, res) => {
+        const user = req.user;
+
+        const take_book = req.body["take-book"] ? Number.parseInt(req.body["take-book"]) : undefined;
+        const give_book = req.body["give-book"] ? Number.parseInt(req.body["give-book"]) : undefined;
+        if (take_book !== undefined) {
+            user.books.push(take_book);
+            population.edit_user(user);
+            return res.end(JSON.stringify(library.give_book(take_book, user.name)));
+        } else if (give_book !== undefined) {
+            for (let i = 0; i < user.books.length; i++) {
+                if (user.books[i] === give_book) {
+                    user.books.splice(i, 1);
+                    population.edit_user(user);
+                    library.return_book(give_book);
+                    return res.end();
+                }
+            }
+        } else return res.status(500).end("Invalid parameters.");
+        const new_books = req.body.books ? JSON.parse(req.body.books) : undefined;
+        if (new_books) user.books = new_books;
+        res.end(population.edit_user(user));
+    });
+
+    server.get("/user", (req, res) => {
+        res.json(req.user).end();
+    });
+
+    server.delete("/user", (req, res) => {
+        population.delete_user(req.user);
         req.logout();
         res.end();
     });

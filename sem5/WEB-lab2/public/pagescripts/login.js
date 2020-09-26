@@ -7,4 +7,13 @@ window.onload = function () {
             (error) => {alert(error);}
         );
     }
+
+    document.getElementById("signin").onclick = function () {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        signin(username, password,
+            () => {window.location = "/";},
+            (error) => {alert(error);}
+        );
+    }
 }

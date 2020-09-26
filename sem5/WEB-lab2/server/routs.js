@@ -1,19 +1,7 @@
 module.exports.configure = function (server) {
-    const express = require('express');
-    const path = require('path');
     const library = require('./library');
 
-    server.use(express.static(path.join(__dirname, "../public")));
-    server.set("view engine", "pug");
-    server.set("views", "./views");
 
-
-
-    server.use((req, res, next) => {
-        console.log("Called", req.url, "with method", req.method, "at",
-            (new Date()).toLocaleDateString("ru"), (new Date()).toLocaleTimeString("ru"), "processing...");
-        return next();
-    });
 
     server.use((req, res, next) => {
         if (req.user) {
@@ -32,25 +20,27 @@ module.exports.configure = function (server) {
     });
 
     server.get("/book", (req, res) => {
-        const code = req.query["code"];
-        if (!code) return res.render("404", {cause: "Wrong query."});
+        const code = req.query["code"] ? Number.parseInt(req.query["code"]) : undefined;
+        if (code === undefined) return res.render("404", {cause: "Неверный запрос."});
 
         const book = library.get_book(code);
-        if (!book) return res.render("404", {cause: "Book with code " + code + " does not exist."});
+        if (!book) return res.render("404", {cause: "Книга с кодом " + code + " не существует."});
 
         return res.render("book", {
-            book_name: book["name"],
-            book_author: book["author"],
-            book_desc: book["description"],
-            cover_img: book["cover"]
+            book: book,
+            publication: (new Date(book.publication)).toLocaleDateString("ru"),
+            return_date: book["taken"] ? (new Date(book["taken"]["return"])).toLocaleDateString("ru") : undefined,
+            taken_by_me: book["taken"] ? (book["taken"]["reader"] === req.user.name) : book["taken"],
+            holder: req.user.name,
+            is_admin: req.user.is_admin
         });
     });
 
     server.get("/", (req, res, next) => {
-        return res.render("lib", {user: req.user.name});
+        return res.render("lib", {user: req.user});
     });
 
     server.get("*", (req, res) => {
-        return res.render("404", {cause: "Page does not exist!"});
+        return res.render("404", {cause: "Страница не найдена!"});
     });
 }

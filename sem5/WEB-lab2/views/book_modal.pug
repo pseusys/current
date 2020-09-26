@@ -1,0 +1,29 @@
+script(src="pagescripts/book_modal.js")
+
+div(class="modal fade" id="book_modal" tabindex="-1" role="dialog" aria-labelledby="book_modal_title" aria-hidden="true")
+    div(class="modal-dialog modal-dialog-centered" role="document")
+        div(class="modal-content")
+            div(class="modal-header")
+                h5(class="modal-title" id="book_modal_title") Информация о книге
+                button(class="close" data-dismiss="modal" aria-label="Close")
+                    span(aria-hidden="true") &times;
+            div(class="modal-body")
+                form
+                    div(class="form-group")
+                        label(for="book_name_input") Название книги
+                        input(type="text" class="form-control" id="book_name_input" placeholder="Название")
+                        div(class="invalid-feedback") Название не может быть пустым!
+                    div(class="form-group")
+                        label(for="book_author_input") Автор книги
+                        input(type="text" class="form-control" id="book_author_input" placeholder="Автор")
+                        div(class="invalid-feedback") Имя автора не может быть пустым!
+                    div(class="form-group")
+                        label(for="book_date_input") Дата публикации
+                        input(type="date" class="form-control" id="book_date_input")
+                        div(class="invalid-feedback") Дата публикации не может быть пустой!
+                    div(class="form-group")
+                        label(for="book_description_input") Описание книги (не обязательно)
+                        textarea(class="form-control" id="book_description_input" rows="3")
+            div(class="modal-footer")
+                button(type="button" class="btn btn-secondary" data-dismiss="modal") Закрыть
+                button(type="button" class="btn btn-primary" id="modal_book_save") Сохранить

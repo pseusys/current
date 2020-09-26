@@ -6,7 +6,7 @@ BOOK OBJECT:
     "cover": "PATH",                                    // path to book cover picture relative to static folder root
     "code": "NUMBER",                                   // book authentication code
     "author": "STRING",                                 // author name
-    "publication":"DATE",                               // date of publication
+    "publication": "DATE",                              // date of publication
     "description": "STRING",                            // description of the book
     "taken": {                                          // if book is taken
         "reader": "STRING",                             // name of the reader
@@ -18,12 +18,17 @@ BOOK OBJECT:
 USER OBJECT:
 {
     "name": "STRING",
-    "profile": "PATH",
+    "is_admin": "BOOLEAN",
     "registration": "DATE",
-    "status": "STRING",
     "books": [
-        "book1": "NUMBER",
+        "NUMBER",
         ...
-        "bookN": "NUMBER"
+        "NUMBER"
     ]
+}
+
+PASSWORD OBJECT:
+{
+    "user": "STRING",
+    "password": "STRING"
 }

@@ -1,0 +1,17 @@
+script(src="pagescripts/user_modal.js")
+
+div(class="modal fade" id="reader_modal" tabindex="-1" role="dialog" aria-labelledby="user_modal_title" aria-hidden="true")
+    div(class="modal-dialog modal-dialog-centered" role="document")
+        div(class="modal-content")
+            div(class="modal-header")
+                h5(class="modal-title" id="user_modal_title") Информация о читателе
+                button(class="close" data-dismiss="modal" aria-label="Close")
+                    span(aria-hidden="true") &times;
+            div(class="modal-body")
+                div(class="container-fluid")
+                    h5(class="text-center" id="modal_username")
+                    div(class="row")
+                        div(class="col-12" id="modal_book_container")
+            div(class="modal-footer")
+                button(type="button" class="btn btn-secondary" data-dismiss="modal") Закрыть
+                button(type="button" class="btn btn-danger" id="modal_delete_user") Удалить
