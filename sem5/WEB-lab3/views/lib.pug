@@ -1,0 +1,52 @@
+extends base
+
+block header
+    title Библиотека
+
+block scripts
+    script(src="pagescripts/lib.js")
+    script(src="scripts/accounter.js")
+    script(src="scripts/book_manager.js")
+    if is_admin
+        script(src="scripts/recovery.js")
+
+block content
+    div(class="row" style="height:20vh")
+        div(class="col-2")
+            if is_admin
+                button(class="btn btn-sm btn-block btn-warning texteous" id="push" onclick="on_push()") Архивировать
+                button(class="btn btn-sm btn-block btn-danger texteous" id="pull" onclick="on_pull()") Восстановить
+                button(class="btn btn-sm btn-block btn-success texteous" id="add" data-toggle="modal" data-target="#book_modal") Добавить
+                include ./book_modal.pug
+        div(class="col-8 my-auto")
+            h1(class="text-center") Библиотека
+        div(class="col-2")
+            h5(class="text-center")= user_name
+            button(class="btn btn-sm btn-block btn-primary texteous" id="reader" data-toggle="modal" data-target="#reader_modal") Читатель
+            button(class="btn btn-sm btn-block btn-secondary texteous" id="logout" onclick="on_logout()") Выйти
+            include ./user_modal.pug
+    div(class="row" style="height:75vh; overflow-y: auto;")
+        div(class="col" id="librarian")
+            if all_books.length > 0
+                div(class="row")
+                    for book in all_books
+                        div(class="col-2")
+                            img(class="img-thumbnail rounded mb-2" src= book.cover)
+                            if book.taken
+                                button(class="btn btn-sm btn-block texteous btn-danger" onclick="on_open()")= book.name
+                            else
+                                button(class="btn btn-sm btn-block texteous btn-success" onclick="on_open()")=book.name
+            else
+                div(class="row justify-content-center" style="height:75vh;")
+                    h1(class="text-center align-self-center") Библиотека пока пуста!
+    div(class="row" style="height:5vh")
+        form(class="form-inline")
+            div(class="form-group")
+                label(class="radio-inline" for="none") Все
+                input(type="radio" name="optradio" id="none" checked)
+            div(class="form-group")
+                label(class="radio-inline" for="available") В наличии
+                input(type="radio" name="optradio" id="available")
+            div(class="form-group")
+                label(class="radio-inline" for="return-date") Скоро будут
+                input(type="radio" name="optradio" id="return-date")

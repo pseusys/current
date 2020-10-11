@@ -1,0 +1,21 @@
+extends base
+
+block header
+    title Вход
+
+block scripts
+    script(src="pagescripts/login.js")
+    script(src="scripts/accounter.js")
+
+block content
+    div(class="row" style="height:100vh")
+        div(class="col-6 offset-3 my-auto")
+            div(class="row justify-content-center")
+                h3(class="text-center") Войдите или зарегестрируйтесь
+                div(class="input-group mb-3")
+                    input(type="text" id="username" class="form-control" placeholder="Имя пользователя" aria-label="Имя пользователя")
+                div(class="input-group mb-3")
+                    input(type="password" id="password" class="form-control" placeholder="Пароль" aria-label="Пароль")
+                div(class="align-self-center")
+                    button(class="btn btn-primary texteous" id="signin" onclick="on_signin()") Регистрация
+                    button(class="btn btn-primary texteous" id="login" onclick="on_login()") Вход

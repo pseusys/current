@@ -1,0 +1,44 @@
+extends base
+
+block header
+    title= book_name
+
+block scripts
+    script(src="pagescripts/book.js")
+    script(src="scripts/book_manager.js")
+    script(src="scripts/accounter.js")
+
+block content
+    div(class="row" style="height:100vh")
+        div(class="col-3")
+            button(class="btn btn-sm btn-block btn-secondary texteous" id="back" onclick="on_back()") В библиотеку
+            img(class="img-fluid rounded" style="min-width:100%" src= book_cover)
+            if book_taken
+                h5 &#128308; На руках
+                p
+                    small Будет возвращена #{return_date}
+                p
+                    small Взял #{holder}
+            else
+                h5 &#128994; В наличии
+            if taken_by_me
+                button(class="btn btn-sm btn-block btn-warn texteous" id="return" onclick="on_return()") Вернуть
+            else if !book_taken
+                button(class="btn btn-sm btn-block btn-success texteous" id="take" onclick="on_take()") Взять
+                if is_admin
+                    button(class="btn btn-sm btn-block btn-warn texteous" id="edit" data-toggle="modal" data-target="#book_modal") Редактировать
+                    include ./book_modal.pug
+
+            if is_admin
+                button(class="btn btn-sm btn-block btn-danger texteous" id="delete" onclick="on_delete()") Удалить
+        div(class="col-9")
+            div(class="row" style="height:20vh")
+                div(class="col-12")
+                    h1= book_name
+                    h3= book_author
+            div(class="row" style="height:70vh; overflow-y: auto")
+                div(class="col-12")
+                    h6= book_description
+            div(class="row" style="height:10vh")
+                div(class="col-12")
+                    h6 Дата публикации #{(new Date(book_publication)).toLocaleDateString("ru")}
