@@ -1,16 +1,12 @@
 function on_login () {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-    login(username, password,
+    login($("#username").val(), $("#password").val(),
         () => {window.location = "/";},
         (error) => {alert(error);}
     );
 }
 
 function on_signin () {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-    signin(username, password,
+    signin($("#username").val(), $("#password").val(),
         () => {window.location = "/";},
         (error) => {alert(error);}
     );

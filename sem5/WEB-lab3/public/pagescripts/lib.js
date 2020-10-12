@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    const filter = get_params().filter;
+    const filter = get_params("filter");
     if (filter) $("#" + filter).prop("checked", true);
 });
 
@@ -9,11 +9,9 @@ $("input[type=radio]").change(function () {
 
 
 
-function on_open() {
-    window.location = "/book?code=" + book["code"];
+function on_open(code) {
+    window.location = "/book?code=" + code;
 }
-
-
 
 function on_logout() {
     logout(() => {

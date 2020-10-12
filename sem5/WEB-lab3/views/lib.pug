@@ -33,9 +33,9 @@ block content
                         div(class="col-2")
                             img(class="img-thumbnail rounded mb-2" src= book.cover)
                             if book.taken
-                                button(class="btn btn-sm btn-block texteous btn-danger" onclick="on_open()")= book.name
+                                button(class="btn btn-sm btn-block texteous btn-danger" onclick="on_open(" + book.code + ")")= book.name
                             else
-                                button(class="btn btn-sm btn-block texteous btn-success" onclick="on_open()")=book.name
+                                button(class="btn btn-sm btn-block texteous btn-success" onclick="on_open(" + book.code + ")")=book.name
             else
                 div(class="row justify-content-center" style="height:75vh;")
                     h1(class="text-center align-self-center") Библиотека пока пуста!

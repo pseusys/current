@@ -1,86 +1,19 @@
-function get_books(filter, onsuccess = undefined, onerror = undefined) {
-    const request = new XMLHttpRequest();
-    request.onreadystatechange = function () {
-        if (request.readyState === 4) {
-            if (request.status === 200) {
-                if (onsuccess) onsuccess(JSON.parse(this.responseText));
-            } else if (onerror) onerror(request.responseText);
-        }
-    }
-    request.open("GET", "/books?method=books&filter=" + filter);
-    request.send();
-}
-
-function push_books(onsuccess = undefined, onerror = undefined) {
-    manage_lib("POST", onsuccess, onerror);
-}
-
-function pull_books(onsuccess = undefined, onerror = undefined) {
-    manage_lib("GET", onsuccess, onerror);
-}
-
-function manage_lib(method, onsuccess = undefined, onerror = undefined) {
-    const request = new XMLHttpRequest();
-    request.onreadystatechange = function () {
-        if (request.readyState === 4) {
-            if (request.status === 200) {
-                if (onsuccess) onsuccess();
-            } else if (onerror) onerror(request.responseText);
-        }
-    }
-    request.open(method, "/lib");
-    request.send();
-}
-
-
-
-function get_book(code, onsuccess = undefined, onerror = undefined) {
-    const request = new XMLHttpRequest();
-    request.onreadystatechange = function () {
-        if (request.readyState === 4) {
-            if (request.status === 200) {
-                if (onsuccess) onsuccess(JSON.parse(this.responseText));
-            } else if (onerror) onerror(request.responseText);
-        }
-    }
-    request.open("GET", "/books?method=book&code=" + code);
-    request.send();
-}
-
-function commit_book(book, method, onsuccess = undefined, onerror = undefined) {
-    const request = new XMLHttpRequest();
-    request.open(method, "/books");
-    request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    request.onreadystatechange = function () {
-        if (request.readyState === 4) {
-            if (request.status === 200) {
-                if (onsuccess) onsuccess();
-            } else if (onerror) onerror(request.responseText);
-        }
-    }
-    request.send("book=" + JSON.stringify(book));
-}
-
 function add_book(book, onsuccess = undefined, onerror = undefined) {
-    commit_book(book, "PUT", onsuccess, onerror);
+    $.ajax({url: "/books", type: "PUT", data: "book=" + JSON.stringify(book)})
+        .done(function(result) { if (onsuccess) onsuccess(result ? JSON.parse(result) : "") })
+        .fail(function(jqXHR) { if (onerror) onerror(jqXHR.responseText) });
 }
 
 function edit_book(book, onsuccess = undefined, onerror = undefined) {
-    commit_book(book, "POST", onsuccess, onerror);
+    $.post("/books", {book: JSON.stringify(book)})
+        .done(function(result) { if (onsuccess) onsuccess(result) })
+        .fail(function(jqXHR) { if (onerror) onerror(jqXHR.responseText) });
 }
 
 function remove_book(code, onsuccess = undefined, onerror = undefined) {
-    const request = new XMLHttpRequest();
-    request.open("DELETE", "/books");
-    request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    request.onreadystatechange = function () {
-        if (request.readyState === 4) {
-            if (request.status === 200) {
-                if (onsuccess) onsuccess();
-            } else if (onerror) onerror(request.responseText);
-        }
-    }
-    request.send("code=" + code);
+    $.ajax({url: "/books", type: "DELETE", data: "code=" + code})
+        .done(function(result) { if (onsuccess) onsuccess(result) })
+        .fail(function(jqXHR) { if (onerror) onerror(jqXHR.responseText) });
 }
 
 
