@@ -1,12 +1,14 @@
 function on_login () {
-    login($("#username").val(), $("#password").val(),
+    const creditionals = collect_values_if_possible("username", "password");
+    if (creditionals) login(creditionals.username, creditionals.password,
         () => {window.location = "/";},
         (error) => {alert(error);}
     );
 }
 
 function on_signin () {
-    signin($("#username").val(), $("#password").val(),
+    const creditionals = collect_values_if_possible("username", "password");
+    if (creditionals) signin(creditionals.username, creditionals.password,
         () => {window.location = "/";},
         (error) => {alert(error);}
     );

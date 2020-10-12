@@ -1,16 +1,10 @@
 function save_book_data() {
-    const necessary_fields = $("input[type=text], input[type=date]");
-    let valid = true;
-    necessary_fields.map(function () {
-        $(this).toggleClass("is-invalid", this.value === "");
-        valid &= (this.value !== "");
-        return this;
-    });
+    const params = collect_values_if_possible("book_name_input", "book_author_input", "book_date_input");
 
-    if (valid) return assemble_book(
-        $("#book_name_input").val(),
-        $("#book_author_input").val(),
-        $("#book_date_input").val(),
+    return assemble_book(
+        params["book_name_input"],
+        params["book_author_input"],
+        params["book_date_input"],
         $("#book_description_input").val()
     ); //TODO: resolve path to pic.
 }

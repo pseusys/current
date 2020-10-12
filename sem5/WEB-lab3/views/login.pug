@@ -8,14 +8,20 @@ block scripts
     script(src="scripts/accounter.js")
 
 block content
-    div(class="row" style="height:100vh")
+    div(class="row high-100vh")
         div(class="col-6 offset-3 my-auto")
             div(class="row justify-content-center")
-                h3(class="text-center") Войдите или зарегестрируйтесь
-                div(class="input-group mb-3")
-                    input(type="text" id="username" class="form-control" placeholder="Имя пользователя" aria-label="Имя пользователя")
-                div(class="input-group mb-3")
-                    input(type="password" id="password" class="form-control" placeholder="Пароль" aria-label="Пароль")
-                div(class="align-self-center")
-                    button(class="btn btn-primary texteous" id="signin" onclick="on_signin()") Регистрация
-                    button(class="btn btn-primary texteous" id="login" onclick="on_login()") Вход
+                div(class="col")
+                    h3(class="text-center") Войдите или зарегестрируйтесь
+                    form
+                        div(class="form-group row")
+                            label(class="col-4" for="username") Имя пользователя
+                            input(type="text" class="col-8 form-control" id="username" placeholder="Имя пользователя")
+                            div(class="invalid-feedback") Имя пользователя не может быть пусто!
+                        div(class="form-group row")
+                            label(class="col-4" for="password") Пароль
+                            input(type="password" class="col-8 form-control" id="password" placeholder="Пароль")
+                            div(class="invalid-feedback") Пароль не может быть пуст!
+                        div(class="form-group justify-content-center row h-heavy")
+                            button(type="button" class="btn btn-primary align-self-center" id="signin" onclick="on_signin()") Регистрация
+                            button(type="button" class="btn btn-primary align-self-center" id="login" onclick="on_login()") Вход
