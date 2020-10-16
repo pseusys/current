@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 let current_lib_state = undefined;
 
+const coverage = require('./coverage');
+
 
 
 function get_all_books () {
@@ -46,6 +48,7 @@ module.exports.set_book = function (book) {
 module.exports.edit_book = function (book) {
     const library = get_all_books();
     for (let i = 0; i < library.length; i++) if (library[i].code === book.code) {
+        if (library[i].cover !== book.cover) coverage.remove_cover(library[i].cover);
         library[i] = book;
         return true;
     }
@@ -55,6 +58,7 @@ module.exports.edit_book = function (book) {
 module.exports.delete_book = function (book_code) {
     let library = get_all_books();
     for (let i = 0; i < library.length; i++) if (library[i].code === book_code) {
+        coverage.remove_cover(library[i].cover);
         library = library.splice(i, 1);
         return true;
     }

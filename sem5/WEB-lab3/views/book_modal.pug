@@ -24,6 +24,9 @@ div(class="modal fade" id="book_modal" tabindex="-1" role="dialog" aria-labelled
                     div(class="form-group")
                         label(for="book_description_input") Описание книги (не обязательно)
                         textarea(class="form-control" id="book_description_input" rows="3")= book_description
+                    div(class="form-group")
+                        label(for="book_cover_input") Обложка книги (не обязательно)
+                        input(type="file" class="form-control-file" id="book_cover_input" value= book_cover)
             div(class="modal-footer")
                 button(type="button" class="btn btn-secondary" data-dismiss="modal") Закрыть
                 button(type="button" class="btn btn-primary" id="modal_book_save" onclick="on_modal_book_save(" + book_code + ")") Сохранить

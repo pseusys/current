@@ -1,4 +1,7 @@
 module.exports.configure = function (server) {
+    const formidable = require('formidable');
+
+    const coverage = require('./coverage');
     const library = require('./library');
 
 
@@ -72,5 +75,19 @@ module.exports.configure = function (server) {
         const code = req.body.code ? Number.parseInt(req.body.code) : undefined;
         if (code !== undefined) library.delete_book(code);
         return res.end();
+    });
+
+
+
+    /** Accepts:
+     * @param image = new book cover image
+     */
+    server.post("/cover", (req, res) => {
+        let form = new formidable.IncomingForm();
+        form.parse(req, function (err, fields, files) {
+            coverage.add_cover(files, function () {
+                res.end("./covers/" + files.image.name);
+            });
+        });
     });
 }

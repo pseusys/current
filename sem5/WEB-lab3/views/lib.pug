@@ -19,7 +19,7 @@ block content
                 button(type="button" class=button + "btn-success" id="add" data-toggle="modal" data-target="#book_modal") Добавить
                 include ./book_modal.pug
         div(class="col-8 my-auto")
-            h1(class="text-center") Библиотека
+            h1(class="text-center" id="lib_logo") Библиотека
         div(class="col-2 v-lite")
             h5(class="text-center")= user_name
             button(type="button" class=button + "btn-primary" id="reader" data-toggle="modal" data-target="#reader_modal") Читатель

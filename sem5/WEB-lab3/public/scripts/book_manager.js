@@ -18,17 +18,33 @@ function remove_book(code, onsuccess = undefined, onerror = undefined) {
 
 
 
-function assemble_book(name, author, publication, description) {
-    const actual_description = description ? description : "[Нет описания]";
-    let actual_file = "./covers/sample_cover.jpg";
-
-    return {
+function assemble_book(name, author, publication, description, cover, after) {
+    let book = {
         name: name,
-        cover: actual_file,
+        cover: "./covers/default.jpg",
         code: undefined,
         author: author,
         publication: publication,
-        description: actual_description,
+        description: description ? description : "[Нет описания]",
         taken: false
     };
+
+    if (cover) {
+        const formData = new FormData();
+        formData.append("image", cover);
+
+        $.ajax({
+            url: "/cover",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false
+        }).done(function (result) {
+            book.cover = result;
+            after(book);
+        }).fail(function () {
+            console.log("Cover can not be uploaded!");
+            after(book);
+        });
+    } else after (book);
 }
