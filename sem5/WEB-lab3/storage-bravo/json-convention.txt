@@ -1,0 +1,36 @@
+Following objects are transmitted via app:
+
+BOOK OBJECT:
+{
+    "name": "STRING",
+    "cover": "PATH",
+    "code": "NUMBER",
+    "author": "STRING",
+    "publication": "DATE",
+    "description": "STRING",
+    "part": {
+        "start_cost": "NUMBER",
+        "min_step": "NUMBER",
+        "max_step": "NUMBER"
+    } OR false,
+    "owner": "STRING" or false
+}
+
+USER OBJECT:
+{
+    "name": "STRING",
+    "is_admin": "BOOLEAN",
+    "registration": "DATE",
+    "part": "BOOLEAN",
+    "books": [
+        "NUMBER",
+        ...
+        "NUMBER"
+    ]
+}
+
+PASSWORD OBJECT:
+{
+    "user": "STRING",
+    "password": "STRING"
+}

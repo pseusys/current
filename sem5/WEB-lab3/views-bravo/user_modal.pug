@@ -1,0 +1,23 @@
+script(src="pagescripts/user_modal.js")
+
+div(class="modal fade" id="reader_modal" tabindex="-1" role="dialog" aria-labelledby="user_modal_title" aria-hidden="true")
+    div(class="modal-dialog modal-dialog-centered" role="document")
+        div(class="modal-content")
+            div(class="modal-header")
+                h5(class="modal-title" id="user_modal_title") Информация о читателе
+                button(class="close" data-dismiss="modal" aria-label="Close")
+                    span(aria-hidden="true") &times;
+            div(class="modal-body")
+                div(class="container-fluid")
+                    h5(class="text-center")= user_name
+                    if user_part
+                        h6(class="text-left") Участвует в голосовании
+                    form
+                        div(class="form-group form-inline")
+                            label(class="mr-2" for="money_input") Деньги
+                            input(type="number" class="form-control" id="money_input" placeholder="Деньги" onchange="on_money()" value= user_money)
+
+
+            div(class="modal-footer")
+                button(type="button" class="btn btn-secondary" data-dismiss="modal") Закрыть
+                button(type="button" class="btn btn-danger" id="modal_delete_user" onclick="on_modal_delete_user()") Удалить

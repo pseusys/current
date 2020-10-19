@@ -1,0 +1,30 @@
+extends base
+
+block header
+    title Участники
+
+block scripts
+    script(src="pagescripts/users.js")
+    script(src="scripts/accounter.js")
+
+block content
+    div(class="row")
+        div(class="col-3 v-lite")
+            button(type="button" class=button + "btn-warning" id="users" onclick="on_back()") Назад
+        div(class="col-6")
+            h1(class="text-center") Участники аукциона
+    table(class="table table-striped table-hover" id="results_table")
+        thead
+            tr
+                th(class="results_table_index" scope="col") Торгует
+                th(class="results_table_test" scope="col") Имя
+                th(class="results_table_result" scope="col") Место жительства
+        tbody
+            for user in users
+                tr
+                    th
+                        if is_admin
+                            div(class="form-check")
+                                input(class="form-check-input position-static" type="checkbox" id= user.name checked= !!user.part aria-label="Участвует")
+                    td= user.name
+                    td= user.location
