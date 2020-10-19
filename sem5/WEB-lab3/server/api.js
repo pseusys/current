@@ -3,18 +3,7 @@ module.exports.configure = function (server) {
 
     const coverage = require('./coverage');
     const library = require('./library');
-
-
-
-    server.get("/lib", (req, res) => {
-        library.restore_lib();
-        return res.end();
-    });
-
-    server.post("/lib", (req, res) => {
-        library.back_up_lib();
-        return res.end();
-    });
+    const settings = require('./settings');
 
 
 
@@ -89,5 +78,24 @@ module.exports.configure = function (server) {
                 res.end("./covers/" + files.image.name);
             });
         });
+    });
+
+
+
+    server.put("/part", (req, res) => {
+        const take_book = req.body["take-book"] ? Number.parseInt(req.body["take-book"]) : undefined;
+        const give_book = req.body["give-book"] ? Number.parseInt(req.body["give-book"]) : undefined;
+        if (take_book !== undefined) {
+            library.give_book(take_book, JSON.parse(req.body["params"]));
+            return res.end();
+        } else if (give_book !== undefined) {
+            library.return_book(give_book);
+            return res.end();
+        }
+    });
+
+    server.post("/settings", (req, res) => {
+        if (req.body.settings) settings.alter_settings(req.body.settings);
+        return res.end();
     });
 }

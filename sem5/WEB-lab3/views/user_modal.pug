@@ -10,10 +10,12 @@ div(class="modal fade" id="reader_modal" tabindex="-1" role="dialog" aria-labell
             div(class="modal-body")
                 div(class="container-fluid")
                     h5(class="text-center")= user_name
-                        each book in user_books
-                            div(class="row justify-content-between")
-                                a(href="/book?code=" + book.code)= book.name
-                                p= (new Date(book.taken.return)).toLocaleDateString("ru")
+                    if user_part
+                        h6(class="text-left") Участвует в голосовании
+                    form
+                        div(class="form-group form-inline")
+                            label(class="mr-2" for="money_input") Деньги
+                            input(type="number" class="form-control" id="money_input" placeholder="Деньги" onchange="on_money()" value= user_money)
 
 
             div(class="modal-footer")

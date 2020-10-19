@@ -16,9 +16,31 @@ function remove_book(code, onsuccess = undefined, onerror = undefined) {
         .fail(function(jqXHR) { if (onerror) onerror(jqXHR.responseText) });
 }
 
+function return_book(old_book, onsuccess = undefined, onerror = undefined) {
+    $.ajax({url: "/part", type: "PUT", data: "give-book=" + old_book})
+        .done(function(result) { if (onsuccess) onsuccess(result ? JSON.parse(result) : "") })
+        .fail(function(jqXHR) { if (onerror) onerror(jqXHR.responseText) });
+}
+
+function take_book(new_book, params, onsuccess = undefined, onerror = undefined) {
+    $.ajax({url: "/part", type: "PUT", data: "take-book=" + new_book + "&params=" + JSON.stringify(params)})
+        .done(function(result) { if (onsuccess) onsuccess(result ? JSON.parse(result) : "") })
+        .fail(function(jqXHR) { if (onerror) onerror(jqXHR.responseText) });
+}
 
 
-function assemble_book(name, author, publication, description, cover, after) {
+
+function assemble_participation(min_step, max_step, start_cost) {
+    if (min_step < max_step) {
+        return {
+            min_step: min_step,
+            max_step: max_step,
+            start_cost: start_cost
+        };
+    } else return false;
+}
+
+function assemble_book(name, author, publication, description, cover, part, after) {
     let book = {
         name: name,
         cover: "./covers/default.jpg",
@@ -26,10 +48,10 @@ function assemble_book(name, author, publication, description, cover, after) {
         author: author,
         publication: publication,
         description: description ? description : "[Нет описания]",
-        taken: false
+        part: part
     };
 
-    if (cover) {
+    if ((cover) && (typeof cover !== "string")) {
         const formData = new FormData();
         formData.append("image", cover);
 
@@ -46,5 +68,10 @@ function assemble_book(name, author, publication, description, cover, after) {
             console.log("Cover can not be uploaded!");
             after(book);
         });
-    } else after (book);
+    } else if ((cover) && (typeof cover === "string")) {
+        book.cover = cover;
+        after(book);
+    } else {
+        after (book);
+    }
 }

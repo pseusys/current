@@ -1,25 +1,20 @@
 const fs = require('fs');
 const path = require('path');
-let current_lib_state = undefined;
 
 const coverage = require('./coverage');
 
 
 
 function get_all_books () {
-    if (current_lib_state !== undefined) return current_lib_state;
-    else {
-        const library = fs.readFileSync(path.join(__dirname, "../storage/lib.json"));
-        current_lib_state = JSON.parse(library.toString());
-        current_lib_state.sort((a, b) => {return a.code - b.code});
-        return current_lib_state;
-    }
+    const library = fs.readFileSync(path.join(__dirname, "../storage/lib.json"));
+    const current_state = JSON.parse(library.toString());
+    current_state.sort((a, b) => {return a.code - b.code});
+    return current_state;
 }
 
-module.exports.get_user_books = function (user) {
-    const user_books = [];
-    for (const code of user.books) user_books.push(module.exports.get_book(code));
-    return user_books;
+function set_all_books (state) {
+    const lib = JSON.stringify(state);
+    fs.writeFileSync(path.join(__dirname, "../storage/lib.json"), lib);
 }
 
 
@@ -30,36 +25,39 @@ module.exports.get_book = function (book_code) {
 }
 
 module.exports.set_book = function (book) {
-    const library = get_all_books();
+    const storage = get_all_books();
 
     let previous = 0, new_code;
-    for (let i = 0; i < library.length; i++) {
-        if (library[i].code - previous > 1) {
+    for (let i = 0; i < storage.length; i++) {
+        if (storage[i].code - previous > 1) {
             new_code = previous + 1;
             break;
-        } else previous = library[i].code;
+        } else previous = storage[i].code;
     }
-    if (previous === library.length - 1) new_code = library.length;
+    if (previous === storage.length - 1) new_code = storage.length;
     book.code = new_code;
 
-    get_all_books().push(book);
+    storage.push(book);
+    set_all_books(storage);
 }
 
 module.exports.edit_book = function (book) {
-    const library = get_all_books();
-    for (let i = 0; i < library.length; i++) if (library[i].code === book.code) {
-        if (library[i].cover !== book.cover) coverage.remove_cover(library[i].cover);
-        library[i] = book;
+    const storage = get_all_books();
+    for (let i = 0; i < storage.length; i++) if (storage[i].code === book.code) {
+        if (storage[i].cover !== book.cover) coverage.remove_cover(storage[i].cover);
+        storage[i] = book;
+        set_all_books(storage);
         return true;
     }
     return false;
 }
 
 module.exports.delete_book = function (book_code) {
-    let library = get_all_books();
-    for (let i = 0; i < library.length; i++) if (library[i].code === book_code) {
-        coverage.remove_cover(library[i].cover);
-        library = library.splice(i, 1);
+    let storage = get_all_books();
+    for (let i = 0; i < storage.length; i++) if (storage[i].code === book_code) {
+        coverage.remove_cover(storage[i].cover);
+        storage.splice(i, 1);
+        set_all_books(storage);
         return true;
     }
     return false;
@@ -72,21 +70,18 @@ module.exports.delete_book = function (book_code) {
  * @filter return-date = sort by return date, earlier first
  * @filter available = available books only
  */
-module.exports.get_books_sorted = function (condition = "none") {
+module.exports.get_books_sorted = function (condition = "all") {
     const all_books = get_all_books();
     const sorted_books = [];
     switch (condition) {
-        case "none":
+        case "all":
             for (const book of all_books) sorted_books.push(book);
             break;
-        case "return-date":
-            for (const book of all_books) if (book["taken"]) sorted_books.push(book);
-            sorted_books.sort((a, b) => {
-                return (new Date(a["taken"]["return"])) - (new Date(b["taken"]["return"]));
-            });
+        case "on-sale":
+            for (const book of all_books) if (book["part"]) sorted_books.push(book);
             break;
-        case "available":
-            for (const book of all_books) if (!book["taken"]) sorted_books.push(book);
+        case "sold":
+            for (const book of all_books) if (book["owner"]) sorted_books.push(book);
             break;
     }
     return sorted_books;
@@ -94,36 +89,21 @@ module.exports.get_books_sorted = function (condition = "none") {
 
 
 
-module.exports.back_up_lib = function () {
-    get_all_books();
-    const lib = JSON.stringify(current_lib_state);
-    fs.writeFileSync(path.join(__dirname, "../storage/lib.json"), lib);
-}
-
-module.exports.restore_lib = function () {
-    const library = fs.readFileSync(path.join(__dirname, "../storage/lib.json"));
-    current_lib_state = JSON.parse(library.toString());
-}
-
-
-
-module.exports.give_book = function (code, reader) {
-    const return_date = new Date();
-    return_date.setMonth(return_date.getMonth() + 1);
-    for (const book of get_all_books()) if (book.code === code) {
-        book.taken = {
-            reader: reader,
-            taken: new Date,
-            return: return_date
-        };
-        return return_date;
+module.exports.give_book = function (code, part) {
+    let storage = get_all_books();
+    for (const book of storage) if (book.code === code) {
+        book.part = part;
+        set_all_books(storage);
+        return true;
     }
     return false;
 }
 
 module.exports.return_book = function (code) {
-    for (const book of get_all_books()) if (book.code === code) {
-        book.taken = false;
+    let storage = get_all_books();
+    for (const book of storage) if (book.code === code) {
+        book.part = false;
+        set_all_books(storage);
         return true;
     }
     return false;

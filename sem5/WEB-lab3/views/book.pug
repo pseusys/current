@@ -11,26 +11,25 @@ block scripts
 block content
     div(class="row high-100vh overflown-y")
         div(class="col-3 v-heavy")
-            button(type="button" class=button + "btn-secondary" id="back" onclick="on_back()") В библиотеку
+            button(type="button" class=button + "btn-secondary" id="back" onclick="on_back()") Назад
             div(class="row justify-content-center")
                 img(class="rounded align-self-center book-img" src= book_cover)
-            if book_taken
+            if book_part
                 h5 &#128308; На руках
                 p
-                    small Будет возвращена #{return_date}
+                    small Шаг: #{book_part.min_step} - #{book_part.max_step}
                 p
-                    small Взял #{holder}
+                    small Начальная цена: #{book_part.start_cost}
             else
                 h5 &#128994; В наличии
-            if taken_by_me
-                button(type="button" class=button + "btn-warning" id="return" onclick="on_return()") Вернуть
-            else if !book_taken
-                button(type="button" class=button + "btn-success" id="take" onclick="on_take()") Взять
-                if is_admin
-                    button(type="button" class=button + "btn-warning" id="edit" data-toggle="modal" data-target="#book_modal") Редактировать
-                    include ./book_modal.pug
-
             if is_admin
+                if book_part
+                    button(type="button" class=button + "btn-warning" id="return" onclick="on_return()") Снять
+                else
+                    button(type="button" class=button + "btn-success" id="take" data-toggle="modal" data-target="#take_modal") Выставить
+                    include ./take_modal.pug
+                button(type="button" class=button + "btn-warning" id="edit" data-toggle="modal" data-target="#book_modal") Редактировать
+                include ./book_modal.pug
                 button(type="button" class=button + "btn-danger" id="delete" onclick="on_delete()") Удалить
         div(class="col-9 v-lite")
             div(class="row high-20vh")

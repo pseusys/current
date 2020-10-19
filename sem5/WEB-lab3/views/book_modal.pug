@@ -10,23 +10,40 @@ div(class="modal fade" id="book_modal" tabindex="-1" role="dialog" aria-labelled
             div(class="modal-body")
                 form
                     div(class="form-group")
-                        label(for="book_name_input") Название книги
-                        input(type="text" class="form-control" id="book_name_input" placeholder="Название" value= book_name)
+                        label(for="book_name") Название книги
+                        input(type="text" class="form-control" id="book_name" placeholder="Название" value= book_name)
                         div(class="invalid-feedback") Название не может быть пустым!
                     div(class="form-group")
-                        label(for="book_author_input") Автор книги
-                        input(type="text" class="form-control" id="book_author_input" placeholder="Автор" value= book_author)
+                        label(for="book_author") Автор книги
+                        input(type="text" class="form-control" id="book_author" placeholder="Автор" value= book_author)
                         div(class="invalid-feedback") Имя автора не может быть пустым!
                     div(class="form-group")
-                        label(for="book_date_input") Дата публикации
-                        input(type="date" class="form-control" id="book_date_input" value= book_publication)
+                        label(for="book_date") Дата публикации
+                        input(type="date" class="form-control" id="book_date" value= book_publication)
                         div(class="invalid-feedback") Дата публикации не может быть пустой!
                     div(class="form-group")
-                        label(for="book_description_input") Описание книги (не обязательно)
-                        textarea(class="form-control" id="book_description_input" rows="3")= book_description
+                        label(for="book_description") Описание книги (не обязательно)
+                        textarea(class="form-control" id="book_description" rows="3")= book_description
                     div(class="form-group")
-                        label(for="book_cover_input") Обложка книги (не обязательно)
-                        input(type="file" class="form-control-file" id="book_cover_input" value= book_cover)
+                        label(for="book_cover") Обложка книги (не обязательно)
+                        input(type="file" class="form-control-file" id="book_cover" val= book_cover)
+                    hr
+                    div(class="form-check")
+                        input(class="form-check-input" type="checkbox" id="part_input" checked= !!book_part onchange="toggle_part()")
+                        label(class="form-check-label" for="part_input") Книга учасивует в торгах
+                    div(id="part_container")
+                        div(class="form-group")
+                            label(for="min_step") Минимальный шаг
+                            input(type="number" class="form-control" id="min_step" disabled= !book_part placeholder="Минимальный шаг" value= (!!book_part ? book_part.min_step : ""))
+                            div(class="invalid-feedback") Минимальный шаг не может быть пустым!
+                        div(class="form-group")
+                            label(for="max_step") Максимальный шаг
+                            input(type="number" class="form-control" id="max_step" disabled= !book_part placeholder="Максимальный шаг" value= (!!book_part ? book_part.max_step : ""))
+                            div(class="invalid-feedback") Максимальный шаг не может быть пустым!
+                        div(class="form-group")
+                            label(for="start_cost") Начальная цена
+                            input(type="number" class="form-control" id="start_cost" disabled= !book_part placeholder="Начальная цена" value= (!!book_part ? book_part.start_cost : ""))
+                            div(class="invalid-feedback") Начальная цена не может быть пустой!
             div(class="modal-footer")
                 button(type="button" class="btn btn-secondary" data-dismiss="modal") Закрыть
                 button(type="button" class="btn btn-primary" id="modal_book_save" onclick="on_modal_book_save(" + book_code + ")") Сохранить

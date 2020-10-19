@@ -1,5 +1,7 @@
 module.exports.configure = function (server) {
     const library = require('./library');
+    const population = require('./population');
+    const settings = require('./settings');
 
 
 
@@ -27,18 +29,29 @@ module.exports.configure = function (server) {
         if (!book) return res.render("404", {cause: "Книга с кодом " + code + " не существует."});
 
         return res.render("book", {
-            return_date: book.taken ? (new Date(book.taken.return)).toLocaleDateString("ru") : undefined,
-            taken_by_me: book.taken ? (book.taken.reader === req.user.name) : book.taken,
             holder: req.user.name,
             is_admin: req.user.is_admin,
 
             book_code: book.code,
             book_name: book.name,
             book_cover: book.cover,
-            book_taken: book.taken,
+            book_part: book.part,
             book_author: book.author,
             book_description: book.description,
             book_publication: book.publication
+        });
+    });
+
+    server.get("/users", (req, res) => {
+        return res.render("users", {
+            is_admin: req.user.is_admin,
+            users: population.get_users()
+        });
+    });
+
+    server.get("/settings", (req, res) => {
+        return res.render("settings", {
+            settings: settings.read_settings()
         });
     });
 
@@ -46,8 +59,9 @@ module.exports.configure = function (server) {
         return res.render("lib", {
             user_name: req.user.name,
             is_admin: req.user.is_admin,
-            all_books: library.get_books_sorted(req.query.filter),
-            user_books: library.get_user_books(req.user)
+            user_part: req.user.part,
+            user_money: req.user.money,
+            all_books: library.get_books_sorted(req.query.filter)
         });
     });
 

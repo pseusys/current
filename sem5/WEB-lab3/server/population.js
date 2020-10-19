@@ -3,21 +3,21 @@ const path = require('path');
 
 
 
-function get_users() {
-    const user_book = fs.readFileSync(path.join(__dirname, "../storage/users.json"));
-    return JSON.parse(user_book.toString());
-}
-
 function set_users(users) {
     const user_string = JSON.stringify(users);
     fs.writeFileSync(path.join(__dirname, "../storage/users.json"), user_string);
 }
 
+module.exports.get_users = function () {
+    const user_book = fs.readFileSync(path.join(__dirname, "../storage/users.json"));
+    return JSON.parse(user_book.toString());
+}
 
 
-module.exports.get_user = function(username, password) {
-    const users = get_users();
-    for (const user of users) if (user.name === username) if (check_pass(username, password)) return user;
+
+module.exports.get_user = function(username, password = undefined) {
+    const users = module.exports.get_users();
+    for (const user of users) if (user.name === username) if (!password || check_pass(username, password)) return user;
     return false;
 }
 
@@ -29,7 +29,7 @@ module.exports.set_user = function(username, password) {
         books: []
     }
 
-    const users = get_users();
+    const users = module.exports.get_users();
     for (const user of users) if (user.name === username) return false;
     users.push(user);
     set_users(users);
@@ -39,7 +39,7 @@ module.exports.set_user = function(username, password) {
 }
 
 module.exports.edit_user = function(user) {
-    const users = get_users();
+    const users = module.exports.get_users();
     for (let i = 0; i < users.length; i++) if (users[i].name === user.name) {
         users[i] = user;
         set_users(users);
@@ -49,7 +49,7 @@ module.exports.edit_user = function(user) {
 }
 
 module.exports.delete_user = function(user) {
-    const users = get_users();
+    const users = module.exports.get_users();
     for (let i = 0; i < users.length; i++) if (users[i].name === user.name) {
         if (delete_pass(user.name)) {
             users.splice(i, 1);

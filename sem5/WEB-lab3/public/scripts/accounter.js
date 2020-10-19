@@ -26,14 +26,14 @@ function signout(onsuccess = undefined, onerror = undefined) {
 
 
 
-function return_book(old_book, onsuccess = undefined, onerror = undefined) {
-    $.ajax({url: "/user", type: "PUT", data: "give-book=" + old_book})
-        .done(function(result) { if (onsuccess) onsuccess(result ? JSON.parse(result) : "") })
+function part_user(part, user = undefined, onsuccess = undefined, onerror = undefined) {
+    $.post("/users", {part: part, username: user})
+        .done(function(result) { if (onsuccess) onsuccess(result) })
         .fail(function(jqXHR) { if (onerror) onerror(jqXHR.responseText) });
 }
 
-function take_book(new_book, onsuccess = undefined, onerror = undefined) {
-    $.ajax({url: "/user", type: "PUT", data: "take-book=" + new_book})
-        .done(function(result) { if (onsuccess) onsuccess(result ? JSON.parse(result) : "") })
+function money_user(money, user = undefined, onsuccess = undefined, onerror = undefined) {
+    $.post("/users", {money: money, username: user})
+        .done(function(result) { if (onsuccess) onsuccess(result) })
         .fail(function(jqXHR) { if (onerror) onerror(jqXHR.responseText) });
 }

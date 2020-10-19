@@ -13,9 +13,9 @@ block scripts
 block content
     div(class="row high-20vh")
         div(class="col-2 v-lite")
+            button(type="button" class=button + "btn-warning" id="users" onclick="on_users()") Пользователи
             if is_admin
-                button(type="button" class=button + "btn-warning" id="push" onclick="on_push()") Архивировать
-                button(type="button" class=button + "btn-danger" id="pull" onclick="on_pull()") Восстановить
+                button(type="button" class=button + "btn-warning" id="pull" onclick="on_settings()") Настройки
                 button(type="button" class=button + "btn-success" id="add" data-toggle="modal" data-target="#book_modal") Добавить
                 include ./book_modal.pug
         div(class="col-8 my-auto")
@@ -33,21 +33,24 @@ block content
                         div(class="col-2 v-lite")
                             div(class="row justify-content-center")
                                 img(class="book-tmb img-thumbnail align-self-center rounded" src= book.cover)
-                            if book.taken
-                                button(type="button" class=button + "btn-danger" onclick="on_open(" + book.code + ")")= book.name
+                            if (book.part || book.owner)
+                                if book.part
+                                    button(type="button" class= button + "btn-warning" onclick="on_open(" + book.code + ")")= book.name
+                                if book.owner
+                                    button(type="button" class= button + "btn-danger" onclick="on_open(" + book.code + ")")=book.name
                             else
-                                button(type="button" class=button + "btn-success" onclick="on_open(" + book.code + ")")=book.name
+                                button(type="button" class= button + "btn-success" onclick="on_open(" + book.code + ")")=book.name
             else
                 div(class="row justify-content-center high-75vh")
                     h1(class="text-center align-self-center") Библиотека пока пуста!
     div(class="row high-5vh h-lite")
         form
             div(class="form-check form-check-inline")
-                input(class="form-check-input" type="radio" name="optradio" id="none" checked)
-                label(class="form-check-label" for="none") Все
+                input(class="form-check-input" type="radio" name="optradio" id="all" checked)
+                label(class="form-check-label" for="all") Все
             div(class="form-check form-check-inline")
-                input(class="form-check-input" type="radio" name="optradio" id="available")
-                label(class="form-check-label" for="available") В наличии
+                input(class="form-check-input" type="radio" name="optradio" id="on-sale")
+                label(class="form-check-label" for="on-sale") Продаются
             div(class="form-check form-check-inline")
-                input(class="form-check-input" type="radio" name="optradio" id="return-date")
-                label(class="form-check-label" for="return-date") Скоро будут
+                input(class="form-check-input" type="radio" name="optradio" id="sold")
+                label(class="form-check-label" for="sold") Куплены

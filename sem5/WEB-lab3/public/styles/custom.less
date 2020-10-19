@@ -24,8 +24,9 @@
 
 
 .v(@x: .5rem) {
-    * + * {
+    & > * + * {
         margin-top: @x / 5 * 3 !important;
+        margin-bottom: 0 !important;
     }
     margin-top: @x !important;
     margin-bottom: @x !important;
@@ -42,6 +43,7 @@
 .h(@x: .5rem) {
     & > * + * {
         margin-left: @x / 5 * 3 !important;
+        margin-right: 0 !important;
     }
 
     margin-left: @x !important;

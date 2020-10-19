@@ -2,17 +2,18 @@ Following objects are transmitted via app:
 
 BOOK OBJECT:
 {
-    "name": "STRING",                                   // book name
-    "cover": "PATH",                                    // path to book cover picture relative to static folder root
-    "code": "NUMBER",                                   // book authentication code
-    "author": "STRING",                                 // author name
-    "publication": "DATE",                              // date of publication
-    "description": "STRING",                            // description of the book
-    "taken": {                                          // if book is taken
-        "reader": "STRING",                             // name of the reader
-        "taken": "DATE",                                // taken date
-        "return": "DATE"                                // promised return date (set automatically to the next month)
-    } OR false                                          // if book available
+    "name": "STRING",
+    "cover": "PATH",
+    "code": "NUMBER",
+    "author": "STRING",
+    "publication": "DATE",
+    "description": "STRING",
+    "part": {
+        "start_cost": "NUMBER",
+        "min_step": "NUMBER",
+        "max_step": "NUMBER"
+    } OR false,
+    "owner": "STRING" or false
 }
 
 USER OBJECT:
@@ -20,6 +21,7 @@ USER OBJECT:
     "name": "STRING",
     "is_admin": "BOOLEAN",
     "registration": "DATE",
+    "part": "BOOLEAN",
     "books": [
         "NUMBER",
         ...

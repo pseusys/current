@@ -3,7 +3,6 @@ module.exports.configure = function (server) {
     const LocalStrategy = require('passport-local').Strategy;
 
     const population = require('./population');
-    const library = require('./library');
 
     server.use(require('cookie-parser')());
     server.use(require('express-session')({
@@ -84,6 +83,7 @@ module.exports.configure = function (server) {
      * @param take-book = the book user has taken
      * @param give-book = the book user has returned
      */
+    /*
     server.put("/user", (req, res) => {
         const user = req.user;
 
@@ -107,6 +107,7 @@ module.exports.configure = function (server) {
         if (new_books) user.books = new_books;
         res.end(population.edit_user(user));
     });
+    */
 
     server.get("/user", (req, res) => {
         res.json(req.user).end();
@@ -115,6 +116,19 @@ module.exports.configure = function (server) {
     server.delete("/user", (req, res) => {
         population.delete_user(req.user);
         req.logout();
+        res.end();
+    });
+
+
+
+    server.post("/users", (req, res) => {
+        const username = req.body.username ? req.body.username : req.user.name;
+        const user = population.get_user(username);
+        if (user) {
+            if (req.body.part) user.part = req.body.part === "true";
+            if (req.body.money) user.money = Number.parseInt(req.body.money);
+            population.edit_user(user);
+        }
         res.end();
     });
 }

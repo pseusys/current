@@ -19,15 +19,10 @@ function on_logout() {
     })
 }
 
-function on_push() {
-    push_books(() => {
-        alert("Состояние библиотеки успешно сохранено!")
-    });
+function on_users() {
+    window.location = "/users";
 }
 
-function on_pull() {
-    pull_books(() => {
-        alert("Состояние библиотеки успешно загружено!")
-        window.location = window.location.href;
-    });
+function on_settings() {
+    window.location = "/settings";
 }

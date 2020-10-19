@@ -13,7 +13,7 @@ function collect_values_if_possible(...ids) {
         return this;
     });
     if (valid) {
-        const result = {};
+        const result = Object();
         for (const field of necessary_fields) result[field.id] = field.value;
         return result;
     }

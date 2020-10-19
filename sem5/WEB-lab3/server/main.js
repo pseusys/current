@@ -25,6 +25,6 @@ auth.configure(server);
 const routes = require('./routs');
 routes.configure(server);
 
-app.use("/", server).listen(3000, () => {
-    console.log("Server started at: http://localhost:3000/");
+app.use("/", server).listen(3001, () => {
+    console.log("Server started at: http://localhost:3001/");
 });
