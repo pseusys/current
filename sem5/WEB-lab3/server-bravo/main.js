@@ -34,5 +34,5 @@ app.use("/", server);
 
 const httpsServer = https.createServer({key: privateKey, cert: certificate}, app);
 httpsServer.listen(8081, () => {
-    console.log("Server started at: http://localhost:8081/");
+    console.log("Server started at: https://localhost:8081/");
 });
