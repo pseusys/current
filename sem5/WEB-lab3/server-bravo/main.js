@@ -8,9 +8,9 @@ const privateKey = fs.readFileSync(path.join(__dirname, "../keys/server.key"));
 const certificate = fs.readFileSync(path.join(__dirname, "../keys/server.crt"));
 const app = express();
 
-app.use(express.static(path.join(__dirname, "../public-alpha")));
+app.use(express.static(path.join(__dirname, "../src")));
 app.set("view engine", "pug");
-app.set("views", "./views");
+app.set("views", "./views-bravo");
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());

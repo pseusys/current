@@ -8,9 +8,9 @@ const privateKey = fs.readFileSync(path.join(__dirname, "../keys/server.key"));
 const certificate = fs.readFileSync(path.join(__dirname, "../keys/server.crt"));
 const app = express();
 
-app.use(express.static(path.join(__dirname, "../public")));
+app.use(express.static(path.join(__dirname, "../public-alpha")));
 app.set("view engine", "pug");
-app.set("views", "./views");
+app.set("views", "./views-alpha");
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
@@ -33,4 +33,6 @@ routes.configure(server);
 app.use("/", server);
 
 const httpsServer = https.createServer({key: privateKey, cert: certificate}, app);
-httpsServer.listen(8080);
+httpsServer.listen(8081, () => {
+    console.log("Server started at: http://localhost:8081/");
+});

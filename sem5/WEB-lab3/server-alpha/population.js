@@ -5,11 +5,11 @@ const path = require('path');
 
 function set_users(users) {
     const user_string = JSON.stringify(users);
-    fs.writeFileSync(path.join(__dirname, "../storage/users.json"), user_string);
+    fs.writeFileSync(path.join(__dirname, "../storage-alpha/users.json"), user_string);
 }
 
 module.exports.get_users = function () {
-    const user_book = fs.readFileSync(path.join(__dirname, "../storage/users.json"));
+    const user_book = fs.readFileSync(path.join(__dirname, "../storage-alpha/users.json"));
     return JSON.parse(user_book.toString());
 }
 
@@ -63,13 +63,13 @@ module.exports.delete_user = function(user) {
 
 
 function get_passes() {
-    const passwords = fs.readFileSync(path.join(__dirname, "../storage/passwords.json"));
+    const passwords = fs.readFileSync(path.join(__dirname, "../storage-alpha/passwords.json"));
     return JSON.parse(passwords.toString());
 }
 
 function set_passes(passes) {
     const passwords = JSON.stringify(passes);
-    fs.writeFileSync(path.join(__dirname, "../storage/passwords.json"), passwords);
+    fs.writeFileSync(path.join(__dirname, "../storage-alpha/passwords.json"), passwords);
 }
 
 function check_pass(username, password) {

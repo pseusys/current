@@ -6,7 +6,7 @@ const coverage = require('./coverage');
 
 
 function get_all_books () {
-    const library = fs.readFileSync(path.join(__dirname, "../storage/lib.json"));
+    const library = fs.readFileSync(path.join(__dirname, "../storage-alpha/lib.json"));
     const current_state = JSON.parse(library.toString());
     current_state.sort((a, b) => {return a.code - b.code});
     return current_state;
@@ -14,7 +14,7 @@ function get_all_books () {
 
 function set_all_books (state) {
     const lib = JSON.stringify(state);
-    fs.writeFileSync(path.join(__dirname, "../storage/lib.json"), lib);
+    fs.writeFileSync(path.join(__dirname, "../storage-alpha/lib.json"), lib);
 }
 
 

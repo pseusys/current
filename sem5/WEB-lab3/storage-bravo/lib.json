@@ -1,1 +1,30 @@
-[{"name":"Братство Кольца","cover":"./covers/LOTR1.jpeg","code":0,"author":"Дж. Р. Р. Толкин","publication":"1955-10-20","description":"Начало путешествия хоббитов","taken":false,"part":false},{"name":"Две Башни","cover":"./covers/LOTR2.jpg","code":1,"author":"Дж. Р. Р. Толкин","publication":"1955-10-20","description":"Сере динка путешествия хоббитов","part":false},{"name":"Возвращение Короля","cover":"./covers/LOTR3.jpg","code":2,"author":"Дж. Р. Р. Толкин","publication":"1955-10-20","description":"lollel","part":false}]
+[
+  {
+    "name": "Братство Кольца",
+    "cover": "./images/LOTR1.jpeg",
+    "code": 0,
+    "author": "Дж. Р. Р. Толкин",
+    "publication": "1955-10-20",
+    "description": "Начало путешествия хоббитов",
+    "taken": false,
+    "part": false
+  },
+  {
+    "name": "Две Башни",
+    "cover": "./images/LOTR2.jpg",
+    "code": 1,
+    "author": "Дж. Р. Р. Толкин",
+    "publication": "1955-10-20",
+    "description": "Сере динка путешествия хоббитов",
+    "part": false
+  },
+  {
+    "name": "Возвращение Короля",
+    "cover": "./images/LOTR3.jpg",
+    "code": 2,
+    "author": "Дж. Р. Р. Толкин",
+    "publication": "1955-10-20",
+    "description": "lollel",
+    "part": false
+  }
+]

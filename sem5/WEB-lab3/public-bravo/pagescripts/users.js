@@ -1,5 +1,5 @@
 $("input[type=checkbox]").change(function () {
-    part_user($(this).attr("id"), $(this).prop("checked"));
+    part_user($(this).prop("checked"), $(this).attr("id"));
 });
 
 function on_back () {

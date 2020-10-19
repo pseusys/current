@@ -5,5 +5,5 @@ function on_modal_delete_user() {
 }
 
 function on_money() {
-    part_user($("#money_input").val());
+    money_user($("#money_input").val());
 }

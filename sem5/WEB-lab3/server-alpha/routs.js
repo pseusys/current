@@ -59,8 +59,8 @@ module.exports.configure = function (server) {
         return res.render("lib", {
             user_name: req.user.name,
             is_admin: req.user.is_admin,
-            user_part: req.user.part,
-            user_money: req.user.money,
+            user_part: population.get_user(req.user.name).part,
+            user_money: population.get_user(req.user.name).money,
             all_books: library.get_books_sorted(req.query.filter)
         });
     });

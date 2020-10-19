@@ -5,11 +5,11 @@ const path = require('path');
 
 function write_settings (settings) {
     const lib = JSON.stringify(settings);
-    fs.writeFileSync(path.join(__dirname, "../storage-alpha/settings.json"), lib);
+    fs.writeFileSync(path.join(__dirname, "../storage-bravo/settings.json"), lib);
 }
 
 module.exports.read_settings = function () {
-    const library = fs.readFileSync(path.join(__dirname, "../storage-alpha/settings.json"));
+    const library = fs.readFileSync(path.join(__dirname, "../storage-bravo/settings.json"));
     return JSON.parse(library.toString());
 }
 
