@@ -10,22 +10,22 @@ block content
             div(class="row justify-content-center")
                 img(class="rounded align-self-center book-img" src= book_cover)
             if book_part
-                h5 &#128308; На руках
+                h5 &#128308; На торгах
                 p
                     small Шаг: #{book_part.min_step} - #{book_part.max_step}
                 p
                     small Начальная цена: #{book_part.start_cost}
             else
-                h5 &#128994; В наличии
+                h5 &#128994; Не продаётся
             if is_admin
                 if book_part
                     button(type="button" class=button + "btn-warning" id="return" onclick="on_return()") Снять
                 else
                     button(type="button" class=button + "btn-success" id="take" data-toggle="modal" data-target="#take_modal") Выставить
                     include ./take_modal.pug
-                button(type="button" class=button + "btn-warning" id="edit" data-toggle="modal" data-target="#book_modal") Редактировать
-                include ./book_modal.pug
-                button(type="button" class=button + "btn-danger" id="delete" onclick="on_delete()") Удалить
+                    button(type="button" class=button + "btn-warning" id="edit" data-toggle="modal" data-target="#book_modal") Редактировать
+                    include ./book_modal.pug
+                    button(type="button" class=button + "btn-danger" id="delete" onclick="on_delete()") Удалить
         div(class="col-9 v-lite")
             div(class="row high-20vh")
                 div(class="col-12")

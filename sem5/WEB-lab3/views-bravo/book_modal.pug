@@ -2,17 +2,17 @@ div(class="modal fade" id="book_modal" tabindex="-1" role="dialog" aria-labelled
     div(class="modal-dialog modal-dialog-centered" role="document")
         div(class="modal-content")
             div(class="modal-header")
-                h5(class="modal-title" id="book_modal_title") Информация о книге
+                h5(class="modal-title" id="book_modal_title") Информация о картине
                 button(class="close" data-dismiss="modal" aria-label="Close")
                     span(aria-hidden="true") &times;
             div(class="modal-body")
                 form
                     div(class="form-group")
-                        label(for="book_name") Название книги
+                        label(for="book_name") Название картины
                         input(type="text" class="form-control" id="book_name" placeholder="Название" value= book_name)
                         div(class="invalid-feedback") Название не может быть пустым!
                     div(class="form-group")
-                        label(for="book_author") Автор книги
+                        label(for="book_author") Автор картины
                         input(type="text" class="form-control" id="book_author" placeholder="Автор" value= book_author)
                         div(class="invalid-feedback") Имя автора не может быть пустым!
                     div(class="form-group")
@@ -20,10 +20,10 @@ div(class="modal fade" id="book_modal" tabindex="-1" role="dialog" aria-labelled
                         input(type="date" class="form-control" id="book_date" value= book_publication)
                         div(class="invalid-feedback") Дата публикации не может быть пустой!
                     div(class="form-group")
-                        label(for="book_description") Описание книги (не обязательно)
+                        label(for="book_description") Описание картины (не обязательно)
                         textarea(class="form-control" id="book_description" rows="3")= book_description
                     div(class="form-group")
-                        label(for="book_cover") Обложка книги (не обязательно)
+                        label(for="book_cover") Превью (не обязательно)
                         input(type="file" class="form-control-file" id="book_cover" val= book_cover)
                     hr
                     div(class="form-check")

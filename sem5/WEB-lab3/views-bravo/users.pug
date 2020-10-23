@@ -15,6 +15,7 @@ block content
                 th(class="results_table_index" scope="col") Торгует
                 th(class="results_table_test" scope="col") Имя
                 th(class="results_table_result" scope="col") Место жительства
+                th(class="results_table_result" scope="col") Деньги
         tbody
             for user in users
                 tr
@@ -24,3 +25,4 @@ block content
                                 input(class="form-check-input position-static" type="checkbox" id= user.name checked= !!user.part aria-label="Участвует")
                     td= user.name
                     td= user.location
+                    td= !user.money ? 0 : user.money

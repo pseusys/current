@@ -31,6 +31,8 @@ function take_book(new_book, params, onsuccess = undefined, onerror = undefined)
 
 
 function assemble_participation(min_step, max_step, start_cost) {
+    min_step = Number.parseInt(min_step);
+    max_step = Number.parseInt(max_step);
     if (min_step < max_step) {
         return {
             min_step: min_step,

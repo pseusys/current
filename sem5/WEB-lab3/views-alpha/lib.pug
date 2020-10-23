@@ -1,7 +1,7 @@
 extends base
 
 block header
-    title Библиотека
+    title Аукцион
 
 block scripts
     script(src="pagescripts/lib.js")
@@ -19,10 +19,10 @@ block content
                 button(type="button" class=button + "btn-success" id="add" data-toggle="modal" data-target="#book_modal") Добавить
                 include ./book_modal.pug
         div(class="col-8 my-auto")
-            h1(class="text-center" id="lib_logo") Библиотека
+            h1(class="text-center" id="lib_logo") Аукцион
         div(class="col-2 v-lite")
             h5(class="text-center")= user_name
-            button(type="button" class=button + "btn-primary" id="reader" data-toggle="modal" data-target="#reader_modal") Читатель
+            button(type="button" class=button + "btn-primary" id="reader" data-toggle="modal" data-target="#reader_modal") Пользователь
             button(type="button" class=button + "btn-secondary" id="logout" onclick="on_logout()") Выйти
             include ./user_modal.pug
     div(class="row high-75vh overflown-y")
@@ -42,7 +42,7 @@ block content
                                 button(type="button" class= button + "btn-success" onclick="on_open(" + book.code + ")")=book.name
             else
                 div(class="row justify-content-center high-75vh")
-                    h1(class="text-center align-self-center") Библиотека пока пуста!
+                    h1(class="text-center align-self-center") Здесь пока ничего нет!
     div(class="row high-5vh h-lite")
         form
             div(class="form-check form-check-inline")
