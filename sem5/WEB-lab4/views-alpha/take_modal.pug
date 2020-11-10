@@ -1,0 +1,27 @@
+script(src="pagescripts/take_modal.js")
+
+div(class="modal fade" id="take_modal" tabindex="-1" role="dialog" aria-labelledby="user_modal_title" aria-hidden="true")
+    div(class="modal-dialog modal-dialog-centered" role="document")
+        div(class="modal-content")
+            div(class="modal-header")
+                h5(class="modal-title" id="user_modal_title") Выставить на аукцион
+                button(class="close" data-dismiss="modal" aria-label="Close")
+                    span(aria-hidden="true") &times;
+            div(class="modal-body")
+                div(class="container-fluid")
+                    form
+                        div(class="form-group")
+                            label(for="min_step_input") Минимальный шаг
+                            input(type="number" class="form-control" id="min_step_input" placeholder="Минимальный шаг")
+                            div(class="invalid-feedback") Минимальный шаг не может быть пустым!
+                        div(class="form-group")
+                            label(for="max_step_input") Максимальный шаг
+                            input(type="number" class="form-control" id="max_step_input" placeholder="Максимальный шаг")
+                            div(class="invalid-feedback") Максимальный шаг не может быть пустым!
+                        div(class="form-group")
+                            label(for="start_cost_input") Начальная цена
+                            input(type="number" class="form-control" id="start_cost_input" placeholder="Начальная цена")
+                            div(class="invalid-feedback") Начальная цена не может быть пустой!
+            div(class="modal-footer")
+                button(type="button" class="btn btn-secondary" data-dismiss="modal") Закрыть
+                button(type="button" class="btn btn-primary" onclick="on_modal_take()") Добавить

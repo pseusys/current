@@ -1,0 +1,73 @@
+#basic {
+    background-color: BurlyWood;
+    background-image: url("../images/wood.png");
+    overflow: hidden;
+}
+
+.overflown-y {
+    overflow-y: auto;
+}
+
+.book-tmb {
+    width: auto;
+    height: 40vh !important;
+}
+.book-img {
+    width: 15vw;
+    height: auto;
+}
+
+.buttonier {
+    position: absolute !important;
+    bottom: 5%;
+    right: 5%;
+}
+
+#lib_logo {
+    font-weight: bold;
+}
+
+
+
+.v(@x: .5rem) {
+    & > * + * {
+        margin-top: @x / 5 * 3 !important;
+        margin-bottom: 0 !important;
+    }
+    margin-top: @x !important;
+    margin-bottom: @x !important;
+}
+.v-lite {
+    .v
+}
+.v-heavy {
+    .v(1rem)
+}
+
+
+
+.h(@x: .5rem) {
+    & > * + * {
+        margin-left: @x / 5 * 3 !important;
+        margin-right: 0 !important;
+    }
+
+    margin-left: @x !important;
+    margin-right: @x !important;
+}
+.h-lite {
+    .h
+}
+.h-heavy {
+    .h(1rem)
+}
+
+
+
+
+@heights: range(0vh, 100vh, 5);
+each(@heights, {
+    .high-@{value} {
+        height: @value;
+    }
+});

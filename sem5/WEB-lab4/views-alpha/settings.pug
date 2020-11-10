@@ -1,0 +1,24 @@
+extends base
+
+block header
+    title Настройки
+
+block scripts
+    script(src="pagescripts/settings.js")
+    script(src="scripts/setter.js")
+
+block content
+    div(class="row")
+        div(class="col-3 v-lite")
+            button(type="button" class=button + "btn-warning" id="users" onclick="on_back()") Назад
+        div(class="col-6")
+            h1(class="text-center") Настройки аукциона
+    div(class="row overflown-y")
+        div(class="offset-1 col-10")
+            form
+                for setting in settings
+                    div(class="form-group")
+                        label(for= setting.name)= setting.description
+                        input(type=setting.type class="form-control collectable" id= setting.name placeholder= setting.description value= setting.value)
+        div(class="offset-3 col-6")
+            button(type="button" class=button + "btn-success align-self-center" id="commit" onclick="on_commit()") Сохранить настройки
