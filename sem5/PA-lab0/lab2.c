@@ -5,19 +5,22 @@
 
 #define premier 1000000933
 #define array_upper_limit 1000
+#define element_multiplier 128
 
 void populate_array(unsigned int* arr, unsigned int size) {
     srand(time(NULL));
-    printf("Array (length %d): [ ", size);
+    //printf("Array (length %d): [ ", size);
     for (unsigned int i = 0; i < size; i++) {
         arr[i] = (unsigned int) rand() % array_upper_limit;
-        printf("%d ", arr[i]);
+        //printf("%d ", arr[i]);
     }
-    printf("]\n");
+    //printf("]\n");
 }
 
 void not_array(unsigned int* arr, unsigned int size) {
-    for (unsigned int i = 0; i < size; i++) arr[i]--;
+    for (unsigned int i = 0; i < size; i++) {
+        arr[i] /= 7;
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -32,10 +35,10 @@ int main(int argc, char* argv[]) {
 
     if (ProcRank == 0) {
         double start_time = MPI_Wtime();
-        printf ("Root process started at %lf\n", start_time);
+        //printf ("Root process started at %lf\n", start_time);
 
-        unsigned int array_size = (1u << (unsigned int) work_nodes) - 1u;
-        printf("Calculated array size : %d\n", array_size);
+        unsigned int array_size = ((1u << (unsigned int) work_nodes) - 1u) * element_multiplier;
+        //printf("Calculated array size : %d\n", array_size);
 
         unsigned int* array = (unsigned int*) malloc(array_size * sizeof(unsigned int));
         populate_array(array, array_size);
@@ -51,21 +54,20 @@ int main(int argc, char* argv[]) {
             adv = (adv + premier) % work_nodes;
         }
 
-        printf("]\n");
         for (int i = 1; i < ProcNum; i++)
-            MPI_Recv(&(array[local_sizes[i - 1] - 1]), local_sizes[i - 1], MPI_UNSIGNED, MPI_ANY_SOURCE, i, MPI_COMM_WORLD, &Status);
+            MPI_Recv(&(array[local_sizes[i - 1] - 1 * (element_multiplier > 1 ? 2 : 1)]), local_sizes[i - 1], MPI_UNSIGNED, MPI_ANY_SOURCE, i, MPI_COMM_WORLD, &Status);
 
         free(local_sizes);
 
-        printf("Array (length %d): [ ", array_size);
-        for (unsigned int i = 0; i < array_size; i++) printf("%d ", array[i]);
-        printf("]\n");
+        //printf("Array (length %d): [ ", array_size);
+        //for (unsigned int i = 0; i < array_size; i++) printf("%d ", array[i]);
+        //printf("]\n");
 
         free(array);
 
         double end_time = MPI_Wtime();
-        printf("Root process ended at %lf\n", end_time);
-        printf("All operations took %lf\n", end_time - start_time);
+        //printf("Root process ended at %lf\n", end_time);
+        printf("For %d processes and %d elements it took %lf sec.\n", ProcNum, array_size, end_time - start_time);
 
     } else {
         unsigned int local_size;

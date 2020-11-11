@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
         }
     } else {
         double* arr = (double*) malloc(10 * sizeof(double));
-        MPI_Send(&ProcRank,1,MPI_INT,0,ProcRank, MPI_COMM_WORLD); //MPI_Send(&ProcRank,1,MPI_INT,0,0, MPI_COMM_WORLD);
+        MPI_Send(&ProcRank,1,MPI_INT, 0, ProcRank, MPI_COMM_WORLD); //MPI_Send(&ProcRank,1,MPI_INT,0,0, MPI_COMM_WORLD);
     }
 
     MPI_Finalize();

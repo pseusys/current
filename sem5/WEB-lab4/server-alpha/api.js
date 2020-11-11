@@ -1,12 +1,13 @@
-module.exports.configure = function (server) {
-    const formidable = require('formidable');
+// @flow
 
-    const coverage = require('./coverage');
-    const library = require('./library');
-    const settings = require('./settings');
+const https = require('https');
+const formidable = require('formidable');
 
+const coverage = require('./coverage');
+const library = require('./library');
+const settings = require('./settings');
 
-
+module.exports.configure = function (server: https.Server): null {
     /** Accepts:
      * @param method = one of the following:
      *      book (expects 'code' parameter) = get book with following code

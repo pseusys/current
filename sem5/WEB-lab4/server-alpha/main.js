@@ -1,8 +1,11 @@
+// @flow
+
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const https = require('https');
+const domain = require('domain');
 
 const privateKey = fs.readFileSync(path.join(__dirname, "../keys/server.key"));
 const certificate = fs.readFileSync(path.join(__dirname, "../keys/server.crt"));
@@ -17,9 +20,13 @@ app.use(bodyParser.json());
 
 const server = express.Router();
 
+const log = require('./logger');
+log.define();
+
 server.use((req, res, next) => {
-    console.log("Called", req.url, "with method", req.method, "at",
-        (new Date()).toLocaleDateString("ru"), (new Date()).toLocaleTimeString("ru"), "processing...");
+    log.logger.http("Called " + req.url + " with method " + req.method + " at " +
+        (new Date()).toLocaleDateString("ru") + " " + (new Date()).toLocaleTimeString("ru") +
+        " processing...");
     return next();
 });
 
@@ -32,9 +39,15 @@ routes.configure(server);
 
 app.use("/", server);
 
-const httpsServer = https.createServer({key: privateKey, cert: certificate}, app);
-const trade = require('./trade');
-trade.setup_io(httpsServer);
-httpsServer.listen(8081, () => {
-    console.log("Server started at: https://localhost:8081/");
+const d = domain.create();
+d.on("error", (e) => {
+    log.logger.error("Домен перехватил ошибку " + e);
+});
+d.run(() => {
+    const httpsServer = https.createServer({key: privateKey, cert: certificate}, app);
+    const trade = require('./trade');
+    trade.setup_io(httpsServer);
+    httpsServer.listen(8081, () => {
+        log.logger.info("Server started at: https://localhost:8081/");
+    });
 });

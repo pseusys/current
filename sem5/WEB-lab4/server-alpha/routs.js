@@ -1,10 +1,10 @@
+// @flow
+
+const library = require('./library');
+const population = require('./population');
+const settings = require('./settings');
+
 module.exports.configure = function (server) {
-    const library = require('./library');
-    const population = require('./population');
-    const settings = require('./settings');
-
-
-
     server.use((req, res, next) => {
         if (req.user) {
             if (req.url !== "/login") return next();

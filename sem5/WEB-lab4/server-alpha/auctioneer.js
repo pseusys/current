@@ -1,6 +1,9 @@
+// @flow
+
 const library = require('./library');
 const trader = require('./trade');
 const population = require('./population');
+const log = require('./logger');
 
 let settings;
 let books;
@@ -16,27 +19,35 @@ function sec(s) {
     return new Promise(resolve => setTimeout(resolve, s * 1000));
 }
 
-module.exports.time = function () {
+function runAtDate(date, func) {
+    const diff = date - new Date();
+    if (diff > 0x7FFFFFFF) // setTimeout limit is MAX_INT32=(2^31-1)
+        setTimeout(() => { runAtDate(date, func); }, 0x7FFFFFFF);
+    else
+        setTimeout(func, diff);
+}
+
+module.exports.time = function (): number {
     return time;
 }
 
 module.exports.auct = function (set) {
     time = set.date_time;
-    let date_diff = Date.parse(time) - new Date();
+    const date = Date.parse(time);
+    let date_diff = date - new Date();
     if (date_diff < 0) return;
 
-    setTimeout(() => {
+    runAtDate(date, () => {
         settings = set;
         books = library.get_books_sorted("on-sale");
-        trade().then(() => {
-            console.log("Trading ended.");
-        });
+        trade().catch((e) => { log.logger.error(e); })
+            .then(() => { log.logger.info("Trading ended successfully!"); });
     }, date_diff);
     trader.time(time);
 }
 
 module.exports.bet = function (user, money) {
-    console.log(user + " bets " + money);
+    trader.message(user + " bets " + money);
     const better = population.get_user(user);
     if ((better.money >= money) &&
         (money > current_bet) &&
@@ -49,7 +60,7 @@ module.exports.bet = function (user, money) {
         current_winner = better;
         trader.new_price(user, money);
 
-    } else if (better.money < money) trader.message("Your funds insufficient!");
+    } else if (better.money < money) trader.message("Funds insufficient!");
     else if (!bets_allowed) trader.message("Bets not allowed!");
     else if (money - current_bet < trades.min_step) trader.message("Minimal step underrun!");
     else if (money - current_bet > trades.max_step) trader.message("Maximal step overrun!");

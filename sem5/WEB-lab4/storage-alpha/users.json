@@ -1,1 +1,1 @@
-[{"name":"other","is_admin":false,"registration":"2020-09-25T20:15:11.554Z","books":[],"part":false},{"name":"milty","is_admin":true,"registration":"2020-10-17T20:25:59.554Z","books":[0,1,2,0,2,0,1],"part":true,"money":111}]
+[{"name":"other","is_admin":false,"registration":"2020-09-25T20:15:11.554Z","books":[],"part":false},{"name":"milty","is_admin":true,"registration":"2020-10-17T20:25:59.554Z","books":[0,1,2,0,2,0,1,2],"part":true,"money":101}]

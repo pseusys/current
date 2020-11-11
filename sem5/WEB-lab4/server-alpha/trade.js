@@ -1,4 +1,7 @@
+// @flow
+
 const auct = require('./auctioneer');
+const log = require('./logger');
 
 let io;
 
@@ -17,7 +20,7 @@ module.exports.setup_io = function (server) {
 
         socket.on("message", (message) => {
             const p = JSON.parse(message);
-            console.log(p.sender + " said: " + p.msg);
+            log.logger.info(p.sender + " said: " + p.msg);
         });
     });
 }
@@ -27,7 +30,7 @@ module.exports.setup_io = function (server) {
 function broadcast (event, data = {}) {
     const j = JSON.stringify(data);
     io.emit(event, j);
-    console.log(event + ": " + j);
+    log.logger.info(event + ": " + j);
 }
 
 module.exports.time = function (time) {

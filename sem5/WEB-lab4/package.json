@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "flow-remove-types ./server-alpha -d ./src",
+    "prepublish": "npm run build",
+    "flow": "flow"
   },
   "keywords": [],
   "author": "",
@@ -17,12 +19,17 @@
     "formidable": "^1.2.2",
     "passport": "^0.4.1",
     "passport-local": "^1.0.0",
-    "socket.io": "^2.3.0"
+    "rollbar": "^2.19.4",
+    "socket.io": "^2.3.0",
+    "winston": "^3.3.3",
+    "winston-transport": "^4.4.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.3",
     "@babel/preset-env": "^7.12.1",
     "del": "^6.0.0",
+    "flow-bin": "^0.137.0",
+    "flow-remove-types": "^2.137.0",
     "gulp-babel": "^8.0.0",
     "gulp-clean-css": "^4.3.0",
     "gulp-cli": "^2.3.0",
