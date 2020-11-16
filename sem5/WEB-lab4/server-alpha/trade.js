@@ -1,11 +1,13 @@
 // @flow
 
+const express = require('express');
+
 const auct = require('./auctioneer');
 const log = require('./logger');
 
 let io;
 
-module.exports.setup_io = function (server) {
+module.exports.setup_io = function (server: typeof express.Router): void {
     io = require('socket.io')(server);
 
     io.on("connection", (socket) => {
@@ -33,34 +35,34 @@ function broadcast (event, data = {}) {
     log.logger.info(event + ": " + j);
 }
 
-module.exports.time = function (time) {
+module.exports.time = function (time: string): void {
     broadcast("time", time);
 }
 
-module.exports.start = function () {
+module.exports.start = function (): void {
     broadcast("start");
 }
 
-module.exports.message = function (message) {
+module.exports.message = function (message: string): void {
     broadcast("message", { sender: "server", msg: message });
 }
 
-module.exports.new_book = function (book) {
+module.exports.new_book = function (book: { name: string, author: string }): void {
     broadcast("new_book", { name: book.name, author: book.author });
 }
 
-module.exports.trading = function (trades) {
+module.exports.trading = function (trades: {}): void {
     broadcast("trading", trades);
 }
 
-module.exports.countdown = function (interval) {
+module.exports.countdown = function (interval: number): void {
     broadcast("countdown", interval);
 }
 
-module.exports.new_price = function (user, money) {
+module.exports.new_price = function (user: string, money: number): void {
     broadcast("new_price", { user: user, money: money });
 }
 
-module.exports.over = function () {
+module.exports.over = function (): void {
     broadcast("over")
 }

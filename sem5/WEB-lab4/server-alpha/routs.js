@@ -1,10 +1,12 @@
 // @flow
 
+const express = require('express');
+
 const library = require('./library');
 const population = require('./population');
 const settings = require('./settings');
 
-module.exports.configure = function (server) {
+module.exports.configure = function (server: typeof express.Router) {
     server.use((req, res, next) => {
         if (req.user) {
             if (req.url !== "/login") return next();
@@ -26,21 +28,22 @@ module.exports.configure = function (server) {
         if (code === undefined) return res.render("404", {cause: "Неверный запрос."});
 
         const book = library.get_book(code);
+        const user = population.get_user(req.user.name);
         if (!book) return res.render("404", {cause: "Книга с кодом " + code + " не существует."});
 
         return res.render("book", {
             holder: req.user.name,
-            holder_money: population.get_user(req.user.name).money,
+            holder_money: (typeof user !== "boolean") ? user.money : 0,
             is_admin: req.user.is_admin,
 
-            book_owner: book.owner,
-            book_code: book.code,
-            book_name: book.name,
-            book_cover: book.cover,
-            book_part: book.part,
-            book_author: book.author,
-            book_description: book.description,
-            book_publication: book.publication
+            book_owner: (typeof book !== "boolean") ? book.owner : "",
+            book_code: (typeof book !== "boolean") ? book.code : -1,
+            book_name: (typeof book !== "boolean") ? book.name : "",
+            book_cover: (typeof book !== "boolean") ? book.cover : "",
+            book_part: (typeof book !== "boolean") ? book.part : false,
+            book_author: (typeof book !== "boolean") ? book.author : "",
+            book_description: (typeof book !== "boolean") ? book.description : "",
+            book_publication: (typeof book !== "boolean") ? book.publication : ""
         });
     });
 
@@ -58,8 +61,9 @@ module.exports.configure = function (server) {
     });
 
     server.get("/", (req, res) => {
-        const user = population.get_user(req.user.name);
         const books = [];
+        const user = population.get_user(req.user.name);
+        if (typeof user === "boolean") return res.end();
         for (const code of user.books) books.push(library.get_book(code));
         return res.render("lib", {
             user_name: req.user.name,

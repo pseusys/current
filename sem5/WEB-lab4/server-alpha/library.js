@@ -21,29 +21,30 @@ function set_all_books (state) {
 
 
 
-module.exports.get_book = function (book_code) {
+module.exports.get_book = function (book_code: number): boolean {
     for (const book of get_all_books()) if (book.code === book_code) return book;
     return false;
 }
 
-module.exports.set_book = function (book) {
+module.exports.set_book = function (book: { code: number }): boolean {
     const storage = get_all_books();
 
-    let previous = 0, new_code;
+    let previous = 0, new_code = -1;
     for (let i = 0; i < storage.length; i++) {
         if (storage[i].code - previous > 1) {
             new_code = previous + 1;
             break;
         } else previous = storage[i].code;
     }
-    if (previous === storage.length - 1) new_code = storage.length;
+    if (new_code === -1) new_code = storage.length;
     book.code = new_code;
 
     storage.push(book);
     set_all_books(storage);
+    return true;
 }
 
-module.exports.edit_book = function (book) {
+module.exports.edit_book = function (book: { cover: string, code: number }): boolean {
     const storage = get_all_books();
     for (let i = 0; i < storage.length; i++) if (storage[i].code === book.code) {
         if (storage[i].cover !== book.cover) coverage.remove_cover(storage[i].cover);
@@ -54,7 +55,7 @@ module.exports.edit_book = function (book) {
     return false;
 }
 
-module.exports.delete_book = function (book_code) {
+module.exports.delete_book = function (book_code: number): boolean {
     let storage = get_all_books();
     for (let i = 0; i < storage.length; i++) if (storage[i].code === book_code) {
         coverage.remove_cover(storage[i].cover);
@@ -72,7 +73,9 @@ module.exports.delete_book = function (book_code) {
  * @filter return-date = sort by return date, earlier first
  * @filter available = available books only
  */
-module.exports.get_books_sorted = function (condition = "all") {
+module.exports.get_books_sorted = function (condition: string = "all"):
+    Array<{ code: number, author: string, cover: string, name: string, owner: {} | boolean, part: { start_cost: number, min_step: number, max_step: number } | boolean }> {
+
     const all_books = get_all_books();
     const sorted_books = [];
     switch (condition) {
@@ -91,7 +94,7 @@ module.exports.get_books_sorted = function (condition = "all") {
 
 
 
-module.exports.give_book = function (code, part) {
+module.exports.give_book = function (code: number, part: {}): boolean {
     let storage = get_all_books();
     for (const book of storage) if (book.code === code) {
         if (!book.owner) book.part = part;
@@ -101,7 +104,7 @@ module.exports.give_book = function (code, part) {
     return false;
 }
 
-module.exports.return_book = function (code) {
+module.exports.return_book = function (code: number): boolean {
     let storage = get_all_books();
     for (const book of storage) if (book.code === code) {
         book.part = false;
@@ -111,7 +114,7 @@ module.exports.return_book = function (code) {
     return false;
 }
 
-module.exports.sell_book = function (code) {
+module.exports.sell_book = function (code: number): boolean {
     let storage = get_all_books();
     for (const book of storage) if (book.code === code) {
         book.owner = false;

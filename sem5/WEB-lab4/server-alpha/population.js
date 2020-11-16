@@ -5,30 +5,34 @@ const path = require('path');
 
 
 
-function set_users(users) {
+function set_users(users: Array<{ name: string, books: Array<number>, money: number, part: boolean | {} }>): void {
     const user_string = JSON.stringify(users);
     fs.writeFileSync(path.join(__dirname, "../storage-alpha/users.json"), user_string);
 }
 
-module.exports.get_users = function () {
+module.exports.get_users = function (): Array<{ name: string, books: Array<number>, money: number, part: boolean | {} }> {
     const user_book = fs.readFileSync(path.join(__dirname, "../storage-alpha/users.json"));
     return JSON.parse(user_book.toString());
 }
 
 
 
-module.exports.get_user = function(username, password = undefined) {
+module.exports.get_user = function(username: string, password?: string):
+    { money: number, books: Array<number>, name: string, part: boolean | {} } | boolean {
+
     const users = module.exports.get_users();
     for (const user of users) if (user.name === username) if (!password || check_pass(username, password)) return user;
     return false;
 }
 
-module.exports.set_user = function(username, password) {
+module.exports.set_user = function(username: string, password: string): {} | boolean {
     const user = {
         name: username,
         is_admin: false,
         registration: new Date(),
-        books: []
+        books: [],
+        money: 0,
+        part: false
     }
 
     const users = module.exports.get_users();
@@ -40,7 +44,7 @@ module.exports.set_user = function(username, password) {
     return user;
 }
 
-module.exports.edit_user = function(user) {
+module.exports.edit_user = function(user: { name: string, books: Array<number>, money: number, part: boolean | {} }): boolean {
     const users = module.exports.get_users();
     for (let i = 0; i < users.length; i++) if (users[i].name === user.name) {
         users[i] = user;
@@ -50,7 +54,7 @@ module.exports.edit_user = function(user) {
     return false;
 }
 
-module.exports.delete_user = function(user) {
+module.exports.delete_user = function(user: { name: string }): boolean {
     const users = module.exports.get_users();
     for (let i = 0; i < users.length; i++) if (users[i].name === user.name) {
         if (delete_pass(user.name)) {

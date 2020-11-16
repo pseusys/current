@@ -3,18 +3,8 @@ extends base
 block header
     title Аукцион
 
-block meta_header
-    link(rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css")
-    script(src="https://code.jquery.com/ui/1.12.1/jquery-ui.js")
-    script(src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js")
-
 block scripts
-    script(src="pagescripts/lib.js")
-    script(src="scripts/accounter.js")
-    script(src="scripts/book_manager.js")
-    if is_admin
-        script(src="scripts/recovery.js")
-    script(src="pagescripts/module.js")
+    script(src="./src/lib.js")
 
 block content
     div(id="dialog" title="Торги" style="display: flex; flex-direction: column;" user= user_name)

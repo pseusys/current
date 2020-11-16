@@ -1,13 +1,13 @@
 // @flow
 
-const https = require('https');
+const express = require('express');
 const formidable = require('formidable');
 
 const coverage = require('./coverage');
 const library = require('./library');
 const settings = require('./settings');
 
-module.exports.configure = function (server: https.Server): null {
+module.exports.configure = function (server: typeof express.Router): void {
     /** Accepts:
      * @param method = one of the following:
      *      book (expects 'code' parameter) = get book with following code
@@ -95,6 +95,8 @@ module.exports.configure = function (server: https.Server): null {
             return res.end();
         } else if (sell_book !== undefined) {
             library.sell_book(sell_book);
+            const index = req.user.books.indexOf(sell_book);
+            if (index !== -1) req.user.books.splice(index, 1);
             return res.end();
         }
     });

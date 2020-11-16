@@ -7,6 +7,8 @@ const fs = require('fs');
 const https = require('https');
 const domain = require('domain');
 
+const log = require('./logger');
+
 const privateKey = fs.readFileSync(path.join(__dirname, "../keys/server.key"));
 const certificate = fs.readFileSync(path.join(__dirname, "../keys/server.crt"));
 const app = express();
@@ -19,9 +21,6 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
 const server = express.Router();
-
-const log = require('./logger');
-log.define();
 
 server.use((req, res, next) => {
     log.logger.http("Called " + req.url + " with method " + req.method + " at " +

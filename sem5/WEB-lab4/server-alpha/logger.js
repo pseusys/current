@@ -23,19 +23,16 @@ class RollbarTransport extends Transport {
     }
 }
 
+const logger: typeof winston.Logger = winston.createLogger({
+    exitOnError: false,
+    transports: [
+        new winston.transports.Console({ level: "silly", format: winston.format.combine(
+            winston.format.colorize(),
+                winston.format.simple()
+            )} ),
+        new winston.transports.File({ filename: 'combined.log', format: winston.format.json() }),
+        new RollbarTransport( { format: winston.format.json() } )
+    ]
+});
 
-module.exports.logger = undefined;
-
-module.exports.define = function () {
-    module.exports.logger = winston.createLogger({
-         exitOnError: false,
-         transports: [
-             new winston.transports.Console({ level: "silly", format: winston.format.combine(
-                     winston.format.colorize(),
-                     winston.format.simple()
-                 )} ),
-             new winston.transports.File({ filename: 'combined.log', format: winston.format.json() }),
-             new RollbarTransport( { format: winston.format.json() } )
-         ]
-    });
-}
+module.exports.logger = logger;

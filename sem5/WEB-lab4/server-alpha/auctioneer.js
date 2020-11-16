@@ -16,7 +16,7 @@ let current_winner;
 let current_bet;
 
 function sec(s) {
-    return new Promise(resolve => setTimeout(resolve, s * 1000));
+    return new Promise(resolve => setTimeout(resolve, Number.parseInt(s) * 1000));
 }
 
 function runAtDate(date, func) {
@@ -27,11 +27,11 @@ function runAtDate(date, func) {
         setTimeout(func, diff);
 }
 
-module.exports.time = function (): number {
+module.exports.time = function (): string {
     return time;
 }
 
-module.exports.auct = function (set) {
+module.exports.auct = function (set: { date_time: string, sell_timeout: string, interval: string, pause: string }): void {
     time = set.date_time;
     const date = Date.parse(time);
     let date_diff = date - new Date();
@@ -42,13 +42,17 @@ module.exports.auct = function (set) {
         books = library.get_books_sorted("on-sale");
         trade().catch((e) => { log.logger.error(e); })
             .then(() => { log.logger.info("Trading ended successfully!"); });
-    }, date_diff);
+    });
     trader.time(time);
 }
 
-module.exports.bet = function (user, money) {
+module.exports.bet = function (user: string, money: number): void {
     trader.message(user + " bets " + money);
     const better = population.get_user(user);
+    if (typeof better === "boolean") {
+        trader.message("User not found!");
+        return;
+    }
     if ((better.money >= money) &&
         (money > current_bet) &&
         bets_allowed &&
@@ -85,30 +89,32 @@ function win (book) {
 async function trade () {
     trader.start();
     for (const book of books) {
-        current_winner = undefined;
-        current_bet = book.part.start_cost;
+        if (typeof book.part !== "boolean") {
+            current_winner = undefined;
+            current_bet = book.part.start_cost;
 
-        trader.new_book(book);
-        trades = {
-            price: book.part.start_cost,
-            min_step: book.part.min_step,
-            max_step: book.part.max_step
-        };
+            trader.new_book(book);
+            trades = {
+                price: (typeof book.part !== "boolean") ? book.part.start_cost : -1,
+                min_step: (typeof book.part !== "boolean") ? book.part.min_step : -1,
+                max_step: (typeof book.part !== "boolean") ? book.part.max_step : -1
+            };
 
-        bets_allowed = true;
-        trader.trading(trades);
-        await sec(settings.sell_timeout);
+            bets_allowed = true;
+            trader.trading(trades);
+            await sec(settings.sell_timeout);
 
-        trader.countdown(Number.parseInt(settings.interval));
-        await sec(settings.interval);
-        bets_allowed = false;
+            trader.countdown(Number.parseInt(settings.interval));
+            await sec(settings.interval);
+            bets_allowed = false;
 
-        trader.message("Trading ends!");
+            trader.message("Trading ends!");
 
-        win(book, current_winner, current_bet);
+            win(book);
 
-        trader.message("Pause!");
-        await sec(settings.pause);
+            trader.message("Pause!");
+            await sec(settings.pause);
+        }
     }
     trader.over();
 }
