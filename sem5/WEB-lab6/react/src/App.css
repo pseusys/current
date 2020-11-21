@@ -1,0 +1,57 @@
+:root {
+  --sunk: rgba(0,0,0, 0.4);
+}
+
+#basic:before {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: -1;
+
+  display: block;
+  background-image: url("./imgs/cover.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 100vw;
+  height: 100vh;
+
+  filter: blur(5px);
+}
+
+#basic {
+  height: 100vh;
+  overflow: hidden;
+}
+
+#header {
+  width: 100vw;
+  height: 15vh;
+
+  background-color: var(--sunk);
+  border-bottom: 3px solid #f1f1f1;
+  padding: 20px;
+}
+
+.in-button {
+  padding: 0;
+  background-color: transparent;
+  border: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: gainsboro !important;
+  text-shadow: 0 1px 0 black;
+  display: block;
+  width: 100%;
+}
+
+#title {
+  font-size: 2.5rem;
+  text-align: center;
+}
+
+.bright * {
+  color: white;
+  font-weight: bold !important;
+}

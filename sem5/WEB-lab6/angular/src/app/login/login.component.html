@@ -1,0 +1,31 @@
+<div id="basic" class="container-fluid">
+  <div class="row only bright">
+    <div class="col-6 offset-3 my-auto">
+      <div class="row justify-content-center">
+        <div class="col">
+          <h3 class="text-center">Войдите или зарегестрируйтесь</h3>
+          <form>
+            <div class="form-group row">
+              <label class="col-4" for="username">Имя пользователя</label>
+              <input type="text" class="col-8 form-control" id="username" placeholder="Имя пользователя" name="username" [(ngModel)]="username"/>
+              <div class="invalid-feedback">Имя пользователя не может быть пусто!</div>
+            </div>
+            <div class="form-group row">
+              <label class="col-4" for="password">Пароль</label>
+              <input type="password" class="col-8 form-control" id="password" placeholder="Пароль" name="password" [(ngModel)]="password"/>
+              <div class="invalid-feedback">Пароль не может быть пуст!</div>
+            </div>
+            <div class="form-group row">
+              <div class="col-3 offset-2">
+                <button type="button" class="in-button stand-button" id="signin" (click)="on_signin()">+</button>
+              </div>
+              <div class="col-3 offset-2">
+                <button type="button" class="in-button stand-button" id="login" (click)="on_login()">🠖</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

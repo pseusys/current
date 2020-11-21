@@ -1,0 +1,14 @@
+#buttonier {
+    width: 100vw;
+    height: 5vh;
+}
+
+.titel {
+    width: 100%;
+    display: block;
+    text-align: center;
+}
+
+.span {
+    width: 50vw;
+}

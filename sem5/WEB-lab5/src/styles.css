@@ -1,1 +1,84 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --sunk: rgba(0,0,0, 0.4);
+}
+
+.bright * {
+  color: white;
+  font-weight: bold !important;
+}
+
+.straight {
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  box-sizing: content-box;
+}
+
+#basic:before {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: -1;
+
+  display: block;
+  background-image: url("./assets/cover.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 100vw;
+  height: 100vh;
+
+  filter: blur(5px);
+}
+
+#header {
+  background-color: var(--sunk);
+  border-bottom: 3px solid #f1f1f1;
+  padding: 20px;
+  text-align: center;
+
+  width: 100vw;
+  height: 15vh;
+}
+
+.body {
+  width: 100vw;
+  height: 85vh;
+  overflow-y: auto;
+}
+
+.big-body {
+  width: 100vw;
+  height: 55vh;
+}
+
+.small-body {
+  width: 100vw;
+  height: 30vh;
+}
+
+.in-button {
+  padding: 0;
+  background-color: transparent;
+  border: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: gainsboro;
+  text-shadow: 0 1px 0 black;
+  display: block;
+  width: 100%;
+}
+
+.stand-button {
+  background-color: var(--sunk) !important;
+  border: 1px solid #a1a1a1 !important;
+  border-radius: 10px;
+}
+
+#title {
+  font-size: 2.5rem;
+  text-align: center;
+}

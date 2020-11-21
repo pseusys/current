@@ -1,12 +1,17 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
+const cors = require('cors');
+
+const cors_options = {
+  credentials: true,
+  origin: 'http://localhost:4200',
+  methods: 'GET, POST, PUT, DELETE'
+};
 
 const app = express();
 
-app.use(express.static(path.join(__dirname, "../public")));
-app.set("view engine", "pug");
-app.set("views", "./views");
+app.use(cors(cors_options));
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
@@ -20,6 +25,12 @@ server.use((req, res, next) => {
     return next();
 });
 
+const auth = require('./auth');
+auth.configure(server);
+const actionize = require('./actionize');
+actionize.configure(server);
+const set = require('./set');
+set.configure(server);
 const routes = require('./routs');
 routes.configure(server);
 

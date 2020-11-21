@@ -1,0 +1,141 @@
+<div id="basic" class="container-fluid">
+  <div id="header" class="row bright">
+    <div class="col-2 my-auto">
+      <button type="button" class="in-button" (click)="!!href ? on_back() : on_login()">{{ leftHeaderButton }}</button>
+    </div>
+    <div class="col-8">
+      <h6 id="title">Биржа</h6>
+    </div>
+    <div class="col-2 my-auto">
+      <button *ngIf="href === '' && user.member()" type="button" class="in-button" data-toggle="modal" data-target="#user_edit">{{ rightHeaderButton }}</button>
+      <button *ngIf="href === 'actions' && user.admin()" type="button" class="in-button" data-toggle="modal" data-target="#add_action">{{ rightHeaderButton }}</button>
+    </div>
+  </div>
+
+  <ng-template #mainBody>
+    <div class="modal fade" id="user_edit" tabindex="-1" role="dialog" aria-labelledby="user_title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="user_title">Информация о пользователе</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="form-group">
+                <input type="number" class="form-control" id="user_money" placeholder="Количество средств" name="user_money" [(ngModel)]="user.money"/>
+                <label for="user_money">Количество средств пользователя</label>
+                <div class="invalid-feedback">Количество средств не может быть пустым!</div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+            <button type="button" class="btn btn-primary" data-dismiss="modal" (click)="on_edit_user()">Сохранить</button>
+            <button type="button" class="btn btn-danger" data-dismiss="modal" (click)="on_delete_user()">Удалить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="big-body row bright">
+      <form *ngIf="user.admin()" class="col-4 my-auto offset-4">
+        <div class="form-group">
+          <input type="datetime-local" class="form-control" id="settings_start" placeholder="Начало торгов" name="settings_start" [(ngModel)]="settings.tradeStart"/>
+          <label for="settings_start">Начало торгов</label>
+          <div class="invalid-feedback">КНачало торгов не может быть пустым!</div>
+        </div>
+        <div class="form-group">
+          <input type="datetime-local" class="form-control" id="settings_end" placeholder="Конец торгов" name="settings_end" [(ngModel)]="settings.tradeEnd"/>
+          <label for="settings_end">Конец торгов</label>
+          <div class="invalid-feedback">Конец торгов не может быть пустым!</div>
+        </div>
+        <div class="form-group">
+          <input type="number" class="form-control" id="settings_interval" placeholder="Интервал (в секундах)" name="settings_interval" [(ngModel)]="settings.interval"/>
+          <label for="settings_interval">Интервал (в секундах)</label>
+          <div class="invalid-feedback">Интервал (в секундах) не может быть пустым!</div>
+        </div>
+        <div class="form-group">
+          <button type="button" class="in-button stand-button" id="settings_save" (click)="set_settings()">Сохранить</button>
+        </div>
+      </form>
+    </div>
+    <div class="small-body row">
+      <div class="col-4 my-auto">
+        <button type="button" class="in-button" (click)="on_brokers()">🠔 К брокерам</button>
+      </div>
+      <div class="col-4 offset-4 my-auto">
+        <button type="button" class="in-button" (click)="on_actions()">К акциям 🠖</button>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #brokersBody>
+    <div class="body row">
+      <div class="col">
+        <app-brokers *ngFor="let broker of brokers" [current]="broker"></app-brokers>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #actionsBody>
+    <div class="modal fade" id="add_action" tabindex="-1" role="dialog" aria-labelledby="add_action_title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="add_action_title">Информация об акции</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="form-group">
+                <input type="text" class="form-control" id="add_action_name" placeholder="Название" name="add_action_name" [(ngModel)]="newAction.name"/>
+                <label for="add_action_name">Название акции</label>
+                <div class="invalid-feedback">Название не может быть пустым!</div>
+              </div>
+              <div class="form-group">
+                <input type="number" class="form-control" id="add_action_max" placeholder="Максимальное значение" name="add_action_max" [(ngModel)]="newAction.maximum"/>
+                <label for="add_action_max">Максимальное значение изменения</label>
+                <div class="invalid-feedback">Максимальное значение не может быть пустым!</div>
+              </div>
+              <div class="form-group">
+                <input type="number" class="form-control" id="add_actions_quant" placeholder="Количество" name="add_actions_quant" [(ngModel)]="newAction.quantity"/>
+                <label for="add_actions_quant">Количество доступных акций</label>
+                <div class="invalid-feedback">Количество не может быть пустым!</div>
+              </div>
+              <div class="form-group">
+                <input type="number" class="form-control" id="add_action_cost" placeholder="Начальная цена" name="add_action_cost" [(ngModel)]="newAction.cost"/>
+                <label for="add_action_cost">Начальная цена акции</label>
+                <div class="invalid-feedback">Начальная цена не может быть пустой!</div>
+              </div>
+              <div class="form-group">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="add_equal" id="add_equal" [(ngModel)]="newAction.law" value="equal">
+                  <label class="form-check-label" for="add_equal">Равномерный закон распределения</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="add_normal" id="add_normal" [(ngModel)]="newAction.law" value="normal">
+                  <label class="form-check-label" for="add_normal">Нормальный закон распределения</label>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+            <button type="button" class="btn btn-primary" data-dismiss="modal" (click)="on_add_action()">Сохранить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="body row">
+      <div class="col">
+        <app-actions *ngFor="let action of actions" [current]="action"></app-actions>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-container *ngTemplateOutlet="!!href ? (href === 'brokers' ? brokersBody : actionsBody ) : mainBody"></ng-container>
+</div>

@@ -1,0 +1,24 @@
+.semi-body {
+    width: 100vw;
+    height: 40vh;
+}
+
+.scrollable {
+    overflow-y: auto;
+}
+
+.button-small {
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+.intruder {
+    background-color: var(--sunk);
+    font-size: 0.75rem;
+    width: 100%;
+}
+
+::placeholder {
+    color: white;
+    opacity: 0.75;
+}

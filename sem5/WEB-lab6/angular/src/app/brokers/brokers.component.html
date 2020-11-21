@@ -1,0 +1,32 @@
+<div class="modal fade" id="{{ id }}" tabindex="-1" role="dialog" aria-labelledby="broker_title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="broker_title">Акции пользователя</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="container-fluid">
+          <div *ngFor="let action of current.actions" class="row">
+            <div class="col-8">{{ action.name }}</div>
+            <div class="col-4">{{ action.quantity }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row bright">
+  <div class="col-4">{{ current.name }}</div>
+  <div class="col-3">{{ current.money }}</div>
+  <div class="col-2">{{ !!current.isAdmin ? "admin" : "user" }}</div>
+  <div *ngIf="user.admin() === true" class="col-1 my-auto">
+    <button type="button" class="in-button" data-toggle="modal" [attr.data-target]="'#' + id">&#9632;</button>
+  </div>
+</div>
