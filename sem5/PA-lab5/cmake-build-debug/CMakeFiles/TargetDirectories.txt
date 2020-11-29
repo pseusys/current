@@ -1,0 +1,3 @@
+/home/milty/Documents/current/sem5/PA-lab5 /cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/milty/Documents/current/sem5/PA-lab5 /cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/milty/Documents/current/sem5/PA-lab5 /cmake-build-debug/CMakeFiles/PA_lab5.dir
