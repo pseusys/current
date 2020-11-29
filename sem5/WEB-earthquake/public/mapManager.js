@@ -205,6 +205,7 @@ const mapManager = {
                         try {
                             if (e.name === 'player') {
                                 const obj = Object.create(gameManager.factory[e.type])
+                                obj.name = e.name;
                                 obj.pos_x = this.tileSize;
                                 obj.pos_y = gameManager.level === 2 ?
                                     (this.floor.h + this.floor.l - this.tileSize) / 2 :

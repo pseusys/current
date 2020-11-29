@@ -118,14 +118,8 @@ const gameManager = {
 
     update: function () {
         if (this.player === null) return
-        if (eventsManager.action === 'esc') {
-            this.end_game(ctx);
-            return;
-        }
 
         physicsManager.update_world();
-
-        // обновление информации по всем объектам на карте
         this.entities.forEach(function (e) {
             try {
                 e.update()
@@ -133,7 +127,11 @@ const gameManager = {
                 console.log(e.name + ' ' + JSON.stringify(ex))
             }
         });
-        eventsManager.consume();
+
+        if (eventsManager.escaped) {
+            this.end_game(ctx);
+            return;
+        }
 
         this.emit_wall();
 
@@ -144,7 +142,7 @@ const gameManager = {
         const text = "Score " + physicsManager.count_offset().toFixed(3);
         ctx.font = physicsManager.get_text_by_size("small") + "px serif";
         ctx.fillText(text, mapManager.view.x + mapManager.view.w / 2, mapManager.tileSize / 2);
-        const prompt = "Use 'W', 'S' to change gravity, 'Esc' to quit, 'Space' to toggle sound";
+        const prompt = "Use 'W', 'S' to change gravity and 'Esc' to quit";
         ctx.fillText(prompt, mapManager.view.x + mapManager.view.w / 2, mapManager.floor.l + mapManager.tileSize / 2);
     },
 

@@ -18,10 +18,9 @@ const Player = Entity.extend({
 
     update: function () {
         if (gameManager.level === 2) physicsManager.trip(this);
-        else physicsManager.update_player(this, false);
+        else physicsManager.update_player(this);
         if (physicsManager.entityAtXY(this, this.pos_x + mapManager.view.x, this.pos_y, false)) {
-            //soundManager.play('hit.mp3', false, 1);
-            gameManager.end_game(ctx);
+            eventsManager.escaped = true;
         }
     }
 })

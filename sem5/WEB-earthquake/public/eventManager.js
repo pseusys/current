@@ -1,32 +1,18 @@
 const eventsManager = {
-    bind: [],
-    action: '',
-    actionChanged: true,
-
-    immediates: [],
+    immediates: ['ArrowUp', 'ArrowDown', 'w', 's'],
+    callback: undefined,
     escaped: false,
 
     setup: function () {
-        this.bind = [];
-        this.action = [];
-        this.actionChanged = true;
+        this.callback = undefined;
+        this.escaped = false;
 
-        this.bind[27] = 'esc'
-        this.bind[87] = 'up'
-        this.bind[83] = 'down'
         document.body.addEventListener("keydown", eventsManager.onKeyDown);
     },
 
     onKeyDown: function (event) {
-        const action = eventsManager.bind[event.keyCode]
-        if (action) {
-            if (action !== eventsManager.action) eventsManager.actionChanged = true;
-            eventsManager.action = action
-        }
-    },
-
-    consume: function () {
-        eventsManager.actionChanged = false
+        if (event.key === 'Escape') eventsManager.escaped = true;
+        else if (eventsManager.immediates.includes(event.key) && (eventsManager.callback)) eventsManager.callback(event.key);
     },
 
 

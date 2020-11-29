@@ -3,16 +3,15 @@ const soundManager = {
     audio: undefined,
 
     init: function () {
-        this.clips = {};
-        this.audio = undefined;
+        soundManager.clips = {};
+        soundManager.audio = undefined;
     },
 
     load: function (path) {
-        this.clips[path] = new Audio('/files?name=' + path);
+        soundManager.clips[path] = new Audio('/files?name=' + path);
     },
 
     loadArray: function (array) {
-        // загрузка массива звуков
         for (let i = 0; i < array.length; i++) {
             soundManager.load(array[i]);
         }
@@ -21,13 +20,13 @@ const soundManager = {
 
 
     play: function (sound, repet, volume) {
-        if (this.audio) this.audio.pause();
-        this.audio = this.clips[sound];
-        this.audio.play();
-        this.audio.onended = function () { if (repet) this.play(sound, repet, volume); };
+        if (soundManager.audio) soundManager.audio.pause();
+        soundManager.audio = this.clips[sound];
+        soundManager.audio.play().catch(_ => {});
+        soundManager.audio.onended = function () { if (repet) soundManager.play(sound, repet, volume); };
     },
 
     stop: function () {
-        if (this.audio) this.audio.pause();
+        if (soundManager.audio) soundManager.audio.pause();
     }
 }

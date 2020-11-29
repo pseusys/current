@@ -6,20 +6,30 @@ const physicsManager = {
         this.gravity = 1;
         this.dpc_y = 0;
         this.dpc_y = document.getElementById('dpi').offsetHeight;
+
+        eventsManager.callback = physicsManager.queryEntities;
+    },
+
+    queryEntities: function (key) {
+        const new_gravity = ((key === 'w') || (key === 'ArrowUp')) ? -1 : 1;
+        if (new_gravity !== physicsManager.gravity) {
+            physicsManager.gravity = new_gravity;
+            for (const entity of gameManager.entities) {
+                if (((gameManager.level === 1) && (entity.name === 'player')) ||
+                    ((gameManager.level === 2) && (entity.name !== 'player'))) {
+
+                    if (entity.fly !== 0) {
+                        entity.y_speed = -entity.y_speed;
+                        entity.y_speed_prev = entity.y_speed;
+                    }
+                    entity.fly = 0;
+                    entity.flying = true;
+                }
+            }
+        }
     },
 
     update_player: function (player) {
-        if (eventsManager.actionChanged) {
-            if (eventsManager.action === 'up') this.gravity = -1;
-            if (eventsManager.action === 'down') this.gravity = 1;
-            if (player.fly !== 0) {
-                player.y_speed = -player.y_speed;
-                player.y_speed_prev = player.y_speed;
-            }
-            player.fly = 0;
-            player.flying = true;
-        }
-
         if (player.flying) { // 100 times slower than real
             player.fly += 0.015;
             const new_speed = player.y_speed_prev + player.y_speedup * player.fly;
