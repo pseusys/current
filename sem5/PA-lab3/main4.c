@@ -4,7 +4,6 @@
 
 int main(int argc, char* argv[]) {
     int ProcNum, ProcRank;
-    MPI_Status Status;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);

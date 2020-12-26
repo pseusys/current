@@ -15,6 +15,7 @@ int main(int argc, char* argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
     MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
     srand(time(NULL) + ProcRank);
+    double start_time = MPI_Wtime();
 
     int n;
     if (ProcNum % 3) {
@@ -43,6 +44,7 @@ int main(int argc, char* argv[]) {
         }
         printf(" }\n");
     }
+    if (ProcRank == 0) printf("It took %lf sec.\n", MPI_Wtime() - start_time);
 
     free(buffer);
     MPI_Finalize();

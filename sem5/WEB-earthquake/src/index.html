@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earthquake</title>
+
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+
+    <link rel="stylesheet" type="text/css" href="index.css">
+</head>
+<body>
+    <div class="base" id="menu" style="display: block">
+        <div class="holder" id="header">
+            <h1 class="ins" id="title">Earthquake</h1>
+        </div>
+        <div class="holder">
+            <div class="middle">
+                <button type="button" class="btn" id="game_1_button">Dwarf!</button>
+                <button type="button" class="btn" id="game_2_button">Gargoyle!</button>
+            </div>
+        </div>
+        <div class="holder">
+            <button type="button" class="middle" id="results_button">Results</button>
+        </div>
+        <div class="holder">
+            <h6 class="ins" id="description">The Dwarf and the Gargoyle were battling so hard deep under the mountain that earthquake started!<br>
+            Help one (or both) of them to escape from the mine before it collapses!<br>
+            Well, who sees the sunlight today?</h6>
+            <h5 class="ins" id="subscription">by Sergeev Alexander, 8304</h5>
+        </div>
+    </div>
+
+    <div class="base" id="results" style="display: none">
+        <div id="table_holder">
+            <table id="table_rising" class="middle">
+                <thead>
+                <tr>
+                    <th class="ins" scope="col">#</th>
+                    <th class="ins" scope="col">Date</th>
+                    <th class="ins" scope="col">Game mode</th>
+                    <th class="ins" scope="col">Score (in meters)</th>
+                </tr>
+                </thead>
+                <tbody id="table"></tbody>
+            </table>
+        </div>
+        <div id="prompt_holder">
+            <h6 class="ins" id="prompt">Press 'Esc' to return</h6>
+        </div>
+    </div>
+
+    <div id="dpi"></div>
+    <canvas id="game" style="display: none"></canvas>
+
+    <script src="all.min.js"></script>
+</body>
+</html>

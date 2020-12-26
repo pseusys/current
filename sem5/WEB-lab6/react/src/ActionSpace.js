@@ -19,10 +19,8 @@ export default class MoneySpan extends Component {
             this.actions = actions;
         } else {
             if (this.state.stock) this.setState({ empty: true });
-            else {
-                this.user = user;
-                this.actions = actions;
-            }
+            this.user = user;
+            this.actions = actions;
         }
         this.setState({ loaded: true });
     }

@@ -3,7 +3,7 @@ project(PA_lab3 C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(PA_lab3 main.c)
+add_executable(PA_lab3 main4.c main11.c main6.c main8.c)
 
 find_package(MPI REQUIRED)
 set(CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})

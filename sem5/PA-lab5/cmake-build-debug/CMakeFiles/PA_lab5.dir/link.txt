@@ -1,1 +1,0 @@
-/usr/bin/cc -g -Wl,-Bsymbolic-functions  CMakeFiles/PA_lab5.dir/main10.c.o CMakeFiles/PA_lab5.dir/main6.c.o CMakeFiles/PA_lab5.dir/main7.c.o  -o PA_lab5  /usr/lib/x86_64-linux-gnu/libmpich.so 

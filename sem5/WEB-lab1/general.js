@@ -36,7 +36,7 @@ export function fill_records() {
     scores.innerHTML = "";
     if (ratings.length > 15) ratings.length = 15;
     for (let i = 0; i < ratings.length; i++) {
-        scores.innerHTML = scores.innerHTML.concat("<li>" + ratings[i].time.toString() + ": " + ratings[i].score.toString() + "</li>");
+        scores.innerHTML = scores.innerHTML.concat("<li>" + localStorage.getItem("tetris.username") + " " + ratings[i].time.toString() + ": " + ratings[i].score.toString() + "</li>");
     }
 }
 
