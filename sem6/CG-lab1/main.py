@@ -2,6 +2,7 @@ import sys
 import enum
 from OpenGL.GL import *
 from PyQt6 import QtWidgets, uic
+import GLWidget
 
 
 class Mode(enum.Enum):
@@ -17,14 +18,23 @@ class Mode(enum.Enum):
     POLYGON = GL_POLYGON
 
 
+display: GLWidget
+
+
 def configure_window(win):
+    global display
+
     mode_box = win.modeBox
     display = win.mainGLWidget
     reset = win.resetButton
 
     default = Mode.POINTS
 
-    mode_box.addItems([e.name for e in Mode])
+    display.set_mode(default.value)
+    for mode in Mode:
+        mode_box.addItem(mode.name, mode.value)
+    mode_box.activated.connect(lambda index: display.set_mode(mode_box.itemData(index)))
+    reset.clicked.connect(lambda: display.clear_vertexes())
 
 
 if __name__ == '__main__':
