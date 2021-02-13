@@ -2,7 +2,6 @@ import sys
 import enum
 from OpenGL.GL import *
 from PyQt6 import QtWidgets, uic
-import GLWidget
 
 
 class Mode(enum.Enum):
@@ -18,12 +17,7 @@ class Mode(enum.Enum):
     POLYGON = GL_POLYGON
 
 
-display: GLWidget
-
-
 def configure_window(win):
-    global display
-
     mode_box = win.modeBox
     display = win.mainGLWidget
     reset = win.resetButton

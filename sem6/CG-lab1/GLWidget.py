@@ -1,31 +1,40 @@
-from random import random
+import math
+
 from OpenGL.GL import *
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
 
 
+def _blues(x, y):
+    return (2 - abs(x) - abs(y)) / 2
+
+
 class GlWidget(QOpenGLWidget):
     def __init__(self, parent=None):
+        def combinator(grad):
+            rad = math.radians(grad)
+            mono_x = math.cos(rad) / 2
+            mono_y = math.sin(rad) / 2
+            return mono_x, mono_y, _blues(mono_x, mono_y)
         QOpenGLWidget.__init__(self, parent)
-        self._vert = [(0.0, 0.0, random()), (0.5, 0.0, random()), (0.0, 0.5, random())]
+        self._vert = [combinator(x) for x in range(90, 450, 60)]
         self._mode = GL_POINTS
 
     def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT)
         glBegin(self._mode)
         for vertex in self._vert:
-            glColor3f(vertex[0], vertex[1], vertex[2])
+            glColor3f(abs(vertex[0]), abs(vertex[1]), abs(vertex[2]))
             glVertex2f(vertex[0], vertex[1])
         glEnd()
-
-    def initializeGL(self):
-        pass
 
     def mousePressEvent(self, event):
         center_w = self.width() / 2
         center_h = self.height() / 2
         event_x = event.position().x() - center_w
         event_y = event.position().y() - center_h
-        self._vert.append((event_x / center_w, -event_y / center_h, random()))
+        gl_x = event_x / center_w
+        gl_y = -event_y / center_h
+        self._vert.append((gl_x, gl_y, _blues(gl_x, gl_y)))
         self.update()
 
     def set_mode(self, mode):
