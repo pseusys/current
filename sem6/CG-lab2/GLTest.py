@@ -1,55 +1,84 @@
-import enum
+from enum import Enum
 from OpenGL.GL import *
 
 
-class GLTest(enum.Enum):
-    def _apply_scissor(self):
-        side_x = int(self.args['size_x'] * self.args['rad_x'])
-        side_y = int(self.args['size_y'] * self.args['rad_y'])
-        offset_x = int((self.args['size_x'] - side_x) / 2)
-        offset_y = int((self.args['size_y'] - side_y) / 2)
-        print(offset_x, offset_y, side_x, side_y)
+class Func(Enum):
+    ALWAYS = GL_ALWAYS
+    NEVER = GL_NEVER
+    LESS = GL_LESS
+    EQUAL = GL_EQUAL
+    LEQUAL = GL_LEQUAL
+    GREATER = GL_GREATER
+    NOTEQUAL = GL_NOTEQUAL
+    GEQUAL = GL_GEQUAL
+
+
+class SFactor(Enum):
+    SRC_ALPHA = GL_SRC_ALPHA
+    ZERO = GL_ZERO
+    ONE = GL_ONE
+    DST_COLOR = GL_DST_COLOR
+    ONE_MINUS_DST_COLOR = GL_ONE_MINUS_DST_COLOR
+    ONE_MINUS_SRC_ALPHA = GL_ONE_MINUS_SRC_ALPHA
+    DST_ALPHA = GL_DST_ALPHA
+    ONE_MINUS_DST_ALPHA = GL_ONE_MINUS_DST_ALPHA
+    SRC_ALPHA_SATURATE = GL_SRC_ALPHA_SATURATE
+
+
+class DFactor(Enum):
+    ONE_MINUS_SRC_ALPHA = GL_ONE_MINUS_SRC_ALPHA
+    ZERO = GL_ZERO
+    ONE = GL_ONE
+    SRC_COLOR = GL_SRC_COLOR
+    ONE_MINUS_SRC_COLOR = GL_ONE_MINUS_SRC_COLOR
+    SRC_ALPHA = GL_SRC_ALPHA
+    DST_ALPHA = GL_DST_ALPHA
+    ONE_MINUS_DST_ALPHA = GL_ONE_MINUS_DST_ALPHA
+
+
+class GLTest(Enum):
+    _ignore_ = ['_args']
+    _args = {}
+
+    @classmethod
+    def _apply_scissor(cls):
+        side_x = int(cls._args['size_x'] * (1 - cls._args['rad_x']))
+        side_y = int(cls._args['size_y'] * (1 - cls._args['rad_y']))
+        offset_x = int((cls._args['size_x'] - side_x) / 2)
+        offset_y = int((cls._args['size_y'] - side_y) / 2)
         glScissor(offset_x, offset_y, side_x, side_y)
 
-    def _apply_alpha(self):
-        print('alphing', self.args['func'], self.args['ref'])
+    @classmethod
+    def _apply_alpha(cls):
+        glAlphaFunc(cls._args['func'], cls._args['ref'])
 
-    def _apply_blend(self):
-        print('blending', self.args['sfactor'], self.args['dfactor'])
+    @classmethod
+    def _apply_blend(cls):
+        glBlendFunc(cls._args['sfactor'], cls._args['dfactor'])
+
+    def apply(self):
+        pass
 
     def __init__(self, value):
-        self.apply = lambda: None
-        self.args = {}
         if value is GL_SCISSOR_TEST:
-            self.args = {'rad_x': 0.5, 'rad_y': 0.3, 'size_x': 800, 'size_y': 600}  # 1 1
             self.apply = self._apply_scissor
         elif value is GL_ALPHA_TEST:
-            self.args = {'func': GL_ALWAYS, 'ref': 0}
             self.apply = self._apply_alpha
         elif value is GL_BLEND:
-            self.args = {'sfactor': GL_SRC_ALPHA, 'dfactor': GL_ONE_MINUS_SRC_ALPHA}
-            self.apply = self._apply_alpha
+            self.apply = self._apply_blend
 
-    def reset_test(self, args):
-        def exc(*missing):
-            raise Exception("Arguments missing:", missing)
-
-        if self is GLTest.SCISSOR:
-            if ('rad_x' not in args) or ('rad_x' not in args) or ('size_x' not in args) or ('size_y' not in args):
-                exc('rad_x', 'rad_y', 'size_x', 'size_y')
-            else:
-                self.args = args
-        elif self is GLTest.ALPHA_FUNK:
-            if ('func' not in args) or ('ref' not in args):
-                exc('func', 'ref')
-            else:
-                self.args = args
-        elif self is GLTest.BLEND_FUNK:
-            if ('sfactor' not in args) or ('dfactor' not in args):
-                exc('sfactor', 'dfactor')
-            else:
-                self.args = args
+    @classmethod
+    def set_arg(cls, arg):
+        print(arg)
+        cls._args.update(arg)
 
     SCISSOR = GL_SCISSOR_TEST
     ALPHA_FUNK = GL_ALPHA_TEST
     BLEND_FUNK = GL_BLEND
+
+
+GLTest._args = {
+    'rad_x': 0, 'rad_y': 0, 'size_x': 0, 'size_y': 0,
+    'func': GL_ALWAYS, 'ref': 0,
+    'sfactor': GL_SRC_ALPHA, 'dfactor': GL_ONE_MINUS_SRC_ALPHA
+}

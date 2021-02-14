@@ -1,10 +1,10 @@
 import sys
-import enum
+from enum import Enum
 from OpenGL.GL import *
 from PyQt6 import QtWidgets, uic
 
 
-class Mode(enum.Enum):
+class Mode(Enum):
     POINTS = GL_POINTS
     LINES = GL_LINES
     LINE_STRIP = GL_LINE_STRIP
@@ -22,12 +22,9 @@ def configure_window(win):
     display = win.mainGLWidget
     reset = win.resetButton
 
-    default = Mode.POINTS
-
-    display.set_mode(default.value)
+    mode_box.currentIndexChanged.connect(lambda index: display.set_mode(mode_box.itemData(index)))
     for mode in Mode:
         mode_box.addItem(mode.name, mode.value)
-    mode_box.activated.connect(lambda index: display.set_mode(mode_box.itemData(index)))
     reset.clicked.connect(lambda: display.clear_vertexes())
 
 

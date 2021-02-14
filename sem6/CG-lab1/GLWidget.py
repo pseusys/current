@@ -15,6 +15,7 @@ class GlWidget(QOpenGLWidget):
             mono_x = math.cos(rad) / 2
             mono_y = math.sin(rad) / 2
             return mono_x, mono_y, _blues(mono_x, mono_y)
+
         QOpenGLWidget.__init__(self, parent)
         self._vert = [combinator(x) for x in range(90, 450, 60)]
         self._mode = GL_POINTS
