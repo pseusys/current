@@ -45,10 +45,10 @@ std::vector<std::vector<double>> OGLWidget::traf(double xA, double yA, double xB
     std::vector<std::vector<double>> res = {
         base,
         vectorize(base, hUnit, vUnit, 2, 1),
-        vectorize(base, hUnit, vUnit, 3, 2),
+        vectorize(base, hUnit, vUnit, 3, 3),
         vectorize(base, hUnit, vUnit, 3, 1),
         vectorize(base, hUnit, vUnit, 5, 1),
-        vectorize(base, hUnit, vUnit, 6, 3),
+        vectorize(base, hUnit, vUnit, 6, 4),
         vectorize(base, hUnit, vUnit, 7, 1),
         {xB, yB}
     };
