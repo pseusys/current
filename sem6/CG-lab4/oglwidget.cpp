@@ -28,53 +28,55 @@ void OGLWidget::resizeGL(int w, int h)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
-std::vector< std::vector<double> > OGLWidget::traf(double xA, double yA, double xB, double yB)
+
+
+
+std::vector<double> vectorize(std::vector<double> base, std::vector<double> hComp, std::vector<double> vComp, int hMod, int vMod) {
+    return {base[0] + hMod*hComp[0] + vMod*vComp[0], base[1] + hMod*hComp[1] + vMod*vComp[1]};
+}
+
+std::vector<std::vector<double>> OGLWidget::traf(double xA, double yA, double xB, double yB)
 {
-    double delX=xB-xA;
-    double delY=yB-yA;
-    std::vector< std::vector<double> > res = {{xA,xA+delX/5,xA+delX/3,xA+delX/3,xA+delX/1.875,xA+delX/1.5,xA+delX/1.25,xB},
-    {yA,yA+delY*2,yA+delY*5,yA+delY*2,yA+delY*2,yA+delY*7,yA+delY*2,yB}};
+    double delX = xB - xA;
+    double delY = yB - yA;
+    std::vector<double> hUnit = {delX / 9, delY / 9};
+    std::vector<double> vUnit = {-delY / 9, delX / 9};
+    std::vector<double> base = {xA, yA};
+    std::vector<std::vector<double>> res = {
+        base,
+        vectorize(base, hUnit, vUnit, 2, 1),
+        vectorize(base, hUnit, vUnit, 3, 2),
+        vectorize(base, hUnit, vUnit, 3, 1),
+        vectorize(base, hUnit, vUnit, 5, 1),
+        vectorize(base, hUnit, vUnit, 6, 3),
+        vectorize(base, hUnit, vUnit, 7, 1),
+        {xB, yB}
+    };
     return res;
 }
 
-std::vector< std::vector<double> > OGLWidget::fract( std::vector< std::vector<double> > array){
-    for(int i=1; i<n;i++){
 
 
-    }
+void OGLWidget::fract(int factor, double xA, double yA, double xB, double yB){
+    std::vector<std::vector<double>> fractal = traf(xA, yA, xB, yB);
+    if (factor == 0) draw(fractal);
+    else for (unsigned int i = 0; i < fractal.size() - 1; i++) fract(factor - 1, fractal[i][0], fractal[i][1], fractal[i + 1][0], fractal[i + 1][1]);
+
 }
 
-void OGLWidget::draw( std::vector< std::vector<double> > array)
+void OGLWidget::draw( std::vector<std::vector<double>> array)
 {
         glColor3f(0, 0, 1);
         glLineWidth(4);
-        glBegin(GL_LINES);
-            glVertex2f(array[0][0],array[1][0]);
-            glVertex2f(array[0][1],array[1][1]);
-            glVertex2f(array[0][1],array[1][1]);
-            glVertex2f(array[0][2],array[1][2]);
-            glVertex2f(array[0][2],array[1][2]);
-            glVertex2f(array[0][3],array[1][3]);
-            glVertex2f(array[0][3],array[1][3]);
-            glVertex2f(array[0][4],array[1][4]);
-            glVertex2f(array[0][4],array[1][4]);
-            glVertex2f(array[0][5],array[1][5]);
-            glVertex2f(array[0][5],array[1][5]);
-            glVertex2f(array[0][6],array[1][6]);
-            glVertex2f(array[0][6],array[1][6]);
-            glVertex2f(array[0][7],array[1][0]);
+        glBegin(GL_LINE_STRIP);
+            for (unsigned int i = 0; i < array.size(); i++) glVertex2f(array[i][0], array[i][1]);
         glEnd();
 }
+
 
 
 void OGLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    std::vector< std::vector<double> > array = traf(xA,yA,xB,yB);
-
-    draw(traf(xA,yA,xB,yB));
+    fract(n, xA, yA, xB, yB);
 }
-
-
-

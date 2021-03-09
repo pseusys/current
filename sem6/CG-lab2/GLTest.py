@@ -69,7 +69,6 @@ class GLTest(Enum):
 
     @classmethod
     def set_arg(cls, arg):
-        print(arg)
         cls._args.update(arg)
 
     SCISSOR = GL_SCISSOR_TEST
