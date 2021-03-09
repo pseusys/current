@@ -18,6 +18,9 @@ public:
 
 
 
+private slots:
+    void on_n_valueChanged(int arg1);
+
 private:
     Ui::MainWindow *ui;
 };

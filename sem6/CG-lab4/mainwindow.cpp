@@ -14,3 +14,9 @@ MainWindow::~MainWindow()
 }
 
 
+
+void MainWindow::on_n_valueChanged(int arg1)
+{
+    ui->openGLWidget->n=arg1-1;
+    ui->openGLWidget->update();
+}

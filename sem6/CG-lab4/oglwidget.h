@@ -14,7 +14,7 @@ public:
     double yA = 0.07;
     double xB = 0.8;
     double yB = 0.07;
-    int n = 2;
+    int n = 0;
 
 protected:
     void initializeGL();
