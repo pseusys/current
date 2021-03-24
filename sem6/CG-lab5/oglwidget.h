@@ -4,6 +4,10 @@
 #include <QWidget>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
+
+#include <string>
+#include <fstream>
+#include <sstream>
 #include <iostream>
 
 class OGLWidget : public QOpenGLWidget, protected QOpenGLFunctions
