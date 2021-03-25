@@ -1,15 +1,19 @@
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+
 #include "oglwidget.h"
 
-OGLWidget::OGLWidget(QWidget *parent)
-    : QOpenGLWidget(parent)
-{
-
+OGLWidget::OGLWidget(QWidget *parent) : QOpenGLWidget(parent) {
+    timer.start(250, this);
 }
 
-OGLWidget::~OGLWidget()
-{
-
+OGLWidget::~OGLWidget() {
+    timer.stop();
 }
+
+
 
 GLfloat vertices[] = {
     -0.8, 0,
@@ -21,9 +25,9 @@ GLfloat vertices[] = {
 };
 
 GLfloat colors[] = {
-    0,0,0,
-    0,0,0,
-    0,0,0,
+    0, 0, 0,
+    0, 0, 0,
+    0, 0, 0,
     1, 0.3, 0,
     1, 0.3, 0,
     1, 0.3, 0
@@ -94,6 +98,7 @@ void OGLWidget::initializeGL()
     glDeleteShader(fragmentShaderId);
 
     glClearColor(0,0,0,1);
+    initUniforms();
 }
 
 void OGLWidget::resizeGL(int w, int h)
@@ -105,9 +110,13 @@ void OGLWidget::resizeGL(int w, int h)
     glLoadIdentity();
 }
 
-void OGLWidget::draw(int d)
-{
-
+void OGLWidget::initUniforms() {
+    for (int i = 0; i < 10; i += 2) {
+        this->milestones[i] = this->width() / 2;
+        this->milestones[i + 1] = this->height() / 10;
+    }
+    this->radius = 75;
+    this->intens = 1;
 }
 
 void OGLWidget::paintGL()
@@ -129,8 +138,27 @@ void OGLWidget::paintGL()
     glVertexAttribPointer(attributeColor,3,GL_FLOAT,GL_FALSE,0,0);
     glEnableVertexAttribArray(attributeColor);
 
+    GLint uniformMilestones = glGetUniformLocation(program, "milestones");
+    glUniform2fv(uniformMilestones, 5, (const GLfloat*) milestones);
+
+    GLint uniformRadius = glGetUniformLocation(program, "radius");
+    glUniform1i(uniformRadius, radius);
+
+    GLint intensRadius = glGetUniformLocation(program, "intens");
+    glUniform1f(intensRadius, intens);
+
     glDrawArrays(GL_POLYGON, 0, sizeof(vertices) / sizeof(GLfloat));
 
     glDisableVertexAttribArray(attributeCoord2d);
     glDisableVertexAttribArray(attributeColor);
+}
+
+void OGLWidget::timerEvent(QTimerEvent* ev)
+{
+    if (ev->timerId() != timer.timerId()) {
+        QWidget::timerEvent(ev);
+        return;
+    }
+    callBack();
+    update();
 }

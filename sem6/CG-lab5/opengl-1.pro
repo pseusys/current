@@ -1,4 +1,4 @@
-QT       += core gui opengl openglwidgets
+QT += core gui opengl openglwidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -20,7 +20,8 @@ LIBS += -lglu32 -lopengl32
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    oglwidget.cpp
+    oglwidget.cpp \
+    oglwidgetcallback.cpp
 
 HEADERS += \
     mainwindow.h \
