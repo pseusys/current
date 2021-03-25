@@ -3,6 +3,15 @@
 
 #include "oglwidget.h"
 
+void OGLWidget::initUniforms() {
+    for (int i = 0; i < 10; i += 2) {
+        this->milestones[i] = this->width() / 2;
+        this->milestones[i + 1] = this->height() / 10;
+    }
+    this->radius = 75;
+    this->intens = 1;
+}
+
 void OGLWidget::callBack() {
     int min_w = this->width() / 10;
     int max_w = min_w * 9;

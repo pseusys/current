@@ -110,15 +110,6 @@ void OGLWidget::resizeGL(int w, int h)
     glLoadIdentity();
 }
 
-void OGLWidget::initUniforms() {
-    for (int i = 0; i < 10; i += 2) {
-        this->milestones[i] = this->width() / 2;
-        this->milestones[i + 1] = this->height() / 10;
-    }
-    this->radius = 75;
-    this->intens = 1;
-}
-
 void OGLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
