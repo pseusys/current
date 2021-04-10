@@ -6,7 +6,7 @@
 #include "oglwidget.h"
 
 OGLWidget::OGLWidget(QWidget *parent) : QOpenGLWidget(parent) {
-    timer.start(250, this);
+    timer.start(100, this);
 }
 
 OGLWidget::~OGLWidget() {
@@ -37,8 +37,6 @@ GLint program;
 
 void OGLWidget::initializeGL()
 {
-    initializeOpenGLFunctions();
-
     initializeOpenGLFunctions();
 
     std::string vertexCode;
