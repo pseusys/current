@@ -6,11 +6,28 @@
 #include <QOpenGLFunctions>
 #include <QTimerEvent>
 #include <QBasicTimer>
+#include <cmath>
 
 class OGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
     OGLWidget(QWidget *parent = 0);
     ~OGLWidget();
+    double angleX = 140;
+    double angleY = 0;
+    double angleZ = 0;
+    double scaleX = 0.4;
+    double scaleY = 0.4;
+    double scaleZ = 0.4;
+    double translateX = 0;
+    double translateY = 0;
+    double translateZ = 0;
+    bool ortog = 0;
+    bool persp = 0;
+    bool shape_visible = 0;
+    bool edge_visible = 0;
+    bool trans_visible = 0;
+    int fineness = 1;
+    int intensity = 1;
 
 protected:
     void initializeGL() override;
@@ -18,8 +35,6 @@ protected:
     void paintGL() override;
 
 private:
-    GLdouble verts[16][18][3] = {};
-
     void vert();
     void plot();
 };

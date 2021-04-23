@@ -15,52 +15,40 @@ GLint program;
 void OGLWidget::initializeGL() {
     initializeOpenGLFunctions();
 
-    std::string vertexCode;
-    std::string fragmentCode;
-    std::ifstream vShaderFile;
-    std::ifstream fShaderFile;
-    try {
-        vShaderFile.open("./fire.vert");
-        fShaderFile.open("./fire.frag");
-        std::stringstream vShaderStream, fShaderStream;
-        vShaderStream << vShaderFile.rdbuf();
-        fShaderStream << fShaderFile.rdbuf();
-        vShaderFile.close();
-        fShaderFile.close();
-        vertexCode = vShaderStream.str();
-        fragmentCode = fShaderStream.str();
-    } catch(std::ifstream::failure& e) {
-        std::cout << "read not ok" << std::endl;
-    }
-    const GLchar* vShaderCode = vertexCode.c_str();
-    const GLchar* fShaderCode = fragmentCode.c_str();
+    float pos[4] = {3, 3, 3, 1};
+    float dir[3] = {-1, -1, -1};
+    float ambient[4] = {0.0, 0.0, 0.0, 1};
+    float ambient0[4] = {0.5, 0.5, 0.5, 1};
 
-    GLuint vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShaderId, 1, &vShaderCode, NULL);
-    glCompileShader(vertexShaderId);
-    GLint compileOk = GL_FALSE;
-    glGetShaderiv(vertexShaderId, GL_COMPILE_STATUS, &compileOk);
-    std::cout << ((compileOk == GL_FALSE) ? "vertex compile error" : "vertex compile ok") << std::endl;
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
 
-    GLuint fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShaderId, 1, &fShaderCode, NULL);
-    glCompileShader(fragmentShaderId);
-    glGetShaderiv(fragmentShaderId, GL_COMPILE_STATUS, &compileOk);
-    std::cout << ((compileOk == GL_FALSE) ? "fragment compile error" : "fragment compile ok") << std::endl;
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient0);
+    glLightfv(GL_LIGHT0, GL_POSITION, pos);
+    glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, dir);
 
-    program = glCreateProgram();
-    glAttachShader(program, vertexShaderId);
-    glAttachShader(program, fragmentShaderId);
-    glLinkProgram(program);
-    GLint linkOk = GL_FALSE;
-    glGetProgramiv(program, GL_LINK_STATUS, &linkOk);
-    std::cout << ((linkOk == GL_FALSE) ? "link error" : "link ok") << std::endl;
+    GLfloat front_color[] = {0.7, 0, 0, 1};
+    GLfloat back_color[] = {0, 0, 0.7, 1};
 
-    glDeleteShader(vertexShaderId);
-    glDeleteShader(fragmentShaderId);
+    GLfloat front_ambient[] = {0.5, 0, 0, 1};
+    GLfloat back_ambient[] = {0, 0, 0.5, 1};
 
-    glClearColor(0,0,0,1);
-    vert();
+    GLfloat mat_specular[] = {0.3, 0.3, 0.3, 1};
+
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, front_color);
+    glMaterialfv(GL_BACK, GL_DIFFUSE, back_color);
+
+    glMaterialfv(GL_FRONT, GL_AMBIENT, front_ambient);
+    glMaterialfv(GL_BACK, GL_AMBIENT, back_ambient);
+
+    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+    glMaterialfv(GL_BACK, GL_SPECULAR, mat_specular);
+
+    glMaterialf(GL_FRONT, GL_SHININESS, 0.1);
+    glMaterialf(GL_BACK, GL_SHININESS, 0.1);
+
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+
+    glClearColor(0.1f, 0.15f, 0.05f, 1.0f);
 }
 
 void OGLWidget::resizeGL(int w, int h) {
@@ -74,21 +62,15 @@ void OGLWidget::resizeGL(int w, int h) {
 void OGLWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    /*glUseProgram(program);
-    GLuint* vboId = new GLuint();
-    glGenBuffers(1, vboId);
+    float ambient0[4] = {(float) 0.5 * intensity / 100, (float) 0.5 * intensity / 100, (float) 0.5 * intensity / 100, (float) 1};
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient0);
 
-    GLint attributeCoord3d = glGetAttribLocation(program, "coord3d");
-    glBindBuffer(GL_ARRAY_BUFFER, *vboId);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-    glVertexAttribPointer(attributeCoord3d, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(attributeCoord3d);*/
-
-    glTranslated(0.0, -0.25, 0.0);
-    glScaled(0.5, 0.5, 0.5);
-    glRotated(45.0, 1.0, 0.0, 0.0);
+    vert();
+    glLoadIdentity();
+    glTranslated(translateX, translateY, translateZ);
+    glScaled(scaleX, scaleY, scaleZ);
+    glRotated(angleX, 1, 0, 0);
+    glRotated(angleY, 0, 1, 0);
+    glRotated(angleZ, 0, 0, 1);
     plot();
-
-    //glDisableVertexAttribArray(attributeCoord3d);
-    //delete vboId;
 }
