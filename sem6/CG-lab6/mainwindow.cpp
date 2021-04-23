@@ -160,6 +160,12 @@ void MainWindow::on_trans_visibility_stateChanged(int arg1)
     ui->openGLWidget->update();
 }
 
+void MainWindow::on_coords_visibility_stateChanged(int arg1)
+{
+    ui->openGLWidget->coords_visible = arg1;
+    ui->openGLWidget->update();
+}
+
 void MainWindow::on_fineness_valueChanged(int value)
 {
     ui->openGLWidget->fineness = value;

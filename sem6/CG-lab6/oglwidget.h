@@ -26,6 +26,7 @@ public:
     bool shape_visible = 0;
     bool edge_visible = 0;
     bool trans_visible = 0;
+    bool coords_visible = 0;
     int fineness = 1;
     int intensity = 1;
 
@@ -37,6 +38,7 @@ protected:
 private:
     void vert();
     void plot();
+    void coords();
 };
 
 #endif // OGLWIDGET_H

@@ -67,10 +67,11 @@ void OGLWidget::paintGL() {
 
     vert();
     glLoadIdentity();
-    glTranslated(translateX, translateY, translateZ);
-    glScaled(scaleX, scaleY, scaleZ);
     glRotated(angleX, 1, 0, 0);
     glRotated(angleY, 0, 1, 0);
     glRotated(angleZ, 0, 0, 1);
+    coords();
+    glTranslated(translateX, translateY, translateZ);
+    glScaled(scaleX, scaleY, scaleZ);
     plot();
 }

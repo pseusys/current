@@ -58,6 +58,8 @@ private slots:
 
     void on_trans_visibility_stateChanged(int arg1);
 
+    void on_coords_visibility_stateChanged(int arg1);
+
     void on_fineness_valueChanged(int value);
 
     void on_intensity_valueChanged(int value);

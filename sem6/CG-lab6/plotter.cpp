@@ -19,6 +19,32 @@ void rotate(double rad, std::vector<GLdouble>& point, std::vector<GLdouble>& new
 
 
 
+void OGLWidget::coords() {
+    if (coords_visible) {
+        glLineWidth(2.0);
+
+        glEnable(GL_DEPTH_TEST);
+        glBegin(GL_LINES);
+
+        glColor3d(1.0, 0.0, 0.0);
+        glVertex3d(-0.8, 0.0, 0.0);
+        glVertex3d(0.8, 0.0, 0.0);
+
+        glColor3d(0.0, 1.0, 0.0);
+        glVertex3d(0.0, -0.8, 0.0);
+        glVertex3d(0.0, 0.8, 0.0);
+
+        glColor3d(0.0, 0.0, 1.0);
+        glVertex3d(0.0, 0.0, -0.8);
+        glVertex3d(0.0, 0.0, 0.8);
+
+        glEnd();
+        glDisable(GL_DEPTH_TEST);
+    }
+}
+
+
+
 int slides, rings;
 std::vector<std::vector<std::vector<GLdouble>>> verts = {}; // 1: 4, 2; 2: 8, 4; 3: 12, 9; 4: 16, 18;
 
@@ -46,6 +72,8 @@ void OGLWidget::vert() {
 }
 
 void OGLWidget::plot() {
+    glColor3d(1.0, 1.0, 1.0);
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
@@ -71,7 +99,6 @@ void OGLWidget::plot() {
     if (trans_visible) glDisable(GL_DEPTH_TEST);
     glDisable(GL_LIGHTING);
     glDisable(GL_LIGHT0);
-
 
     if (edge_visible) {
         glLineWidth(2.0);
