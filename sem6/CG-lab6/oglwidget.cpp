@@ -16,7 +16,7 @@ GLint program;
 void OGLWidget::initializeGL() {
     initializeOpenGLFunctions();
 
-    float pos[4] = {0.0, 0.0, -2.0, 1};
+    float pos[4] = {0.0, -2.0, -2.0, 1};
     float dir[3] = {-1, -1, -1};
     float ambient[4] = {0.3, 0.3, 0.3, 1};
     float ambient0[4] = {0.5, 0.5, 0.5, 1};
@@ -66,11 +66,11 @@ void OGLWidget::resizeGL(int w, int h) {
 
 void OGLWidget::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     float ambient0[4] = {(float) 0.5 * intensity / 100, (float) 0.5 * intensity / 100, (float) 0.5 * intensity / 100, (float) 1};
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambient0);
-
     vert();
+
+    glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glRotated(angleX, 1, 0, 0);
     glRotated(angleY, 0, 1, 0);

@@ -27,8 +27,8 @@ public:
     bool edge_visible = 0;
     bool trans_visible = 0;
     bool coords_visible = 0;
-    int fineness = 1;
-    int intensity = 1;
+    int fineness = 4;
+    int intensity = 99;
 
 protected:
     void initializeGL() override;

@@ -413,7 +413,7 @@
      <number>4</number>
     </property>
     <property name="value">
-     <number>1</number>
+     <number>4</number>
     </property>
     <property name="orientation">
      <enum>Qt::Horizontal</enum>
