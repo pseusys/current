@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iostream>
 
+#include <GL/glu.h>
 #include "oglwidget.h"
 
 OGLWidget::OGLWidget(QWidget *parent): QOpenGLWidget(parent) {}
@@ -15,9 +16,9 @@ GLint program;
 void OGLWidget::initializeGL() {
     initializeOpenGLFunctions();
 
-    float pos[4] = {3, 3, 3, 1};
+    float pos[4] = {0.0, 0.0, -2.0, 1};
     float dir[3] = {-1, -1, -1};
-    float ambient[4] = {0.0, 0.0, 0.0, 1};
+    float ambient[4] = {0.3, 0.3, 0.3, 1};
     float ambient0[4] = {0.5, 0.5, 0.5, 1};
 
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
@@ -53,8 +54,12 @@ void OGLWidget::initializeGL() {
 
 void OGLWidget::resizeGL(int w, int h) {
     glViewport(0,0,w,h);
+
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+    gluPerspective(90.0, w / h, 1.0, 100.0);
+    gluLookAt(0.0, 0.0, -4.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }

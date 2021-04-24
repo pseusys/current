@@ -12,12 +12,12 @@ class OGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
     OGLWidget(QWidget *parent = 0);
     ~OGLWidget();
-    double angleX = 140;
+    double angleX = 0;
     double angleY = 0;
     double angleZ = 0;
-    double scaleX = 0.4;
-    double scaleY = 0.4;
-    double scaleZ = 0.4;
+    double scaleX = 1;
+    double scaleY = 1;
+    double scaleZ = 1;
     double translateX = 0;
     double translateY = 0;
     double translateZ = 0;
