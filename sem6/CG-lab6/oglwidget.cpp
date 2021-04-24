@@ -57,8 +57,14 @@ void OGLWidget::resizeGL(int w, int h) {
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(90.0, w / h, 1.0, 100.0);
-    gluLookAt(0.0, 0.0, -4.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+
+    if(ortog){
+        glOrtho(-1.0f,1.0f,-1.0f,1.0f,0.1f,100.0f);
+    }else if(persp){
+        gluPerspective(90.0, w / h, 1.0, 100.0);
+    }
+
+    gluLookAt(eyeX, eyeY, eyeZ, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();

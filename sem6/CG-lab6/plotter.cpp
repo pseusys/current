@@ -54,9 +54,9 @@ void OGLWidget::vert() {
     slides = 4 * fineness;
     rings = 18;
     for (int i = 0; i < 4 - fineness; i++) rings /= 2;
-    verts = std::vector(slides, std::vector(rings, std::vector(3, 0.0)));
+    verts = std::vector<std::vector<std::vector<GLdouble>>>(slides, std::vector<std::vector<GLdouble>>(rings, std::vector<GLdouble>(3, 0.0)));
 
-    std::vector<std::vector<GLdouble>> radius = std::vector(rings, std::vector(3, 0.0));
+    std::vector<std::vector<GLdouble>> radius = std::vector<std::vector<GLdouble>>(rings, std::vector<GLdouble>(3, 0.0));
     for (int i = 3; i <= 20; i += (18 / rings)) {
         int num = (i - 3) / (18 / rings);
         if (num >= rings) break;
