@@ -12,22 +12,21 @@ class OGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
     OGLWidget(QWidget *parent = 0);
     ~OGLWidget();
-    double angleX = 140;
+    double angleX = 135;
     double angleY = 0;
     double angleZ = 0;
     double eyeX = 0;
     double eyeY = 0;
     double eyeZ = -4.0;
-    double scaleX = 0.4;
-    double scaleY = 0.4;
-    double scaleZ = 0.4;
+    double scaleX = 1;
+    double scaleY = 1;
+    double scaleZ = 1;
     double translateX = 0;
     double translateY = 0;
     double translateZ = 0;
     bool ortog = 0;
-    bool persp = 0;
-    bool shape_visible = 0;
-    bool edge_visible = 0;
+    bool shape_visible = 1;
+    bool edge_visible = 1;
     bool trans_visible = 0;
     bool coords_visible = 0;
     int fineness = 4;

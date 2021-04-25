@@ -11,6 +11,8 @@ OGLWidget::~OGLWidget() {}
 
 
 
+int curWidth, curHeight;
+
 GLint program;
 
 void OGLWidget::initializeGL() {
@@ -53,31 +55,28 @@ void OGLWidget::initializeGL() {
 }
 
 void OGLWidget::resizeGL(int w, int h) {
-    glViewport(0,0,w,h);
+    glViewport(0, 0, w, h);
+    curWidth = w;
+    curHeight = h;
+}
+
+void OGLWidget::paintGL() {
+    float ambient0[4] = {(float) 0.5 * intensity / 100, (float) 0.5 * intensity / 100, (float) 0.5 * intensity / 100, (float) 1};
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient0);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    vert();
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
-    if(ortog){
-        glOrtho(-1.0f,1.0f,-1.0f,1.0f,0.1f,100.0f);
-    }else if(persp){
-        gluPerspective(90.0, w / h, 1.0, 100.0);
-    }
-
+    if (ortog) glOrtho (-1.0, 1.0, -1.0, 1.0, 0.1, 100.0);
+    else gluPerspective (90.0, curWidth / curHeight, 1.0, 100.0);
     gluLookAt(eyeX, eyeY, eyeZ, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-}
 
-void OGLWidget::paintGL() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    float ambient0[4] = {(float) 0.5 * intensity / 100, (float) 0.5 * intensity / 100, (float) 0.5 * intensity / 100, (float) 1};
-    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient0);
-    vert();
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
     glRotated(angleX, 1, 0, 0);
     glRotated(angleY, 0, 1, 0);
     glRotated(angleZ, 0, 0, 1);

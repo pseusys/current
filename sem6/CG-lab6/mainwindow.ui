@@ -325,6 +325,9 @@
     <property name="text">
      <string>Видимость фигуры</string>
     </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QLabel" name="label_8">
     <property name="geometry">
@@ -429,6 +432,9 @@
     </property>
     <property name="text">
      <string>Видимость граней</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QCheckBox" name="trans_visibility">
@@ -602,7 +608,7 @@
      <x>0</x>
      <y>0</y>
      <width>865</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

@@ -130,18 +130,6 @@ void MainWindow::on_translateDown_clicked()
     ui->openGLWidget->update();
 }
 
-void MainWindow::on_ortho_stateChanged(int arg1)
-{
-    ui->openGLWidget->ortog = arg1;
-    ui->openGLWidget->update();
-}
-
-void MainWindow::on_perspective_stateChanged(int arg1)
-{
-    ui->openGLWidget->persp = arg1;
-    ui->openGLWidget->update();
-}
-
 void MainWindow::on_shape_visibility_stateChanged(int arg1)
 {
     ui->openGLWidget->shape_visible = arg1;
@@ -178,68 +166,50 @@ void MainWindow::on_intensity_valueChanged(int value)
     ui->openGLWidget->update();
 }
 
-void MainWindow::on_ortho_btn_clicked(bool checked)
+void MainWindow::on_ortho_btn_clicked()
 {
     ui->openGLWidget->ortog = 1;
-    ui->openGLWidget->persp = 0;
+    ui->openGLWidget->update();
 }
 
-void MainWindow::on_perspective_btn_clicked(bool checked)
+void MainWindow::on_perspective_btn_clicked()
 {
     ui->openGLWidget->ortog = 0;
-    ui->openGLWidget->persp = 1;
+    ui->openGLWidget->update();
 }
 
 void MainWindow::on_up_eye_clicked()
 {
-    ui->openGLWidget->angleX += 10;
-    if(ui->openGLWidget->angleX==360){
-        ui->openGLWidget->angleX = 0;
-    }
+    ui->openGLWidget->eyeX++;
     ui->openGLWidget->update();
 }
 
 void MainWindow::on_left_eye_clicked()
 {
-    ui->openGLWidget->eyeY -=10;
-    if(ui->openGLWidget->eyeX==360){
-        ui->openGLWidget->eyeX = 0;
-    }
+    ui->openGLWidget->eyeY--;
     ui->openGLWidget->update();
 }
 
 void MainWindow::on_rightZ_eye_clicked()
 {
-    ui->openGLWidget->eyeZ +=10;
-    if(ui->openGLWidget->eyeX==360){
-        ui->openGLWidget->eyeX = 0;
-    }
+    ui->openGLWidget->eyeZ++;
     ui->openGLWidget->update();
 }
 
 void MainWindow::on_leftZ_eye_clicked()
 {
-    ui->openGLWidget->eyeZ -=10;
-    if(ui->openGLWidget->eyeX==360){
-        ui->openGLWidget->eyeX = 0;
-    }
+    ui->openGLWidget->eyeZ--;
     ui->openGLWidget->update();
 }
 
 void MainWindow::on_right_eye_clicked()
 {
-    ui->openGLWidget->eyeY +=10;
-    if(ui->openGLWidget->eyeX==360){
-        ui->openGLWidget->eyeX = 0;
-    }
+    ui->openGLWidget->eyeY++;
     ui->openGLWidget->update();
 }
 
 void MainWindow::on_down_eye_clicked()
 {
-    ui->openGLWidget->eyeX -=10;
-    if(ui->openGLWidget->eyeX==360){
-        ui->openGLWidget->eyeX = 0;
-    }
+    ui->openGLWidget->eyeX--;
     ui->openGLWidget->update();
 }

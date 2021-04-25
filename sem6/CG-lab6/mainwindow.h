@@ -48,10 +48,6 @@ private slots:
 
     void on_translateUp_clicked();
 
-    void on_ortho_stateChanged(int arg1);
-
-    void on_perspective_stateChanged(int arg1);
-
     void on_shape_visibility_stateChanged(int arg1);
 
     void on_edge_visibility_stateChanged(int arg1);
@@ -64,11 +60,9 @@ private slots:
 
     void on_intensity_valueChanged(int value);
 
-    void on_ortho_btn_clicked(bool checked);
+    void on_ortho_btn_clicked();
 
     void on_perspective_btn_clicked();
-
-    void on_perspective_btn_clicked(bool checked);
 
     void on_up_eye_clicked();
 
