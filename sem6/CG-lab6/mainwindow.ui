@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>865</width>
-    <height>579</height>
+    <width>1056</width>
+    <height>720</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,15 +22,15 @@
      <rect>
       <x>20</x>
       <y>20</y>
-      <width>551</width>
-      <height>531</height>
+      <width>721</width>
+      <height>661</height>
      </rect>
     </property>
    </widget>
    <widget class="QPushButton" name="up">
     <property name="geometry">
      <rect>
-      <x>650</x>
+      <x>830</x>
       <y>50</y>
       <width>41</width>
       <height>20</height>
@@ -43,7 +43,7 @@
    <widget class="QPushButton" name="right">
     <property name="geometry">
      <rect>
-      <x>690</x>
+      <x>870</x>
       <y>70</y>
       <width>21</width>
       <height>25</height>
@@ -56,7 +56,7 @@
    <widget class="QPushButton" name="rightZ">
     <property name="geometry">
      <rect>
-      <x>650</x>
+      <x>830</x>
       <y>70</y>
       <width>21</width>
       <height>25</height>
@@ -69,7 +69,7 @@
    <widget class="QPushButton" name="down">
     <property name="geometry">
      <rect>
-      <x>650</x>
+      <x>830</x>
       <y>94</y>
       <width>41</width>
       <height>25</height>
@@ -82,7 +82,7 @@
    <widget class="QPushButton" name="left">
     <property name="geometry">
      <rect>
-      <x>630</x>
+      <x>810</x>
       <y>70</y>
       <width>21</width>
       <height>25</height>
@@ -95,7 +95,7 @@
    <widget class="QPushButton" name="leftZ">
     <property name="geometry">
      <rect>
-      <x>670</x>
+      <x>850</x>
       <y>70</y>
       <width>21</width>
       <height>25</height>
@@ -108,7 +108,7 @@
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>790</x>
       <y>20</y>
       <width>121</width>
       <height>20</height>
@@ -121,7 +121,7 @@
    <widget class="QLabel" name="label_2">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>790</x>
       <y>121</y>
       <width>131</width>
       <height>20</height>
@@ -134,7 +134,7 @@
    <widget class="QLabel" name="label_3">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>790</x>
       <y>240</y>
       <width>101</width>
       <height>20</height>
@@ -147,7 +147,7 @@
    <widget class="QPushButton" name="scaleXdown">
     <property name="geometry">
      <rect>
-      <x>750</x>
+      <x>930</x>
       <y>150</y>
       <width>21</width>
       <height>21</height>
@@ -160,7 +160,7 @@
    <widget class="QPushButton" name="scaleXup">
     <property name="geometry">
      <rect>
-      <x>720</x>
+      <x>900</x>
       <y>150</y>
       <width>21</width>
       <height>21</height>
@@ -173,7 +173,7 @@
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
-      <x>680</x>
+      <x>860</x>
       <y>150</y>
       <width>41</width>
       <height>20</height>
@@ -186,7 +186,7 @@
    <widget class="QPushButton" name="scaleYdown">
     <property name="geometry">
      <rect>
-      <x>750</x>
+      <x>930</x>
       <y>180</y>
       <width>21</width>
       <height>21</height>
@@ -199,7 +199,7 @@
    <widget class="QPushButton" name="scaleYup">
     <property name="geometry">
      <rect>
-      <x>720</x>
+      <x>900</x>
       <y>180</y>
       <width>21</width>
       <height>21</height>
@@ -212,7 +212,7 @@
    <widget class="QLabel" name="label_5">
     <property name="geometry">
      <rect>
-      <x>680</x>
+      <x>860</x>
       <y>180</y>
       <width>41</width>
       <height>20</height>
@@ -225,7 +225,7 @@
    <widget class="QPushButton" name="scaleZdown">
     <property name="geometry">
      <rect>
-      <x>750</x>
+      <x>930</x>
       <y>210</y>
       <width>21</width>
       <height>21</height>
@@ -238,7 +238,7 @@
    <widget class="QPushButton" name="scaleZup">
     <property name="geometry">
      <rect>
-      <x>720</x>
+      <x>900</x>
       <y>210</y>
       <width>21</width>
       <height>21</height>
@@ -251,7 +251,7 @@
    <widget class="QLabel" name="label_6">
     <property name="geometry">
      <rect>
-      <x>680</x>
+      <x>860</x>
       <y>210</y>
       <width>41</width>
       <height>20</height>
@@ -264,7 +264,7 @@
    <widget class="QPushButton" name="translateDown">
     <property name="geometry">
      <rect>
-      <x>770</x>
+      <x>950</x>
       <y>270</y>
       <width>41</width>
       <height>25</height>
@@ -277,7 +277,7 @@
    <widget class="QPushButton" name="translateRight">
     <property name="geometry">
      <rect>
-      <x>730</x>
+      <x>910</x>
       <y>270</y>
       <width>41</width>
       <height>25</height>
@@ -290,7 +290,7 @@
    <widget class="QPushButton" name="translateLeft">
     <property name="geometry">
      <rect>
-      <x>690</x>
+      <x>870</x>
       <y>270</y>
       <width>41</width>
       <height>25</height>
@@ -303,7 +303,7 @@
    <widget class="QLabel" name="label_9">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>790</x>
       <y>300</y>
       <width>131</width>
       <height>17</height>
@@ -316,7 +316,7 @@
    <widget class="QCheckBox" name="shape_visibility">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>790</x>
       <y>370</y>
       <width>181</width>
       <height>23</height>
@@ -332,7 +332,7 @@
    <widget class="QLabel" name="label_8">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>790</x>
       <y>460</y>
       <width>161</width>
       <height>17</height>
@@ -345,7 +345,7 @@
    <widget class="QLabel" name="label_10">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>790</x>
       <y>500</y>
       <width>121</width>
       <height>17</height>
@@ -358,7 +358,7 @@
    <widget class="QPushButton" name="translateUp">
     <property name="geometry">
      <rect>
-      <x>650</x>
+      <x>830</x>
       <y>270</y>
       <width>41</width>
       <height>25</height>
@@ -371,7 +371,7 @@
    <widget class="QSlider" name="fineness">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>790</x>
       <y>480</y>
       <width>160</width>
       <height>16</height>
@@ -402,7 +402,7 @@
    <widget class="QSlider" name="intensity">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>790</x>
       <y>520</y>
       <width>160</width>
       <height>16</height>
@@ -424,7 +424,7 @@
    <widget class="QCheckBox" name="edge_visibility">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>790</x>
       <y>390</y>
       <width>181</width>
       <height>23</height>
@@ -440,7 +440,7 @@
    <widget class="QCheckBox" name="trans_visibility">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>790</x>
       <y>410</y>
       <width>181</width>
       <height>23</height>
@@ -453,7 +453,7 @@
    <widget class="QCheckBox" name="coords_visibility">
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>790</x>
       <y>430</y>
       <width>181</width>
       <height>23</height>
@@ -466,7 +466,7 @@
    <widget class="QRadioButton" name="perspective_btn">
     <property name="geometry">
      <rect>
-      <x>670</x>
+      <x>850</x>
       <y>340</y>
       <width>170</width>
       <height>23</height>
@@ -494,7 +494,7 @@
    <widget class="QRadioButton" name="ortho_btn">
     <property name="geometry">
      <rect>
-      <x>670</x>
+      <x>850</x>
       <y>320</y>
       <width>170</width>
       <height>23</height>
@@ -513,7 +513,7 @@
    <widget class="QPushButton" name="left_eye">
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>940</x>
       <y>71</y>
       <width>21</width>
       <height>25</height>
@@ -526,7 +526,7 @@
    <widget class="QPushButton" name="up_eye">
     <property name="geometry">
      <rect>
-      <x>780</x>
+      <x>960</x>
       <y>51</y>
       <width>41</width>
       <height>20</height>
@@ -539,7 +539,7 @@
    <widget class="QLabel" name="label_7">
     <property name="geometry">
      <rect>
-      <x>740</x>
+      <x>920</x>
       <y>21</y>
       <width>121</width>
       <height>20</height>
@@ -552,7 +552,7 @@
    <widget class="QPushButton" name="down_eye">
     <property name="geometry">
      <rect>
-      <x>780</x>
+      <x>960</x>
       <y>95</y>
       <width>41</width>
       <height>25</height>
@@ -565,7 +565,7 @@
    <widget class="QPushButton" name="leftZ_eye">
     <property name="geometry">
      <rect>
-      <x>800</x>
+      <x>980</x>
       <y>71</y>
       <width>21</width>
       <height>25</height>
@@ -578,7 +578,7 @@
    <widget class="QPushButton" name="rightZ_eye">
     <property name="geometry">
      <rect>
-      <x>780</x>
+      <x>960</x>
       <y>71</y>
       <width>21</width>
       <height>25</height>
@@ -591,7 +591,7 @@
    <widget class="QPushButton" name="right_eye">
     <property name="geometry">
      <rect>
-      <x>820</x>
+      <x>1000</x>
       <y>71</y>
       <width>21</width>
       <height>25</height>
@@ -601,14 +601,96 @@
      <string>→ </string>
     </property>
    </widget>
+   <widget class="QComboBox" name="comboBoxLight">
+    <property name="geometry">
+     <rect>
+      <x>790</x>
+      <y>550</y>
+      <width>251</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>Направленный источник света</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Точечный источник света, убывание интенсивности с расстоянием выкл.</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Точечный источник света, убывание интенсивности с расстоянием вкл.</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Прожектор</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Прожектор, вкл. расчет убывания интенсивности</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Несколько источников света</string>
+     </property>
+    </item>
+   </widget>
+   <zorder>comboBoxLight</zorder>
+   <zorder>openGLWidget</zorder>
+   <zorder>up</zorder>
+   <zorder>right</zorder>
+   <zorder>rightZ</zorder>
+   <zorder>down</zorder>
+   <zorder>left</zorder>
+   <zorder>leftZ</zorder>
+   <zorder>label</zorder>
+   <zorder>label_2</zorder>
+   <zorder>label_3</zorder>
+   <zorder>scaleXdown</zorder>
+   <zorder>scaleXup</zorder>
+   <zorder>label_4</zorder>
+   <zorder>scaleYdown</zorder>
+   <zorder>scaleYup</zorder>
+   <zorder>label_5</zorder>
+   <zorder>scaleZdown</zorder>
+   <zorder>scaleZup</zorder>
+   <zorder>label_6</zorder>
+   <zorder>translateDown</zorder>
+   <zorder>translateRight</zorder>
+   <zorder>translateLeft</zorder>
+   <zorder>label_9</zorder>
+   <zorder>shape_visibility</zorder>
+   <zorder>label_8</zorder>
+   <zorder>label_10</zorder>
+   <zorder>translateUp</zorder>
+   <zorder>fineness</zorder>
+   <zorder>intensity</zorder>
+   <zorder>edge_visibility</zorder>
+   <zorder>trans_visibility</zorder>
+   <zorder>coords_visibility</zorder>
+   <zorder>perspective_btn</zorder>
+   <zorder>ortho_btn</zorder>
+   <zorder>left_eye</zorder>
+   <zorder>up_eye</zorder>
+   <zorder>label_7</zorder>
+   <zorder>down_eye</zorder>
+   <zorder>leftZ_eye</zorder>
+   <zorder>rightZ_eye</zorder>
+   <zorder>right_eye</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>865</width>
-     <height>21</height>
+     <width>1056</width>
+     <height>22</height>
     </rect>
    </property>
   </widget>

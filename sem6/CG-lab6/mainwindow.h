@@ -76,6 +76,8 @@ private slots:
 
     void on_down_eye_clicked();
 
+    void on_comboBoxLight_currentTextChanged(const QString &arg1);
+
 private:
     Ui::MainWindow *ui;
 };

@@ -213,3 +213,20 @@ void MainWindow::on_down_eye_clicked()
     ui->openGLWidget->eyeX--;
     ui->openGLWidget->update();
 }
+
+void MainWindow::on_comboBoxLight_currentTextChanged(const QString &arg1)
+{
+    if (arg1=="Направленный источник света")
+            ui->openGLWidget->light_sample = 1;
+    else if(arg1=="Точечный источник света, убывание интенсивности с расстоянием выкл.")
+            ui->openGLWidget->light_sample = 1;
+    else if(arg1=="Точечный источник света, убывание интенсивности с расстоянием вкл.")
+            ui->openGLWidget->light_sample = 1;
+    else if(arg1=="Прожектор")
+            ui->openGLWidget->light_sample = 1;
+    else if(arg1=="Прожектор, вкл. расчет убывания интенсивности")
+            ui->openGLWidget->light_sample = 1;
+    else
+            ui->openGLWidget->light_sample = 1;
+    ui->openGLWidget->update();
+}
