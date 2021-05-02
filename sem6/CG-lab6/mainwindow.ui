@@ -641,6 +641,36 @@
      </property>
     </item>
    </widget>
+   <widget class="QComboBox" name="comboBox">
+    <property name="geometry">
+     <rect>
+      <x>790</x>
+      <y>590</y>
+      <width>251</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>1) Свойства материала по умолчанию, степень интенсивности 128</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>2) Диффузного нет, r компонента эммиссионного цвета, ст. интенс. 64</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>3) Рассеянного нет, g компонента эммиссионного цвета, ст. интенс. 32</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>4) Первые 3 компоненты зеркального по 0.5, b компонента, ст. инт. 0</string>
+     </property>
+    </item>
+   </widget>
    <zorder>comboBoxLight</zorder>
    <zorder>openGLWidget</zorder>
    <zorder>up</zorder>
@@ -683,6 +713,7 @@
    <zorder>leftZ_eye</zorder>
    <zorder>rightZ_eye</zorder>
    <zorder>right_eye</zorder>
+   <zorder>comboBox</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

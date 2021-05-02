@@ -31,8 +31,9 @@ public:
     bool coords_visible = 0;
     int fineness = 4;
     int intensity = 99;
-    int light_sample = 3;
+    int light_sample = 4;
     int material_sample = 1;
+
 
 protected:
     void initializeGL() override;

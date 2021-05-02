@@ -87,22 +87,59 @@ void OGLWidget::paintGL() {
      glDisable(GL_LIGHT7);
 
  // свойства материала
-    GLfloat material_diffuse[] = {1.0, 1.0, 1.0, 1.0};
-    if (material_sample == 1){
-        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
-    }else if(material_sample == 2){
-        glMaterialfv(GL_FRONT, GL_AMBIENT, material_diffuse);
-    }else if(material_sample == 3){
-        glMaterialfv(GL_BACK, GL_SPECULAR, material_diffuse);
-    }else if(material_sample == 4){
-        glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_diffuse);
-    }else if(material_sample == 5){
-        glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, material_diffuse);
-    }else if(material_sample == 6){
-        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, material_diffuse);
-    }else {
-        glMaterialfv(GL_FRONT_AND_BACK, GL_COLOR_INDEXES, material_diffuse);
-    }
+     if (material_sample == 1)
+     {
+         GLfloat material_diffuse[] = {0.8,0.8,0.8,1.0}; // диффузное
+         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+         GLfloat material_ambient[] = {0.2,0.2,0.2,1.0}; // рассеянный
+         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_ambient);
+         GLfloat material_specular[] = {0.0,0.0,0.0,1.0}; // зеркальное
+         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_specular);
+         GLfloat material_emission[] = {0.0,0.0,0.0,1.0}; // интенсивность
+         glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_emission);
+         GLfloat material_shininess[] = {128}; // степень интенсивности
+         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, material_shininess);
+     }
+     else if (material_sample == 2)
+     {
+         GLfloat material_diffuse[] = {0.0,0.0,0.0,1.0}; // диффузное
+         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+         GLfloat material_ambient[] = {0.2,0.2,0.2,1.0}; // рассеянный
+         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_ambient);
+         GLfloat material_specular[] = {0.0,0.0,0.0,1.0}; // зеркальное
+         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_specular);
+         GLfloat material_emission[] = {0.5,0.0,0.0,1.0}; // интенсивность
+         glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_emission);
+         GLfloat material_shininess[] = {64}; // степень интенсивности
+         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, material_shininess);
+     }
+     else if (material_sample == 3)
+     {
+         GLfloat material_diffuse[] = {0.8,0.8,0.8,1.0}; // диффузное
+         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+         GLfloat material_ambient[] = {0.0,0.0,0.0,1.0}; // рассеянный
+         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_ambient);
+         GLfloat material_specular[] = {0.0,0.0,0.0,1.0}; // зеркальное
+         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_specular);
+         GLfloat material_emission[] = {0.0,0.5,0.0,1.0}; // интенсивность
+         glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_emission);
+         GLfloat material_shininess[] = {32}; // степень интенсивности
+         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, material_shininess);
+     }else
+     {
+         GLfloat material_diffuse[] = {0.8,0.8,0.8,1.0}; // диффузное
+         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+         GLfloat material_ambient[] = {0.2,0.2,0.2,1.0}; // рассеянный
+         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_ambient);
+         GLfloat material_specular[] = {0.5,0.5,0.5,1.0}; // зеркальное
+         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_specular);
+         GLfloat material_emission[] = {0.0,0.0,0.5,1.0}; // интенсивность
+         glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_emission);
+         GLfloat material_shininess[] = {0}; // степень интенсивности
+         glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, material_shininess);
+     }
+
+
 
     glEnable(GL_LIGHTING);
     glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
@@ -111,8 +148,8 @@ void OGLWidget::paintGL() {
     if (light_sample == 1)
     {
         // направленный источник света
-        GLfloat light0_diffuse[] = {0.4, 0.7, 0.2};
-        GLfloat light0_direction[] = {1.0, 1.0, 1.0, 1.0};
+        GLfloat light0_diffuse[] = {1.0, 1.0, 1.0, 1.0}; //цвет диффузного освещения
+        GLfloat light0_direction[] = {0.0,0.0,0.0,1.0};//положение источника
 
         glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diffuse);
         glLightfv(GL_LIGHT0, GL_POSITION, light0_direction);
@@ -123,8 +160,8 @@ void OGLWidget::paintGL() {
         // точечный источник света
         // убывание интенсивности с расстоянием
         // отключено (по умолчанию)
-        GLfloat light1_diffuse[] = {0.4, 0.7, 0.2};
-        GLfloat light1_position[] = {0.0, 0.0, 1.0, 1.0};
+        GLfloat light1_diffuse[] = {1.0, 1.0, 1.0, 1.0};
+        GLfloat light1_position[] = {0.0,0.0,0.0,1.0};
 
         glLightfv(GL_LIGHT1, GL_DIFFUSE, light1_diffuse);
         glLightfv(GL_LIGHT1, GL_POSITION, light1_position);
@@ -154,13 +191,13 @@ void OGLWidget::paintGL() {
         // половина угла при вершине 30 градусов
         // направление на центр плоскости
         GLfloat light3_diffuse[] = {0.4, 0.7, 0.2};
-        GLfloat light3_position[] = {0.0, 0.0, 0.0, 1.0};
-        GLfloat light3_spot_direction[] = {0.0, 0.0, -1.0};
+        GLfloat light3_position[] = {0.0, 0.0, 1.0, 1.0};
+        GLfloat light3_spot_direction[] = {0.0, 0.0, -1.0, 1.0};
 
         glLightfv(GL_LIGHT3, GL_DIFFUSE, light3_diffuse);
         glLightfv(GL_LIGHT3, GL_POSITION, light3_position);
-        glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, 30);
-        glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, light3_spot_direction);
+        glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, 30);//максимальный угол разброса
+        glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, light3_spot_direction);//направление света
         glEnable(GL_LIGHT3);
     }
 

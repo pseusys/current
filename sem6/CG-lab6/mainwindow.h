@@ -78,6 +78,8 @@ private slots:
 
     void on_comboBoxLight_currentTextChanged(const QString &arg1);
 
+    void on_comboBox_activated(int index);
+
 private:
     Ui::MainWindow *ui;
 };

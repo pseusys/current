@@ -219,14 +219,28 @@ void MainWindow::on_comboBoxLight_currentTextChanged(const QString &arg1)
     if (arg1=="Направленный источник света")
             ui->openGLWidget->light_sample = 1;
     else if(arg1=="Точечный источник света, убывание интенсивности с расстоянием выкл.")
-            ui->openGLWidget->light_sample = 1;
+            ui->openGLWidget->light_sample = 2;
     else if(arg1=="Точечный источник света, убывание интенсивности с расстоянием вкл.")
-            ui->openGLWidget->light_sample = 1;
+            ui->openGLWidget->light_sample = 3;
     else if(arg1=="Прожектор")
-            ui->openGLWidget->light_sample = 1;
+            ui->openGLWidget->light_sample = 4;
     else if(arg1=="Прожектор, вкл. расчет убывания интенсивности")
-            ui->openGLWidget->light_sample = 1;
+            ui->openGLWidget->light_sample = 5;
     else
-            ui->openGLWidget->light_sample = 1;
+            ui->openGLWidget->light_sample = 6;
+    ui->openGLWidget->update();
+}
+
+void MainWindow::on_comboBox_activated(int index)
+{
+    if(index == 0){
+        ui->openGLWidget->material_sample = 1;
+    }else if(index == 1){
+        ui->openGLWidget->material_sample = 2;
+    }else if(index == 2){
+        ui->openGLWidget->material_sample = 3;
+    }else{
+        ui->openGLWidget->material_sample = 4;
+    }
     ui->openGLWidget->update();
 }
