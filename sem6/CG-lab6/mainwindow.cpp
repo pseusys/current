@@ -244,3 +244,33 @@ void MainWindow::on_comboBox_activated(int index)
     }
     ui->openGLWidget->update();
 }
+
+void MainWindow::on_up_light_clicked()
+{
+
+}
+
+void MainWindow::on_left_light_clicked()
+{
+
+}
+
+void MainWindow::on_rightZ_light_clicked()
+{
+
+}
+
+void MainWindow::on_leftZ_light_clicked()
+{
+
+}
+
+void MainWindow::on_right_light_clicked()
+{
+
+}
+
+void MainWindow::on_down_light_clicked()
+{
+
+}

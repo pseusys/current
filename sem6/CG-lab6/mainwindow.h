@@ -80,6 +80,18 @@ private slots:
 
     void on_comboBox_activated(int index);
 
+    void on_up_light_clicked();
+
+    void on_left_light_clicked();
+
+    void on_rightZ_light_clicked();
+
+    void on_leftZ_light_clicked();
+
+    void on_right_light_clicked();
+
+    void on_down_light_clicked();
+
 private:
     Ui::MainWindow *ui;
 };

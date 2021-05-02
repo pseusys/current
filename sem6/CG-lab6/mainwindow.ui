@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1056</width>
-    <height>720</height>
+    <width>1059</width>
+    <height>805</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,8 +22,8 @@
      <rect>
       <x>20</x>
       <y>20</y>
-      <width>721</width>
-      <height>661</height>
+      <width>751</width>
+      <height>721</height>
      </rect>
     </property>
    </widget>
@@ -671,6 +671,97 @@
      </property>
     </item>
    </widget>
+   <widget class="QLabel" name="label_11">
+    <property name="geometry">
+     <rect>
+      <x>810</x>
+      <y>630</y>
+      <width>221</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Перемещение источника света</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="rightZ_light">
+    <property name="geometry">
+     <rect>
+      <x>890</x>
+      <y>680</y>
+      <width>21</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>↻</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="left_light">
+    <property name="geometry">
+     <rect>
+      <x>870</x>
+      <y>680</y>
+      <width>21</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>←</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="up_light">
+    <property name="geometry">
+     <rect>
+      <x>890</x>
+      <y>660</y>
+      <width>41</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>↑</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="leftZ_light">
+    <property name="geometry">
+     <rect>
+      <x>910</x>
+      <y>680</y>
+      <width>21</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>↺</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="down_light">
+    <property name="geometry">
+     <rect>
+      <x>890</x>
+      <y>704</y>
+      <width>41</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>↓</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="right_light">
+    <property name="geometry">
+     <rect>
+      <x>930</x>
+      <y>680</y>
+      <width>21</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>→ </string>
+    </property>
+   </widget>
    <zorder>comboBoxLight</zorder>
    <zorder>openGLWidget</zorder>
    <zorder>up</zorder>
@@ -714,13 +805,20 @@
    <zorder>rightZ_eye</zorder>
    <zorder>right_eye</zorder>
    <zorder>comboBox</zorder>
+   <zorder>label_11</zorder>
+   <zorder>rightZ_light</zorder>
+   <zorder>left_light</zorder>
+   <zorder>up_light</zorder>
+   <zorder>leftZ_light</zorder>
+   <zorder>down_light</zorder>
+   <zorder>right_light</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1056</width>
+     <width>1059</width>
      <height>22</height>
     </rect>
    </property>
