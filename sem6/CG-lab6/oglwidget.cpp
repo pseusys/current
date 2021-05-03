@@ -3,7 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include <cmath>
-//#include <GL/glu.h>
+#include <GL/glu.h>
 #include "oglwidget.h"
 
 GLfloat PI = 3.14;
@@ -73,8 +73,8 @@ void OGLWidget::paintGL() {
     glLoadIdentity();
 
     if (ortog) glOrtho (-1.0, 1.0, -1.0, 1.0, 0.1, 100.0);
-    //else gluPerspective (90.0, curWidth / curHeight, 1.0, 100.0);
-    //gluLookAt(eyeX, eyeY, eyeZ, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+    else gluPerspective (90.0, curWidth / curHeight, 1.0, 100.0);
+    gluLookAt(eyeX, eyeY, eyeZ, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
 
     glDisable(GL_LIGHT0);
@@ -149,7 +149,7 @@ void OGLWidget::paintGL() {
     {
         // направленный источник света
         GLfloat light0_diffuse[] = {1.0, 1.0, 1.0, 1.0}; //цвет диффузного освещения
-        GLfloat light0_direction[] = {0.0,0.0,0.0,1.0};//положение источника
+        GLfloat light0_direction[] = {lightX,lightY,lightZ,1.0};//положение источника
 
         glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diffuse);
         glLightfv(GL_LIGHT0, GL_POSITION, light0_direction);
@@ -161,7 +161,7 @@ void OGLWidget::paintGL() {
         // убывание интенсивности с расстоянием
         // отключено (по умолчанию)
         GLfloat light1_diffuse[] = {1.0, 1.0, 1.0, 1.0};
-        GLfloat light1_position[] = {0.0,0.0,0.0,1.0};
+        GLfloat light1_position[] = {lightX,lightY,lightZ,1.0};
 
         glLightfv(GL_LIGHT1, GL_DIFFUSE, light1_diffuse);
         glLightfv(GL_LIGHT1, GL_POSITION, light1_position);
@@ -173,7 +173,7 @@ void OGLWidget::paintGL() {
         // убывание интенсивности с расстоянием
         // задано функцией f(d) = 1.0 / (0.4 * d * d + 0.2 * d)
         GLfloat light2_diffuse[] = {0.4, 0.7, 0.2};
-        GLfloat light2_position[] = {0.0, 0.0, 1.0, 1.0};
+        GLfloat light2_position[] = {lightX,lightY,lightZ, 1.0};
 
         glLightfv(GL_LIGHT2, GL_DIFFUSE, light2_diffuse);
         glLightfv(GL_LIGHT2, GL_POSITION, light2_position);
@@ -191,7 +191,7 @@ void OGLWidget::paintGL() {
         // половина угла при вершине 30 градусов
         // направление на центр плоскости
         GLfloat light3_diffuse[] = {0.4, 0.7, 0.2};
-        GLfloat light3_position[] = {0.0, 0.0, 1.0, 1.0};
+        GLfloat light3_position[] = {lightX,lightY,lightZ, 1.0};
         GLfloat light3_spot_direction[] = {0.0, 0.0, -1.0, 1.0};
 
         glLightfv(GL_LIGHT3, GL_DIFFUSE, light3_diffuse);
@@ -210,7 +210,7 @@ void OGLWidget::paintGL() {
         // направление на центр плоскости
         // включен рассчет убывания интенсивности для прожектора
         GLfloat light4_diffuse[] = {0.4, 0.7, 0.2};
-        GLfloat light4_position[] = {0.0, 0.0, 1.0, 1.0};
+        GLfloat light4_position[] = {lightX,lightY,lightZ, 1.0};
         GLfloat light4_spot_direction[] = {0.0, 0.0, -1.0};
 
         glLightfv(GL_LIGHT4, GL_DIFFUSE, light4_diffuse);
@@ -224,7 +224,7 @@ void OGLWidget::paintGL() {
     {
         // несколько источников света
         GLfloat light5_diffuse[] = {1.0, 0.0, 0.0};
-        GLfloat light5_position[] = {3.0,6.0,5.0,1.0};
+        GLfloat light5_position[] = {(float) (lightX + 1.0),(float) (lightY + 1.0),(float) (lightZ + 1.0),1.0};
 
         glLightfv(GL_LIGHT5, GL_DIFFUSE, light5_diffuse);
         glLightfv(GL_LIGHT5, GL_POSITION, light5_position);
@@ -242,7 +242,7 @@ void OGLWidget::paintGL() {
         glLightf(GL_LIGHT6, GL_QUADRATIC_ATTENUATION, 0.8);
         glEnable(GL_LIGHT6);
         GLfloat light7_diffuse[] = {0.0, 0.0, 1.0};
-        GLfloat light7_position[] = {3.0,6.0,2.0,1.0};
+        GLfloat light7_position[] = {(float) (lightX - 1.0),(float) (lightY - 1.0),(float) (lightZ - 1.0),1.0};
 
         glLightfv(GL_LIGHT7, GL_DIFFUSE, light7_diffuse);
         glLightfv(GL_LIGHT7, GL_POSITION, light7_position);

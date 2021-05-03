@@ -33,6 +33,9 @@ public:
     int intensity = 99;
     int light_sample = 4;
     int material_sample = 1;
+    float lightX = 1.0;
+    float lightY = 1.0;
+    float lightZ = 1.0;
 
 
 protected:
