@@ -7,6 +7,8 @@
 #include <QTimerEvent>
 #include <QBasicTimer>
 
+#include "model.h"
+
 class OGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
     OGLWidget(QWidget *parent = 0);
@@ -22,6 +24,7 @@ protected:
     void timerEvent(QTimerEvent* ev) override;
 
 private:
+    Model speaker;
     QBasicTimer timer;
 
     void initUniforms();

@@ -16,8 +16,8 @@ float min_dist(vec2 position) {
 }
 
 void main(void) {
-    //float len = min_dist(gl_FragCoord.xy);
-    gl_FragColor.r = vColor.r/* * len * intens*/;
-    gl_FragColor.g = vColor.g/* * len * intens*/;
-    gl_FragColor.b = vColor.b/* * len * intens*/;
+    float len = min_dist(gl_FragCoord.xy);
+    gl_FragColor.r = vColor.r * len * intens;
+    gl_FragColor.g = vColor.g * len * intens;
+    gl_FragColor.b = vColor.b * len * intens;
 }

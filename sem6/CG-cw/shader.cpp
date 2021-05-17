@@ -15,7 +15,9 @@ GLuint Shader::compileShader(QString* filename, GLenum type) {
     else code = file.readAll();
     file.close();
 
-    const char* codeStr = code.toStdString().c_str();
+    std::string str = code.toStdString();
+    const char* codeStr = str.c_str();
+
     GLuint shaderId = ctx->functions()->glCreateShader(type);
     ctx->functions()->glShaderSource(shaderId, 1, &codeStr, NULL);
     ctx->functions()->glCompileShader(shaderId);

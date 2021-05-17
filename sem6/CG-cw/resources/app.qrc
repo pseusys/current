@@ -2,5 +2,6 @@
 <qresource>
     <file>fire.frag</file>
     <file>fire.vert</file>
+    <file>speaker.mdl</file>
 </qresource>
 </RCC>

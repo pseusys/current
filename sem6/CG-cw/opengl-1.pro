@@ -22,12 +22,14 @@ RESOURCES = resources/app.qrc
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
+    model.cpp \
     oglwidget.cpp \
     oglwidgetcallback.cpp \
     shader.cpp
 
 HEADERS += \
     mainwindow.h \
+    model.h \
     oglwidget.h \
     shader.h
 
