@@ -26,7 +26,7 @@ void Model::build(QString file) {
 
     QList paths_data = code.split("\r\n\r\n", Qt::SkipEmptyParts);
     foreach (QString path, paths_data) {
-        if (path.startsWith("//")) continue;
+        if (path.startsWith("//") || path.startsWith("\r\n//")) continue;
         VBOs.append(parsePath(&path));
     }
 }

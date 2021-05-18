@@ -4,15 +4,7 @@
 #include "oglwidget.h"
 #include "model.h"
 
-OGLWidget::OGLWidget(QWidget *parent) : QOpenGLWidget(parent) {
-    //timer.start(100, this);
-}
-
-OGLWidget::~OGLWidget() {
-    timer.stop();
-}
-
-
+OGLWidget::OGLWidget(QWidget *parent) : QOpenGLWidget(parent) {}
 
 QOpenGLShaderProgram program;
 
@@ -40,20 +32,12 @@ void OGLWidget::paintGL() {
     opera.clearTransform();
     opera.translateBy(3, 1, 0);
     opera.rotateBy(90);
+    //opera.translateBy(-4, 4, 0);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     program.bind();
     opera.setup(&program);
-    speaker.draw(&program, GL_POINTS);
+    speaker.draw(&program);
     program.release();
-}
-
-void OGLWidget::timerEvent(QTimerEvent* ev) {
-    if (ev->timerId() != timer.timerId()) {
-        QWidget::timerEvent(ev);
-        return;
-    }
-    callBack();
-    update();
 }
