@@ -7,6 +7,6 @@ varying vec3 vColor;
 uniform mat4 pvm_matrix;
 
 void main(void) {
-    gl_Position = pvm_matrix * vec4(coord.x, coord.y, coord.z, 1);
+    gl_Position = pvm_matrix * vec4(coord.x, coord.y, coord.z, 1.0);
     vColor = color;
 }

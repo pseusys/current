@@ -3,14 +3,12 @@
 
 #include "model.h"
 
-Model::Model() {
-    verts.create();
-    cols.create();
-}
+Model::Model() {}
 
 Model::~Model() {
-    verts.destroy();
-    cols.destroy();
+    foreach (QOpenGLBuffer VBO, VBOs) {
+        VBO.destroy();
+    }
 }
 
 void Model::setContext(QOpenGLContext* context) {
@@ -29,11 +27,11 @@ void Model::build(QString file) {
     QList paths_data = code.split("\r\n\r\n", Qt::SkipEmptyParts);
     foreach (QString path, paths_data) {
         if (path.startsWith("//")) continue;
-        paths.append(parsePath(&path));
+        VBOs.append(parsePath(&path));
     }
 }
 
-QPair<QVector<GLfloat>, QVector<GLfloat>> Model::parsePath(QString* path) {
+QOpenGLBuffer Model::parsePath(QString* path) {
     QString codes_path, colors_path;
     QList splittedPath = path->split("\r\n", Qt::SkipEmptyParts).filter(QRegularExpression("((?:(?:[+-]?[0-9]+.[0-9]+)[, ]*)+)"));
     codes_path = splittedPath[0];
@@ -42,6 +40,7 @@ QPair<QVector<GLfloat>, QVector<GLfloat>> Model::parsePath(QString* path) {
     QRegularExpression splitter("( |,)");
     QList codesStr = codes_path.split(splitter, Qt::SkipEmptyParts);
     QList codes = QList<GLfloat>();
+
     foreach (QString code, codesStr) {
         codes.append(code.toFloat());
     }
@@ -52,30 +51,34 @@ QPair<QVector<GLfloat>, QVector<GLfloat>> Model::parsePath(QString* path) {
         colors.append(color.toFloat());
     }
 
-    return QPair<QVector<GLfloat>,QVector<GLfloat>>(QVector<GLfloat>(codes), QVector<GLfloat>(colors));
+    int codes_len = codes.length() * sizeof(GLfloat);
+    int colors_len = colors.length() * sizeof(GLfloat);
+    if (codes_len != colors_len) throw std::runtime_error("Model error, one of the paths vertexes and colors lengths do not match.");
+
+    QOpenGLBuffer VBO(QOpenGLBuffer::VertexBuffer);
+    VBO.create();
+    VBO.bind();
+    VBO.allocate(codes_len + colors_len);
+    VBO.write(0, codes.constBegin(), codes_len);
+    VBO.write(codes_len, colors.constBegin(), colors_len);
+    VBO.release();
+
+    return VBO;
 }
 
 
-void Model::drawPath(int num, QOpenGLShaderProgram* program, int mode, const char* coordAttrributeName, const char* colorAttrributeName) {
-    QPair<QVector<GLfloat>, QVector<GLfloat>> ptr = paths[num];
-    int codes_len = ptr.first.length();
-    const GLfloat* codes = ptr.first.constBegin();
-    int colors_len = ptr.second.length();
-    const GLfloat* colors = ptr.second.constBegin();
+void Model::draw(QOpenGLShaderProgram* program, int mode, const char* coordAttrributeName, const char* colorAttrributeName) {
+    foreach (QOpenGLBuffer VBO, VBOs) {
+        VBO.bind();
+        program->enableAttributeArray(coordAttrributeName);
+        program->setAttributeBuffer(coordAttrributeName, GL_FLOAT, 0, 3);
+        program->enableAttributeArray(colorAttrributeName);
+        program->setAttributeBuffer(colorAttrributeName, GL_FLOAT, VBO.size() / 2, 3);
 
-    verts.bind();
-    verts.allocate(codes, codes_len);
-    cols.bind();
-    cols.allocate(colors, colors_len);
+        ctx->functions()->glDrawArrays(mode, 0, VBO.size() / 6 / sizeof(GLfloat));
 
-    //program->setAttributeBuffer(coordAttrributeName, GL_FLOAT, 0, 3);
-    program->enableAttributeArray(coordAttrributeName);
-    program->setAttributeArray(coordAttrributeName, codes, 3);
-    program->enableAttributeArray(colorAttrributeName);
-    program->setAttributeArray(colorAttrributeName, colors, 3);
-
-    ctx->functions()->glDrawArrays(mode, 0, codes_len / 3);
-
-    program->disableAttributeArray(coordAttrributeName);
-    program->disableAttributeArray(colorAttrributeName);
+        program->disableAttributeArray(coordAttrributeName);
+        program->disableAttributeArray(colorAttrributeName);
+        VBO.release();
+    }
 }

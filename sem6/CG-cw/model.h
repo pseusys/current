@@ -7,21 +7,19 @@
 #include <QOpenGLBuffer>
 
 
-class Model {
+class Model : protected QOpenGLFunctions {
 public:
     Model();
     ~Model();
     void setContext(QOpenGLContext* context);
     void build(QString file);
-    void drawPath(int num, QOpenGLShaderProgram* program, int mode = GL_TRIANGLE_STRIP, const char* coordAttrributeName = "coord", const char* colorAttrributeName = "color");
+    void draw(QOpenGLShaderProgram* program, int mode = GL_TRIANGLE_STRIP, const char* coordAttrributeName = "coord", const char* colorAttrributeName = "color");
 
 private:
-    QPair<QList<GLfloat>, QList<GLfloat>> parsePath(QString* path);
+    QOpenGLBuffer parsePath(QString* path);
 
     QOpenGLContext* ctx;
-    QList<QPair<QVector<GLfloat>, QVector<GLfloat>>> paths;
-
-    QOpenGLBuffer verts, cols;
+    QList<QOpenGLBuffer> VBOs;
 };
 
 #endif // MODEL_H
