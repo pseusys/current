@@ -3,7 +3,15 @@
 
 #include "model.h"
 
-Model::Model() {}
+Model::Model() {
+    verts.create();
+    cols.create();
+}
+
+Model::~Model() {
+    verts.destroy();
+    cols.destroy();
+}
 
 void Model::setContext(QOpenGLContext* context) {
     ctx = context;
@@ -18,60 +26,56 @@ void Model::build(QString file) {
     else code = source.readAll();
     source.close();
 
-    QList paths_data = code.split("\r\n\r\n");
+    QList paths_data = code.split("\r\n\r\n", Qt::SkipEmptyParts);
     foreach (QString path, paths_data) {
+        if (path.startsWith("//")) continue;
         paths.append(parsePath(&path));
     }
 }
 
-QPair<QList<GLfloat>, QList<GLfloat>> Model::parsePath(QString* path) {
+QPair<QVector<GLfloat>, QVector<GLfloat>> Model::parsePath(QString* path) {
     QString codes_path, colors_path;
-    QList splittedPath = path->split("\r\n");
+    QList splittedPath = path->split("\r\n", Qt::SkipEmptyParts).filter(QRegularExpression("((?:(?:[+-]?[0-9]+.[0-9]+)[, ]*)+)"));
     codes_path = splittedPath[0];
     colors_path = splittedPath[1];
 
-    QRegularExpression splitter("(\\ |\\,)");
-    QList codesStr = codes_path.split(splitter);
+    QRegularExpression splitter("( |,)");
+    QList codesStr = codes_path.split(splitter, Qt::SkipEmptyParts);
     QList codes = QList<GLfloat>();
     foreach (QString code, codesStr) {
         codes.append(code.toFloat());
-        //qDebug() << " Code:" << code.toFloat();
     }
 
-    QList colorsStr = colors_path.split(splitter);
+    QList colorsStr = colors_path.split(splitter, Qt::SkipEmptyParts);
     QList colors = QList<GLfloat>();
     foreach (QString color, colorsStr) {
         colors.append(color.toFloat());
-        //qDebug() << " Color:" << color.toFloat();
     }
 
-    return QPair<QList<GLfloat>,QList<GLfloat>>(codes, colors);
+    return QPair<QVector<GLfloat>,QVector<GLfloat>>(QVector<GLfloat>(codes), QVector<GLfloat>(colors));
 }
 
-void Model::drawPath(int num, GLuint program, const char* coordAttrributeName, const char* colorAttrributeName) {
-    QPair<QList<GLfloat>, QList<GLfloat>> ptr = paths[num];
+
+void Model::drawPath(int num, QOpenGLShaderProgram* program, int mode, const char* coordAttrributeName, const char* colorAttrributeName) {
+    QPair<QVector<GLfloat>, QVector<GLfloat>> ptr = paths[num];
     int codes_len = ptr.first.length();
-    const GLfloat* codes = ptr.first.toVector().constBegin();
+    const GLfloat* codes = ptr.first.constBegin();
     int colors_len = ptr.second.length();
-    const GLfloat* colors = ptr.second.toVector().constBegin();
+    const GLfloat* colors = ptr.second.constBegin();
 
-    GLuint* vboIds = new GLuint[2];
-    ctx->functions()->glGenBuffers(2, vboIds);
+    verts.bind();
+    verts.allocate(codes, codes_len);
+    cols.bind();
+    cols.allocate(colors, colors_len);
 
-    GLint attributeCoord2d = ctx->functions()->glGetAttribLocation(program, coordAttrributeName);
-    ctx->functions()->glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);
-    ctx->functions()->glBufferData(GL_ARRAY_BUFFER, codes_len * sizeof(GLfloat), codes, GL_STATIC_DRAW);
-    ctx->functions()->glVertexAttribPointer(attributeCoord2d,3,GL_FLOAT,GL_FALSE,0,0);
-    ctx->functions()->glEnableVertexAttribArray(attributeCoord2d);
+    //program->setAttributeBuffer(coordAttrributeName, GL_FLOAT, 0, 3);
+    program->enableAttributeArray(coordAttrributeName);
+    program->setAttributeArray(coordAttrributeName, codes, 3);
+    program->enableAttributeArray(colorAttrributeName);
+    program->setAttributeArray(colorAttrributeName, colors, 3);
 
-    GLint attributeColor = ctx->functions()->glGetAttribLocation(program, colorAttrributeName);
-    ctx->functions()->glBindBuffer(GL_ARRAY_BUFFER, vboIds[1]);
-    ctx->functions()->glBufferData(GL_ARRAY_BUFFER, colors_len * sizeof(GLfloat), colors, GL_STATIC_DRAW);
-    ctx->functions()->glVertexAttribPointer(attributeColor,3,GL_FLOAT,GL_FALSE,0,0);
-    ctx->functions()->glEnableVertexAttribArray(attributeColor);
+    ctx->functions()->glDrawArrays(mode, 0, codes_len / 3);
 
-    ctx->functions()->glDrawArrays(GL_POINTS, 0, codes_len);
-
-    ctx->functions()->glDisableVertexAttribArray(attributeCoord2d);
-    ctx->functions()->glDisableVertexAttribArray(attributeColor);
+    program->disableAttributeArray(coordAttrributeName);
+    program->disableAttributeArray(colorAttrributeName);
 }

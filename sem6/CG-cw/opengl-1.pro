@@ -25,13 +25,13 @@ SOURCES += \
     model.cpp \
     oglwidget.cpp \
     oglwidgetcallback.cpp \
-    shader.cpp
+    rotas.cpp
 
 HEADERS += \
     mainwindow.h \
     model.h \
     oglwidget.h \
-    shader.h
+    rotas.h
 
 FORMS += \
     mainwindow.ui

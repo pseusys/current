@@ -1,10 +1,7 @@
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLShader>
 
 #include "oglwidget.h"
-#include "shader.h"
 #include "model.h"
 
 OGLWidget::OGLWidget(QWidget *parent) : QOpenGLWidget(parent) {
@@ -18,32 +15,14 @@ OGLWidget::~OGLWidget() {
 
 
 
-GLfloat vertices[] = {
-    -0.8, 0,
-    0, 0.8,
-    0.8, 0,
-    0.2, -0.7,
-    0, -0.8,
-    -0.2, -0.7
-};
+QOpenGLShaderProgram program;
 
-GLfloat colors[] = {
-    0, 0, 0,
-    0, 0, 0,
-    0, 0, 0,
-    1, 0.3, 0,
-    1, 0.3, 0,
-    1, 0.3, 0
-};
-
-GLint program;
-
-void OGLWidget::initializeGL()
-{
+void OGLWidget::initializeGL() {
     initializeOpenGLFunctions();
 
-    Shader shader(this->context());
-    program = shader.compile("fire.vert", "fire.frag");
+    program.addCacheableShaderFromSourceFile(QOpenGLShader::Fragment, ":/fire.frag");
+    program.addCacheableShaderFromSourceFile(QOpenGLShader::Vertex, ":/fire.vert");
+    program.link();
 
     speaker.setContext(this->context());
 
@@ -51,34 +30,23 @@ void OGLWidget::initializeGL()
     initUniforms();
 }
 
-void OGLWidget::resizeGL(int w, int h)
-{
-    glViewport(0,0,w,h);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+void OGLWidget::resizeGL(int w, int h) {
+    glViewport(0, 0, w, h);
+    opera.resize(w, h);
 }
 
-void OGLWidget::paintGL()
-{
+void OGLWidget::paintGL() {
+    opera.translate(0, 1, -2);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(program);
 
-    GLint uniformMilestones = glGetUniformLocation(program, "milestones");
-    glUniform2fv(uniformMilestones, 5, (const GLfloat*) milestones);
-
-    GLint uniformRadius = glGetUniformLocation(program, "radius");
-    glUniform1i(uniformRadius, radius);
-
-    GLint intensRadius = glGetUniformLocation(program, "intens");
-    glUniform1f(intensRadius, intens);
-
-    speaker.drawPath(0, program);
+    program.bind();
+    opera.setup(&program);
+    for (int i = 0; i < 12; i++) speaker.drawPath(i, &program);
+    program.release();
 }
 
-void OGLWidget::timerEvent(QTimerEvent* ev)
-{
+void OGLWidget::timerEvent(QTimerEvent* ev) {
     if (ev->timerId() != timer.timerId()) {
         QWidget::timerEvent(ev);
         return;

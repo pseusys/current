@@ -8,6 +8,7 @@
 #include <QBasicTimer>
 
 #include "model.h"
+#include "rotas.h"
 
 class OGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
@@ -25,6 +26,7 @@ protected:
 
 private:
     Model speaker;
+    Rotas opera;
     QBasicTimer timer;
 
     void initUniforms();
