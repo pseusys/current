@@ -1,26 +1,18 @@
 #include <QOpenGLShaderProgram>
-#include <QOpenGLShader>
+#include <QOpenGLTexture>
 
 #include "oglwidget.h"
 #include "model.h"
 
 OGLWidget::OGLWidget(QWidget *parent) : QOpenGLWidget(parent) {}
 
-QOpenGLShaderProgram program;
-
 void OGLWidget::initializeGL() {
     initializeOpenGLFunctions();
 
-    speaker.build("speaker.mdl");
-
-    program.addCacheableShaderFromSourceFile(QOpenGLShader::Fragment, ":/fire.frag");
-    program.addCacheableShaderFromSourceFile(QOpenGLShader::Vertex, ":/fire.vert");
-    program.link();
-
-    speaker.setContext(this->context());
+    speaker.build("speaker", "general", "textured");
+    speaker.setSquareTexture(22, "img_texture.jpg");
 
     glClearColor(0, 0, 0, 1);
-    initUniforms();
 }
 
 void OGLWidget::resizeGL(int w, int h) {
@@ -29,15 +21,19 @@ void OGLWidget::resizeGL(int w, int h) {
 }
 
 void OGLWidget::paintGL() {
-    opera.clearTransform();
-    opera.translateBy(3, 1, 0);
-    opera.rotateBy(90);
-    //opera.translateBy(-4, 4, 0);
-
+    opera.init();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    program.bind();
-    opera.setup(&program);
-    speaker.draw(&program);
-    program.release();
+    int toDraw = speaker.start();
+    for (int i = 0; i < toDraw; i++) {
+        QOpenGLShaderProgram* shader = speaker.getShader(i);
+        shader->bind();
+        opera.setup(shader);
+        zap.light(shader);
+        zap.color(shader);
+        speaker.draw(i, shader);
+        shader->release();
+    }
+    int drawn = speaker.finish();
+    if (drawn == 0) qDebug() << "Alert! No paths redrawn!";
 }

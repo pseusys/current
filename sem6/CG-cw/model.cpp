@@ -3,82 +3,160 @@
 
 #include "model.h"
 
-Model::Model() {}
+Model::Model() {
+    textures = QHash<int, QOpenGLTexture*>();
+}
 
 Model::~Model() {
     foreach (QOpenGLBuffer VBO, VBOs) {
         VBO.destroy();
     }
+    foreach (QOpenGLTexture* texture, textures.values()) {
+        delete texture;
+    }
 }
 
-void Model::setContext(QOpenGLContext* context) {
-    ctx = context;
-}
+const GLfloat texCoords [8] = {
+    0.0f, 0.0f,
+    0.0f, 1.0f,
+    1.0f, 0.0f,
+    1.0f, 1.0f
+};
 
-void Model::build(QString file) {
-    QString prefix(":/");
-    QString code;
 
-    QFile source(prefix + file);
-    if (!source.open(QIODevice::ReadOnly)) qDebug() << "Model read error, file: " << file;
-    else code = source.readAll();
+
+void Model::build(QString file, QString general, QString textured) {
+    generalS.addCacheableShaderFromSourceFile(QOpenGLShader::Fragment, ":/" + general + ".frag");
+    generalS.addCacheableShaderFromSourceFile(QOpenGLShader::Vertex, ":/" + general + ".vert");
+    generalS.link();
+
+    texturedS.addCacheableShaderFromSourceFile(QOpenGLShader::Fragment, ":/" + textured + ".frag");
+    texturedS.addCacheableShaderFromSourceFile(QOpenGLShader::Vertex, ":/" + textured + ".vert");
+    texturedS.link();
+
+    QString raw;
+    QFile source(":/" + file + ".mdl");
+    if (!source.open(QIODevice::ReadOnly)) qDebug() << "Model read error, file:" << source.fileName();
+    else raw = source.readAll();
     source.close();
 
-    QList paths_data = code.split("\r\n\r\n", Qt::SkipEmptyParts);
-    foreach (QString path, paths_data) {
-        if (path.startsWith("//") || path.startsWith("\r\n//")) continue;
-        VBOs.append(parsePath(&path));
-    }
-}
+    QHash<QString, QVector3D> normals;
+    QList paths = QList<QList<QPair<QString, QVector3D>>>();
 
-QOpenGLBuffer Model::parsePath(QString* path) {
-    QString codes_path, colors_path;
-    QList splittedPath = path->split("\r\n", Qt::SkipEmptyParts).filter(QRegularExpression("((?:(?:[+-]?[0-9]+.[0-9]+)[, ]*)+)"));
-    codes_path = splittedPath[0];
-    colors_path = splittedPath[1];
+    foreach (QString path, raw.split("\r\n", Qt::SkipEmptyParts).filter(QRegularExpression("((?:(?:[+-]?[0-9]+.[0-9]+)[, ]*)+)"))) {
+        QList strings = path.split(" ", Qt::SkipEmptyParts);
+        QList vertexes = QList<QPair<QString, QVector3D>>();
 
-    QRegularExpression splitter("( |,)");
-    QList codesStr = codes_path.split(splitter, Qt::SkipEmptyParts);
-    QList codes = QList<GLfloat>();
+        for (int i = 0; i < strings.length(); i++) {
+            if (!normals.contains(strings[i])) normals.insert(strings[i], QVector3D());
+            QList coords = strings[i].split(",");
+            Q_ASSERT_X(coords.length() == 3, "Model::build(QString)", "A vertex has more or less than 3 coords.");
 
-    foreach (QString code, codesStr) {
-        codes.append(code.toFloat());
-    }
+            vertexes.append(QPair<QString, QVector3D>(strings[i], QVector3D(coords[0].toFloat(), coords[1].toFloat(), coords[2].toFloat())));
+            if (i < 2) continue;
 
-    QList colorsStr = colors_path.split(splitter, Qt::SkipEmptyParts);
-    QList colors = QList<GLfloat>();
-    foreach (QString color, colorsStr) {
-        colors.append(color.toFloat());
+            QVector3D cross(QVector3D::crossProduct(vertexes[i - 2].second - vertexes[i].second, vertexes[i - 1].second - vertexes[i].second));
+            for (int j = 0; j < 3; j++) normals[strings[i - j]] += cross;
+        }
+
+        paths.append(vertexes);
     }
 
-    int codes_len = codes.length() * sizeof(GLfloat);
-    int colors_len = colors.length() * sizeof(GLfloat);
-    if (codes_len != colors_len) throw std::runtime_error("Model error, one of the paths vertexes and colors lengths do not match.");
+    for (int i = 0; i < paths.length(); i++) {
+        int length = paths[i].length() * 3 * sizeof(GLfloat);
+        int offset = 0;
 
-    QOpenGLBuffer VBO(QOpenGLBuffer::VertexBuffer);
-    VBO.create();
-    VBO.bind();
-    VBO.allocate(codes_len + colors_len);
-    VBO.write(0, codes.constBegin(), codes_len);
-    VBO.write(codes_len, colors.constBegin(), colors_len);
-    VBO.release();
-
-    return VBO;
-}
-
-
-void Model::draw(QOpenGLShaderProgram* program, int mode, const char* coordAttrributeName, const char* colorAttrributeName) {
-    foreach (QOpenGLBuffer VBO, VBOs) {
+        QOpenGLBuffer VBO(QOpenGLBuffer::VertexBuffer);
+        VBO.create();
         VBO.bind();
-        program->enableAttributeArray(coordAttrributeName);
-        program->setAttributeBuffer(coordAttrributeName, GL_FLOAT, 0, 3);
-        program->enableAttributeArray(colorAttrributeName);
-        program->setAttributeBuffer(colorAttrributeName, GL_FLOAT, VBO.size() / 2, 3);
+        VBO.allocate(length * 2 + sizeof(texCoords));
 
-        ctx->functions()->glDrawArrays(mode, 0, VBO.size() / 6 / sizeof(GLfloat));
+        for (int j = 0; j < paths[i].length(); j++) {
+            GLfloat vert [3] = {paths[i][j].second.x(), paths[i][j].second.y(), paths[i][j].second.z()};
+            int len = sizeof(vert);
+            VBO.write(offset, vert, len);
+            offset += len;
+        }
+        for (int j = 0; j < paths[i].length(); j++) {
+            if (!normals.contains(paths[i][j].first)) qDebug() << "A vertex does not have normal.";
+            QVector3D normal = normals[paths[i][j].first].normalized();
+            GLfloat norm [3] = {normal.x(), normal.y(), normal.z()};
+            int len = sizeof(norm);
+            VBO.write(offset, norm, len);
+            offset += len;
+        }
 
-        program->disableAttributeArray(coordAttrributeName);
-        program->disableAttributeArray(colorAttrributeName);
         VBO.release();
+        VBOs.append(VBO);
     }
+}
+
+void Model::setSquareTexture(int path, QString file) {
+    Q_ASSERT_X((path > 0) && (path < VBOs.length()), "Model::setTexture(int, QString)", "Invalid path number.");
+
+    VBOs[path].bind();
+    Q_ASSERT_X(VBOs[path].size() == sizeof(GLfloat) * 32, "Model::setTexture(int, QString)", "Path is not applicable for square texture.");
+
+    QOpenGLTexture* texture = new QOpenGLTexture(QImage(":/" + file));
+    textures.insert(path, texture);
+    texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+    texture->setMagnificationFilter(QOpenGLTexture::Linear);
+    texture->create();
+
+    VBOs[path].write(VBOs[path].size() - sizeof(texCoords), texCoords, sizeof(texCoords));
+    VBOs[path].release();
+}
+
+QOpenGLShaderProgram* Model::getShader(int path) {
+    return textures.contains(path) ? &texturedS : &generalS;
+}
+
+
+
+int Model::start() {
+    Q_ASSERT_X(!drawing, "Model::start()", "Drawing already in progress.");
+    drawing = true;
+    drawn = 0;
+    glEnable(GL_DEPTH_TEST);
+    return VBOs.length();
+}
+
+void Model::draw(int num, QOpenGLShaderProgram* program, int mode, const char* coordAN, const char* normalAN, const char* texCoordAN, const char* textureAN) {
+    Q_ASSERT_X(drawing, "Model::draw(int, QOpenGLShaderProgram&, int, const char*, const char*)", "Drawing not in progress.");
+    drawn++;
+    QOpenGLBuffer VBO = VBOs[num];
+    bool drawTexture = textures.contains(num);
+
+    VBO.bind();
+    int size = VBO.size() - sizeof(texCoords);
+
+    program->enableAttributeArray(coordAN);
+    program->setAttributeBuffer(coordAN, GL_FLOAT, 0, 3);
+    program->enableAttributeArray(normalAN);
+    program->setAttributeBuffer(normalAN, GL_FLOAT, size / 2, 3);
+
+    if (drawTexture) {
+        program->enableAttributeArray(texCoordAN);
+        program->setAttributeBuffer(texCoordAN, GL_FLOAT, size, 2);
+        textures[num]->bind(0);
+        program->setUniformValue(textureAN, 0);
+    }
+
+    glDrawArrays(mode, 0, size / 6 / sizeof(GLfloat));
+
+    if (drawTexture) {
+        program->disableAttributeArray(texCoordAN);
+        textures[num]->release(0);
+    }
+
+    program->disableAttributeArray(coordAN);
+    program->disableAttributeArray(normalAN);
+    VBO.release();
+}
+
+int Model::finish() {
+    Q_ASSERT_X(drawing, "Model::finish()", "Drawing hasn't started.");
+    drawing = false;
+    glDisable(GL_DEPTH_TEST);
+    return drawn;
 }

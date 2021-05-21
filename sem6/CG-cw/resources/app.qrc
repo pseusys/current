@@ -1,7 +1,11 @@
-<!DOCTYPE RCC><RCC version="1.0">
+<!DOCTYPE RCC>
+<RCC version="1.0">
 <qresource>
-    <file>fire.frag</file>
-    <file>fire.vert</file>
+    <file>general.frag</file>
+    <file>general.vert</file>
+    <file>textured.frag</file>
+    <file>textured.vert</file>
     <file>speaker.mdl</file>
+    <file>img_texture.jpg</file>
 </qresource>
 </RCC>

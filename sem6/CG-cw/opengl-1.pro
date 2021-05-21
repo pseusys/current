@@ -1,6 +1,6 @@
 QT += core gui opengl openglwidgets
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
 CONFIG += c++11
 
@@ -20,14 +20,15 @@ LIBS += -lglu32 -lopengl32
 RESOURCES = resources/app.qrc
 
 SOURCES += \
+    lightning.cpp \
     main.cpp \
     mainwindow.cpp \
     model.cpp \
     oglwidget.cpp \
-    oglwidgetcallback.cpp \
     rotas.cpp
 
 HEADERS += \
+    lightning.h \
     mainwindow.h \
     model.h \
     oglwidget.h \

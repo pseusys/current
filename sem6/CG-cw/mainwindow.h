@@ -5,11 +5,10 @@
 #include "oglwidget.h"
 
 namespace Ui {
-class MainWindow;
+    class MainWindow;
 }
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
@@ -17,31 +16,32 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_up_eye_clicked();
+    void on_y_plus_eye_clicked();
+    void on_y_minus_eye_clicked();
 
-    void on_left_eye_clicked();
+    void on_x_plus_eye_clicked();
+    void on_x_minus_eye_clicked();
 
-    void on_rightZ_eye_clicked();
+    void on_z_plus_eye_clicked();
+    void on_z_minus_eye_clicked();
 
-    void on_leftZ_eye_clicked();
+    void on_rot_right_eye_clicked();
+    void on_rot_left_eye_clicked();
 
-    void on_right_eye_clicked();
+    void on_y_plus_light_clicked();
+    void on_y_minus_light_clicked();
 
-    void on_down_eye_clicked();
+    void on_x_plus_light_clicked();
+    void on_x_minus_light_clicked();
 
-    void on_up_light_clicked();
-
-    void on_left_light_clicked();
-
-    void on_rightZ_light_clicked();
-
-    void on_leftZ_light_clicked();
-
-    void on_right_light_clicked();
-
-    void on_down_light_clicked();
+    void on_z_plus_light_clicked();
+    void on_z_minus_light_clicked();
 
 private:
+    void updateCamera();
+    void updateLight();
+    QString qFuzzy(float num);
+
     Ui::MainWindow *ui;
 };
 

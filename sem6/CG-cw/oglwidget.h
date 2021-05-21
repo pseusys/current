@@ -7,6 +7,7 @@
 #include <QTimerEvent>
 #include <QBasicTimer>
 
+#include "lightning.h"
 #include "model.h"
 #include "rotas.h"
 
@@ -14,8 +15,8 @@ class OGLWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
     OGLWidget(QWidget *parent = 0);
 
-    GLfloat milestones[10], intens;
-    GLint radius;
+    Rotas opera;
+    Lightning zap;
 
 protected:
     void initializeGL() override;
@@ -24,10 +25,6 @@ protected:
 
 private:
     Model speaker;
-    Rotas opera;
-
-    void initUniforms();
-    void callBack();
 };
 
 #endif // OGLWIDGET_H
