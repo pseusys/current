@@ -25,17 +25,9 @@ const GLfloat texCoords [8] = {
 
 
 
-void Model::build(QString file, QString general, QString textured) {
-    generalS.addCacheableShaderFromSourceFile(QOpenGLShader::Fragment, ":/" + general + ".frag");
-    generalS.addCacheableShaderFromSourceFile(QOpenGLShader::Vertex, ":/" + general + ".vert");
-    generalS.link();
-
-    texturedS.addCacheableShaderFromSourceFile(QOpenGLShader::Fragment, ":/" + textured + ".frag");
-    texturedS.addCacheableShaderFromSourceFile(QOpenGLShader::Vertex, ":/" + textured + ".vert");
-    texturedS.link();
-
+void Model::build(QString file) {
     QString raw;
-    QFile source(":/" + file + ".mdl");
+    QFile source(file);
     if (!source.open(QIODevice::ReadOnly)) qDebug() << "Model read error, file:" << source.fileName();
     else raw = source.readAll();
     source.close();
@@ -97,7 +89,7 @@ void Model::setSquareTexture(int path, QString file) {
     VBOs[path].bind();
     Q_ASSERT_X(VBOs[path].size() == sizeof(GLfloat) * 32, "Model::setTexture(int, QString)", "Path is not applicable for square texture.");
 
-    QOpenGLTexture* texture = new QOpenGLTexture(QImage(":/" + file));
+    QOpenGLTexture* texture = new QOpenGLTexture(QImage(file));
     textures.insert(path, texture);
     texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
     texture->setMagnificationFilter(QOpenGLTexture::Linear);
@@ -105,10 +97,6 @@ void Model::setSquareTexture(int path, QString file) {
 
     VBOs[path].write(VBOs[path].size() - sizeof(texCoords), texCoords, sizeof(texCoords));
     VBOs[path].release();
-}
-
-QOpenGLShaderProgram* Model::getShader(int path) {
-    return textures.contains(path) ? &texturedS : &generalS;
 }
 
 
@@ -121,37 +109,50 @@ int Model::start() {
     return VBOs.length();
 }
 
-void Model::draw(int num, QOpenGLShaderProgram* program, int mode, const char* coordAN, const char* normalAN, const char* texCoordAN, const char* textureAN) {
+void Model::draw(int path, QOpenGLShaderProgram& program, int mode, const char* coordAN, const char* normalAN, const char* texturedAN, const char* texCoordAN, const char* textureAN) {
     Q_ASSERT_X(drawing, "Model::draw(int, QOpenGLShaderProgram&, int, const char*, const char*)", "Drawing not in progress.");
     drawn++;
-    QOpenGLBuffer VBO = VBOs[num];
-    bool drawTexture = textures.contains(num);
+    QOpenGLBuffer VBO = VBOs[path];
+    bool drawTexture = textures.contains(path);
 
     VBO.bind();
     int size = VBO.size() - sizeof(texCoords);
 
-    program->enableAttributeArray(coordAN);
-    program->setAttributeBuffer(coordAN, GL_FLOAT, 0, 3);
-    program->enableAttributeArray(normalAN);
-    program->setAttributeBuffer(normalAN, GL_FLOAT, size / 2, 3);
+    program.enableAttributeArray(coordAN);
+    program.setAttributeBuffer(coordAN, GL_FLOAT, 0, 3);
+
+    program.enableAttributeArray(normalAN);
+    program.setAttributeBuffer(normalAN, GL_FLOAT, size / 2, 3);
 
     if (drawTexture) {
-        program->enableAttributeArray(texCoordAN);
-        program->setAttributeBuffer(texCoordAN, GL_FLOAT, size, 2);
-        textures[num]->bind(0);
-        program->setUniformValue(textureAN, 0);
-    }
+        program.enableAttributeArray(texCoordAN);
+        program.setAttributeBuffer(texCoordAN, GL_FLOAT, size, 2);
+
+        textures[path]->bind(0);
+        program.setUniformValue(textureAN, 0);
+
+        program.setUniformValue(texturedAN, 1);
+    } else program.setUniformValue(texturedAN, 0);
 
     glDrawArrays(mode, 0, size / 6 / sizeof(GLfloat));
 
     if (drawTexture) {
-        program->disableAttributeArray(texCoordAN);
-        textures[num]->release(0);
+        program.disableAttributeArray(texCoordAN);
+        textures[path]->release(0);
     }
 
-    program->disableAttributeArray(coordAN);
-    program->disableAttributeArray(normalAN);
+    program.disableAttributeArray(coordAN);
+    program.disableAttributeArray(normalAN);
     VBO.release();
+}
+
+void Model::color(int path, QOpenGLShaderProgram& program, const char* colorAN, const char* specularAN, const char* shininessAN) {
+    QVector3D materialColor = QVector3D(1.0, 1.0, 1.0);
+    GLfloat materialSpecular = 0.3;
+    GLfloat materialShininess = 4;
+    program.setUniformValue(colorAN, materialColor);
+    program.setUniformValue(specularAN, materialSpecular);
+    program.setUniformValue(shininessAN, materialShininess);
 }
 
 int Model::finish() {

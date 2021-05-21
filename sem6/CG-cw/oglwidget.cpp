@@ -9,8 +9,12 @@ OGLWidget::OGLWidget(QWidget *parent) : QOpenGLWidget(parent) {}
 void OGLWidget::initializeGL() {
     initializeOpenGLFunctions();
 
-    speaker.build("speaker", "general", "textured");
-    speaker.setSquareTexture(22, "img_texture.jpg");
+    shader.addCacheableShaderFromSourceFile(QOpenGLShader::Fragment, ":/general.frag");
+    shader.addCacheableShaderFromSourceFile(QOpenGLShader::Vertex, ":/general.vert");
+    shader.link();
+
+    speaker.build(":/speaker.mdl");
+    speaker.setSquareTexture(22, ":/img_texture.jpg");
 
     glClearColor(0, 0, 0, 1);
 }
@@ -26,13 +30,12 @@ void OGLWidget::paintGL() {
 
     int toDraw = speaker.start();
     for (int i = 0; i < toDraw; i++) {
-        QOpenGLShaderProgram* shader = speaker.getShader(i);
-        shader->bind();
+        shader.bind();
         opera.setup(shader);
         zap.light(shader);
-        zap.color(shader);
+        speaker.color(i, shader);
         speaker.draw(i, shader);
-        shader->release();
+        shader.release();
     }
     int drawn = speaker.finish();
     if (drawn == 0) qDebug() << "Alert! No paths redrawn!";

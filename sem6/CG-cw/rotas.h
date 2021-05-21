@@ -7,7 +7,7 @@
 class Rotas {
 public:
     Rotas();
-    void setup(QOpenGLShaderProgram* program, const char* projectionAN = "projection", const char* viewAN = "view", const char* modelAN = "model", const char* coordAN = "view_coord");
+    void setup(QOpenGLShaderProgram& program, const char* projectionAN = "projection", const char* viewAN = "view", const char* modelAN = "model", const char* coordAN = "view_coord");
 
     void resize(float w, float h);
     bool translateBy(float x, float y, float z);

@@ -25,6 +25,7 @@ protected:
 
 private:
     Model speaker;
+    QOpenGLShaderProgram shader;
 };
 
 #endif // OGLWIDGET_H

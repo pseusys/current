@@ -7,15 +7,14 @@
 class Lightning {
 public:
     Lightning();
-    void light(QOpenGLShaderProgram* program, const char* coordAN = "light_coord", const char* colorAN = "light_color", const char* strengthAN = "light_strength");
-    void color(QOpenGLShaderProgram* program, const char* colorAN = "vert_color", const char* specularAN = "vert_specular", const char* shininessAN = "vert_shininess");
+    void light(QOpenGLShaderProgram& program, const char* coordAN = "light_coord", const char* colorAN = "light_color", const char* strengthAN = "light_strength");
     void translateBy(float x, float y, float z);
 
     QVector3D lightPos;
 
 private:
-    QVector3D lightColor, materialColor;
-    GLfloat lightStrength, materialShininess, materialSpecular;
+    QVector3D lightColor;
+    GLfloat lightStrength;
 };
 
 #endif // LIGHTNING_H

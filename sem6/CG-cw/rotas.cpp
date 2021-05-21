@@ -57,11 +57,11 @@ void Rotas::rotateBy(int degrees) {
     view.lookAt(cameraPoint, center, upPosition);
 }
 
-void Rotas::setup(QOpenGLShaderProgram* program, const char* projectionAN, const char* viewAN, const char* modelAN, const char* coordAN) {
-    program->setUniformValue(projectionAN, projection);
-    program->setUniformValue(viewAN, view);
-    program->setUniformValue(modelAN, model);
-    program->setUniformValue(coordAN, cameraPoint);
+void Rotas::setup(QOpenGLShaderProgram& program, const char* projectionAN, const char* viewAN, const char* modelAN, const char* coordAN) {
+    program.setUniformValue(projectionAN, projection);
+    program.setUniformValue(viewAN, view);
+    program.setUniformValue(modelAN, model);
+    program.setUniformValue(coordAN, cameraPoint);
 }
 
 void Rotas::init() {
