@@ -17,7 +17,7 @@ public:
     QVector3D cameraPoint, upPosition;
 
 private:
-    QVector3D uppreciate(float rotSin, float rotCos, QVector3D basisI, QVector3D basisJ, QVector3D basisK, QVector3D up);
+    QVector3D uppreciate(float rotSin, float rotCos, QVector3D basisI, QVector3D basisJ, QVector3D basisK);
 
     QMatrix4x4 model, view, projection;
 };

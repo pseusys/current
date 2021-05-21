@@ -4,6 +4,6 @@
     <file>general.frag</file>
     <file>general.vert</file>
     <file>speaker.mdl</file>
-    <file>img_texture.jpg</file>
+    <file>texture.png</file>
 </qresource>
 </RCC>

@@ -18,7 +18,8 @@ void Rotas::resize(float w, float h) {
     projection.perspective(fov, w / h, d_near, d_far);
 }
 
-QVector3D Rotas::uppreciate(float rotSin, float rotCos, QVector3D basisI, QVector3D basisJ, QVector3D basisK, QVector3D up) {
+// Функция поворота вектора камеры и up-вектора, код отсюда (https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d/897677#897677).
+QVector3D Rotas::uppreciate(float rotSin, float rotCos, QVector3D basisI, QVector3D basisJ, QVector3D basisK) {
     QMatrix4x4 G(rotCos, -rotSin, 0, 0,
                  rotSin, rotCos, 0, 0,
                  0, 0, 1, 0,
@@ -28,7 +29,7 @@ QVector3D Rotas::uppreciate(float rotSin, float rotCos, QVector3D basisI, QVecto
                   basisJ.z(), basisK.z(), basisI.z(), 0,
                   0, 0, 0, 1);
     QMatrix4x4 U = Fi * G * Fi.inverted();
-    return U * up;
+    return U * upPosition;
 }
 
 bool Rotas::translateBy(float x, float y, float z) {
@@ -39,7 +40,7 @@ bool Rotas::translateBy(float x, float y, float z) {
     if (a != b) {
         float prod = QVector3D::dotProduct(a, b);
         QVector3D proj = a, rej = (b - prod * a) / (b - prod * a).length(), cross = c;
-        upPosition = uppreciate(c.length(), prod, cross, proj, rej, upPosition);
+        upPosition = uppreciate(c.length(), prod, cross, proj, rej);
     }
 
     cameraPoint = newCameraPoint;
@@ -51,7 +52,7 @@ bool Rotas::translateBy(float x, float y, float z) {
 void Rotas::rotateBy(int degrees) {
     float rad = qDegreesToRadians(degrees);
     QVector3D i = cameraPoint.normalized(), j = upPosition.normalized(), k = QVector3D::normal(i, j);
-    upPosition = uppreciate(sin(rad), cos(rad), i, j, k, upPosition);
+    upPosition = uppreciate(sin(rad), cos(rad), i, j, k);
 
     view.setToIdentity();
     view.lookAt(cameraPoint, center, upPosition);

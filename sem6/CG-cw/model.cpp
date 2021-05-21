@@ -3,9 +3,7 @@
 
 #include "model.h"
 
-Model::Model() {
-    textures = QHash<int, QOpenGLTexture*>();
-}
+Model::Model() {}
 
 Model::~Model() {
     foreach (QOpenGLBuffer VBO, VBOs) {
@@ -83,8 +81,14 @@ void Model::build(QString file) {
     }
 }
 
+void Model::setMaterial(int path, Material material) {
+    Q_ASSERT_X((path >= 0) && (path < VBOs.length()), "Model::setMaterial(int, Material)", "Invalid path number.");
+    materials.insert(path, material);
+}
+
+// Функккция установкки текстуры, использован ккод отсюда (https://learnopengl.com/Getting-started/Textures).
 void Model::setSquareTexture(int path, QString file) {
-    Q_ASSERT_X((path > 0) && (path < VBOs.length()), "Model::setTexture(int, QString)", "Invalid path number.");
+    Q_ASSERT_X((path >= 0) && (path < VBOs.length()), "Model::setTexture(int, QString)", "Invalid path number.");
 
     VBOs[path].bind();
     Q_ASSERT_X(VBOs[path].size() == sizeof(GLfloat) * 32, "Model::setTexture(int, QString)", "Path is not applicable for square texture.");
@@ -106,14 +110,16 @@ int Model::start() {
     drawing = true;
     drawn = 0;
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_MULTISAMPLE);
     return VBOs.length();
 }
 
-void Model::draw(int path, QOpenGLShaderProgram& program, int mode, const char* coordAN, const char* normalAN, const char* texturedAN, const char* texCoordAN, const char* textureAN) {
+// Функккция отрисовки, использован код отсюда (https://learnopengl.com/Getting-started/Textures) и отсюда (https://learnopengl.com/Lighting/Basic-lighting).
+void Model::draw(int path, QOpenGLShaderProgram& program, int mode, const char* coordAN, const char* normalAN, const char* texturedAN, const char* texCoordAN, const char* textureAN, const char* colorAN, const char* specularAN, const char* shininessAN, const char* ambientAN, const char* emissionAN) {
     Q_ASSERT_X(drawing, "Model::draw(int, QOpenGLShaderProgram&, int, const char*, const char*)", "Drawing not in progress.");
     drawn++;
     QOpenGLBuffer VBO = VBOs[path];
-    bool drawTexture = textures.contains(path);
+    bool drawTexture = textures.contains(path), drawMaterial = materials.contains(path);
 
     VBO.bind();
     int size = VBO.size() - sizeof(texCoords);
@@ -123,6 +129,15 @@ void Model::draw(int path, QOpenGLShaderProgram& program, int mode, const char* 
 
     program.enableAttributeArray(normalAN);
     program.setAttributeBuffer(normalAN, GL_FLOAT, size / 2, 3);
+
+    if (drawMaterial) {
+        Material material = materials[path];
+        program.setUniformValue(colorAN, material.color);
+        program.setUniformValue(specularAN, material.specular);
+        program.setUniformValue(shininessAN, material.shininess);
+        program.setUniformValue(ambientAN, material.ambient);
+        program.setUniformValue(emissionAN, material.emission);
+    }
 
     if (drawTexture) {
         program.enableAttributeArray(texCoordAN);
@@ -146,18 +161,10 @@ void Model::draw(int path, QOpenGLShaderProgram& program, int mode, const char* 
     VBO.release();
 }
 
-void Model::color(int path, QOpenGLShaderProgram& program, const char* colorAN, const char* specularAN, const char* shininessAN) {
-    QVector3D materialColor = QVector3D(1.0, 1.0, 1.0);
-    GLfloat materialSpecular = 0.3;
-    GLfloat materialShininess = 4;
-    program.setUniformValue(colorAN, materialColor);
-    program.setUniformValue(specularAN, materialSpecular);
-    program.setUniformValue(shininessAN, materialShininess);
-}
-
 int Model::finish() {
     Q_ASSERT_X(drawing, "Model::finish()", "Drawing hasn't started.");
     drawing = false;
+    glDisable(GL_MULTISAMPLE);
     glDisable(GL_DEPTH_TEST);
     return drawn;
 }
