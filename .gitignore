@@ -5,3 +5,5 @@
 **/build
 sem5/WEB-earthquake/public/
 **.mp4
+**/venv/**
+**/__pycache__/**
