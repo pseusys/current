@@ -11,13 +11,14 @@ jobs:
     steps:
     - name: Checkout 🛎️
       uses: actions/checkout@v2.3.4
-      working-directory: ./sem5/WEB-earthquake
 
     - name: Install 🔧
+      working-directory: ./sem5/WEB-earthquake
       run: |
         npm install
     
     - name: Build 🛠
+      working-directory: ./sem5/WEB-earthquake
       run: |
         npm run build
     
@@ -25,5 +26,5 @@ jobs:
       uses: JamesIves/github-pages-deploy-action@3.7.1
       with:
         BRANCH: gh-pages
-        FOLDER: public
+        FOLDER: ./sem5/WEB-earthquake/public
  
