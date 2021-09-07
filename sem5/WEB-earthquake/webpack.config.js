@@ -4,6 +4,7 @@ const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
     entry: ["@babel/polyfill", "./src/index.js"],
+    mode: "production",
     output: {
         path: path.join(__dirname, './public/'),
         filename: "./all.min.js"
