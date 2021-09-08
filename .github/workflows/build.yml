@@ -2,7 +2,8 @@ name: BUILD
 
 on:
   push:
-    branches: [ master ]
+    paths:
+      - './sem5/WEB-earthquake/*'
 
 jobs:
   deploy:
