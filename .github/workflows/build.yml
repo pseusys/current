@@ -21,6 +21,10 @@ jobs:
       working-directory: ./sem5/WEB-earthquake
       run: |
         npm run build
+        
+    - name: NoJekyll ❌
+      run: |
+        touch ./sem5/WEB-earthquake/public/.nojekyll
     
     - name: Deploy 🚀
       uses: JamesIves/github-pages-deploy-action@3.7.1
