@@ -7,3 +7,4 @@ sem5/WEB-earthquake/public/
 **.mp4
 **/venv/**
 **/__pycache__/**
+**/.ipynb_checkpoints/**
