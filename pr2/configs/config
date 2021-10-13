@@ -1,0 +1,26 @@
+server {
+    listen 80;
+    listen [::]:80;
+    root /var/www/html/drupal;
+    index  index.php index.html index.htm;
+    server_name _;
+
+    location / {
+        try_files $uri @rewrite;
+    }
+
+    location @rewrite {
+        rewrite ^/(.*)$ /index.php?q=$1;
+    }
+
+    location ~ [^/]\.php(/|$) {
+         include snippets/fastcgi-php.conf;
+         fastcgi_pass unix:/var/run/php/php7.1-fpm.sock;
+         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+         include fastcgi_params;
+    }
+
+    location ~ ^/sites/.*/files/imagecache/ {
+         try_files $uri @rewrite;
+    }
+}

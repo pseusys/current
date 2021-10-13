@@ -1,0 +1,9 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>ball.png</file>
+    <file>brickie1.png</file>
+    <file>brickie2.png</file>
+    <file>brickie3.png</file>
+    <file>platform.png</file>
+</qresource>
+</RCC>
