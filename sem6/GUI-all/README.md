@@ -33,5 +33,5 @@
 - Реализовать функционал игры
 - Разработать удобный графический интерфейс
 ### Архитектура
-<img src="https://github.com/pseusys/current/blob/main/sem6/GUI-all/.formal/architecture.jpg?raw=true" alt="General MVP model">
+<img src="https://github.com/pseusys/current/blob/master/sem6/GUI-all/.formal/architecture.jpg?raw=true" alt="General MVP model">
 
