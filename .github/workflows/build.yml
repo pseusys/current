@@ -3,7 +3,7 @@ name: BUILD
 on:
   push:
     paths:
-      - './sem5/WEB-earthquake/*'
+      - 'sem5/WEB-earthquake/**'
 
 jobs:
   deploy:
