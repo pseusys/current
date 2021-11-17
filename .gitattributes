@@ -1,0 +1,4 @@
+**.docx diff=word
+**.doc diff=word
+
+**.ipynb binary
