@@ -10,3 +10,4 @@ sem5/WEB-earthquake/public/
 **/.ipynb_checkpoints/
 **/ML-*/*.csv
 **/ML-*/*.json
+**/ML-*/*.data
