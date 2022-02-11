@@ -1,4 +1,5 @@
 **.docx diff=word
 **.doc diff=word
 
-**.ipynb binary
+**.ipynb filter=nbstripout
+**.ipynb diff=ipynb
