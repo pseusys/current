@@ -1,0 +1,3 @@
+./IS-*/logs
+./IS-*/node_modules
+./IS-*/package-lock.json
