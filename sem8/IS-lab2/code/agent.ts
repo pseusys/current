@@ -3,19 +3,27 @@ import { Interface, createInterface } from "readline"; // Подключение
 import { parseMsg } from "./msg"; // Подключение модуля разбора сообщений от сервера
 import { Socket } from "dgram";
 import { create } from "./socket";
-import { triangulate, distBetween, Flag, Player, toPoint } from "./locator";
-import { Command, FIELD_X, FIELD_Y, Position } from "./constants";
+import { Flag, Player, Point } from "./locator";
+import { FIELD_X, FIELD_Y, Position, Signal } from "./constants";
+import { Command } from "./command";
+import { ActionFlow } from "./action";
 
 export class Agent {
     private readonly teamName: string;
     private position: Position;
     private run: boolean;
-    private act: any;
+    private act: Command | null;
     private isMoved: boolean;
+
+    private coord: Point;
+    private isLock: boolean;
+    private angle: number;
+    private speed: number;
     private turnSpeed: number;
+    private flow: ActionFlow;
 
     private rl: Interface;
-    private socket: Socket;
+    private readonly socket: Socket;
     private id: number | undefined;
 
     constructor(team: string) {
@@ -24,7 +32,13 @@ export class Agent {
         this.run = false; // Игра начата
         this.act = null; // Действия
         this.isMoved = false; // Заданы начальные координаты
-        this.turnSpeed = 0; // Скорость вращения  (поворот на каждый такт)
+
+        this.coord = { x: 0, y: 0, d: 0 };
+        this.isLock = false;
+        this.angle = 0;
+        this.speed = 0;
+        this.turnSpeed = 0;
+        this.flow = new ActionFlow([{ act: "flag", fl: "fplc" }, { act: "flag", fl: "flt" }, { act: "flag", fl: "fplt" }, { act: "kick", fl: "fr0" }]);
 
         this.socket = create(this.teamName, msg => {
             // Получение сообщения
@@ -44,53 +58,44 @@ export class Agent {
                 if (
                     isNaN(+args[0]) ||
                     isNaN(+args[1]) ||
-                    isNaN(+args[2]) ||
                     parseInt(args[0]) < -FIELD_X ||
                     parseInt(args[0]) > FIELD_X ||
                     parseInt(args[1]) < -FIELD_Y ||
-                    parseInt(args[1]) > FIELD_Y ||
-                    parseInt(args[2]) < -180 ||
-                    parseInt(args[2]) > 180
+                    parseInt(args[1]) > FIELD_Y
                 ) {
-                    console.log("Неверные аргументы!");
+                    this.log("Неверные аргументы!");
                     return;
                 }
 
                 const x = parseInt(args[0]);
                 const y = parseInt(args[1]);
-                this.socketSend("move", `${x} ${y}`);
-
-                const turnSpeed = parseInt(args[2]);
+                (new Command("move", `${x} ${y}`)).send(this.socket);
 
                 this.isMoved = true;
-                this.turnSpeed = turnSpeed;
-                this.act = { n: "turn", v: this.turnSpeed };
-                this.socketSend(this.act.n, this.act.v);
-                console.log(`Стартовые параметры x: ${x} y: ${y} turnSpeed: ${turnSpeed}`);
-                setInterval(() => this.socketSend("turn", 5), 100);
+                this.log(`Стартовые параметры x: ${x} y: ${y}`);
             }
 
             if (this.run) {
                 // Если игра начата
                 // Движения вперед, вправо, влево, удар по мячу
-                if ("w" == input) this.act = { n: "dash", v: 100 };
-                if ("d" == input) this.act = { n: "turn", v: 20 };
-                if ("a" == input) this.act = { n: "turn", v: -20 };
-                if ("s" == input) this.act = { n: "kick", v: 100 };
+                if ("w" == input) this.act = new Command("dash", 100);
+                if ("d" == input) this.act = new Command("turn", 20);
+                if ("a" == input) this.act = new Command("turn", -20);
+                if ("s" == input) this.act = new Command("kick", 100);
             }
         });
     }
 
-    socketSend(cmd: Command, value: any) {
-        // Отправка команды
-        this.socket?.sendMsg(`(${cmd} ${value})`);
+    private log(msg: string) {
+        console.log(`(Player ${this.id} of team ${this.teamName}): ${msg}`);
     }
 
-    processMsg(msg: string) {
+    private processMsg(msg: string) {
         // Обработка сообщения
         let data = parseMsg(msg); // Разбор сообщения
         if (!data) throw new Error("Parse error \n" + msg);
-        if (data.cmd == "hear") this.run = true; // Первое (hear) - начало игры
+        if (data.cmd == "hear" && data.p[1] == "referee" && data.p[2] == "play_on") this.run = true; // Первое (hear) - начало игры
+        if (data.cmd === "hear" && data.p[1] == "referee" && data.p[2].includes("goal")) this.flow.current = 0;
         if (data.cmd == "init") this.initAgent(data.p); // Инициализация
         this.analyzeEnv(data.cmd, data.p); // Обработка
     }
@@ -101,49 +106,69 @@ export class Agent {
         if (p[1]) this.id = Number(p[1]); // id игрока
     }
 
-    private analyzeEnv(cmd: Command, p: any) {
+    private analyzeEnv(cmd: Signal, p: any) {
         // Обработка сообщений от сервера
         // Анализ сообщения
-        if (cmd == "see" && /*this.run &&*/ this.isMoved) {
-            const seenFlags: Flag[] = [];
-            const seenPlayers: Player[] = [];
+        if (cmd == "see" && this.run && this.isMoved) {
+            const { seenFlags, seenPlayers, seenBall } = this.getVisible(p);
 
-            // Пройдемся по res.p из app.ts
-            for (let i = 1; i < p.length; ++i) {
-                // Если есть "cmd": { "р": [.............] } и есть угол и расстояние
-                if (p[i].cmd.p.length >= 0 && p[i].p.length >= 2) {
-                    // Если игрок видит флаг
-                    // Запоминаем флаги в формате {название, расстояние, угол}
-                    if (p[i].cmd.p[0] == "f") seenFlags.push({ name: p[i].cmd.p.join(""), distance: p[i].p[0], angle: p[i].p[1] });
-                    // Если игрок видит игрока и есть угол и расстояние
-                    else if (p[i].cmd.p[0] == "p" && p[i].cmd.p[1] != undefined && p[i].cmd.p[0] != undefined) seenPlayers.push({ distance: p[i].p[0], angle: p[i].p[1] });
+            const step = this.flow.now();
+            const flagNumber = seenFlags.findIndex(flag => { return flag.name == step.fl });
+
+            // this.log(`${step.fl} ${JSON.stringify(seenFlags.map(value => { return value.name }))} ${flagNumber}`);
+
+            if (step.act == "flag") {
+                if (flagNumber == -1 || (Math.abs(seenFlags[flagNumber].angle) >= 1)) {
+                    if (flagNumber != -1) {
+                        // if (seenFlags[flagNumber].angle > 0) this.turnSpeed = 5;
+                        // else this.turnSpeed = -5;
+                        this.act = new Command("turn", seenFlags[flagNumber].angle);
+                    } else {
+                        this.act = new Command("turn", 10);
+                    }
+                } else {
+                    if (seenFlags[flagNumber].distance <= 3.0) {
+                        this.flow.current++;
+                        this.act = new Command("dash", 50);
+                    } else this.act = new Command("dash", 100);
+                    // this.coord = null;
                 }
+            } else if (step.act == "kick") {
+                // this.log(`${"gr" in seenFlags.map(flag => { return flag.name })} ${JSON.stringify(step)} ${flagNumber}`)
+                if (seenBall == null) this.act = new Command("turn", 10);
+                else if (Math.abs(seenBall.angle) >= 1) this.act = new Command("turn", seenBall.angle);
+                else if (Math.abs(seenBall.distance) >= 0.5) this.act = new Command("dash", 100);
+                else if (flagNumber != -1) this.act = new Command("kick", `100 ${seenFlags[flagNumber].angle}`);
+                else this.act = new Command("kick", "10 45");
             }
-
-            if (seenFlags.length >= 2) {
-                const flags = [toPoint(seenFlags[0]), toPoint(seenFlags[1])];
-                const thflag = (seenFlags[2]) ? toPoint(seenFlags[2]) : null;
-                const res = triangulate(flags[0], flags[1], thflag);
-                console.log(`(Player ${this.id} of team ${this.teamName}): I am at coords (x: ${res.x}, y: ${res.y})`);
-                if (seenPlayers.length > 0) {
-                    const end1 = distBetween(flags[0], seenFlags[0].angle, res, seenPlayers[0].angle);
-                    const end2 = distBetween(flags[1], seenFlags[1].angle, res, seenPlayers[0].angle);
-                    const enemyRes = triangulate(
-                        { x: res.x, y: res.y, d: seenPlayers[0].distance },
-                        { x: flags[0].x, y: flags[0].y, d: end1 },
-                        { x: flags[1].x, y: flags[1].y, d: end2 }
-                    );
-                    console.log(`(Player ${this.id} of team ${this.teamName}): Enemy at coords (x: ${enemyRes.x}, y: ${enemyRes.y})`);
-                }
-            } else console.log(`Can not identify location, seen flags: ${JSON.stringify(seenFlags)}`);
         }
+    }
+
+    private getVisible(p: any): { seenFlags: Flag[], seenPlayers: Player[], seenBall: Player | null } {
+        const seenFlags: Flag[] = [];
+        const seenPlayers: Player[] = [];
+        let seenBall: Player | null = null;
+
+        // Пройдемся по res.p из app.ts
+        for (let i = 1; i < p.length; ++i) {
+            // Если есть "cmd": { "р": [.............] } и есть угол и расстояние
+            if (p[i].cmd.p.length >= 0 && p[i].p.length >= 2) {
+                // Если игрок видит флаг
+                // Запоминаем флаги в формате {название, расстояние, угол}
+                if (p[i].cmd.p[0] == "f") seenFlags.push({ name: p[i].cmd.p.join(""), distance: p[i].p[0], angle: p[i].p[1] });
+                // Если игрок видит игрока и есть угол и расстояние
+                else if (p[i].cmd.p[0] == "p" && p[i].cmd.p[1] != undefined && p[i].cmd.p[0] != undefined) seenPlayers.push({ distance: p[i].p[0], angle: p[i].p[1] });
+                else if (p[i].cmd.p[0] === "b") seenBall = { distance: p[i].p[0], angle: p[i].p[1] }
+            }
+        }
+        return { seenFlags, seenPlayers, seenBall };
     }
 
     private sendCmd() {
         //отправляет следующую команду на сервер
         if (this.run) {
             //Игра начата
-            if (this.act) this.socketSend(this.act.n, this.act.v); //Есть команда от игрока
+            this.act?.send(this.socket); //Есть команда от игрока
             this.act = null;
         }
     }

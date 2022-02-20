@@ -13,7 +13,7 @@ export interface Flag {
     angle: number;
 }
 
-interface Point {
+export interface Point {
     d: number;
     x: number;
     y: number;
