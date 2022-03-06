@@ -38,7 +38,7 @@ export class Agent {
         this.angle = 0;
         this.speed = 0;
         this.turnSpeed = 0;
-        this.flow = new ActionFlow([{ act: "flag", fl: "fplc" }, { act: "flag", fl: "flt" }, { act: "flag", fl: "fplt" }, { act: "kick", fl: "fr0" }]);
+        this.flow = new ActionFlow([{ act: "kick", fl: "gl" }]);
 
         this.socket = create(this.teamName, msg => {
             // Получение сообщения
@@ -115,31 +115,22 @@ export class Agent {
             const step = this.flow.now();
             const flagNumber = seenFlags.findIndex(flag => { return flag.name == step.fl });
 
-            // this.log(`${step.fl} ${JSON.stringify(seenFlags.map(value => { return value.name }))} ${flagNumber}`);
-
             if (step.act == "flag") {
                 if (flagNumber == -1 || (Math.abs(seenFlags[flagNumber].angle) >= 1)) {
-                    if (flagNumber != -1) {
-                        // if (seenFlags[flagNumber].angle > 0) this.turnSpeed = 5;
-                        // else this.turnSpeed = -5;
-                        this.act = new Command("turn", seenFlags[flagNumber].angle);
-                    } else {
-                        this.act = new Command("turn", 10);
-                    }
+                    if (flagNumber != -1) this.act = new Command("turn", -(seenFlags[flagNumber].angle));
+                    else this.act = new Command("turn", 10);
                 } else {
                     if (seenFlags[flagNumber].distance <= 3.0) {
                         this.flow.current++;
                         this.act = new Command("dash", 50);
                     } else this.act = new Command("dash", 100);
-                    // this.coord = null;
                 }
             } else if (step.act == "kick") {
-                // this.log(`${"gr" in seenFlags.map(flag => { return flag.name })} ${JSON.stringify(step)} ${flagNumber}`)
                 if (seenBall == null) this.act = new Command("turn", 10);
                 else if (Math.abs(seenBall.angle) >= 1) this.act = new Command("turn", seenBall.angle);
                 else if (Math.abs(seenBall.distance) >= 0.5) this.act = new Command("dash", 100);
                 else if (flagNumber != -1) this.act = new Command("kick", `100 ${seenFlags[flagNumber].angle}`);
-                else this.act = new Command("kick", "10 45");
+                else this.act = new Command("kick", "10 -45");
             }
         }
     }
@@ -155,7 +146,7 @@ export class Agent {
             if (p[i].cmd.p.length >= 0 && p[i].p.length >= 2) {
                 // Если игрок видит флаг
                 // Запоминаем флаги в формате {название, расстояние, угол}
-                if (p[i].cmd.p[0] == "f") seenFlags.push({ name: p[i].cmd.p.join(""), distance: p[i].p[0], angle: p[i].p[1] });
+                if (p[i].cmd.p[0] == "f" || p[i].cmd.p[0] == "g") seenFlags.push({ name: p[i].cmd.p.join(""), distance: p[i].p[0], angle: p[i].p[1] });
                 // Если игрок видит игрока и есть угол и расстояние
                 else if (p[i].cmd.p[0] == "p" && p[i].cmd.p[1] != undefined && p[i].cmd.p[0] != undefined) seenPlayers.push({ distance: p[i].p[0], angle: p[i].p[1] });
                 else if (p[i].cmd.p[0] === "b") seenBall = { distance: p[i].p[0], angle: p[i].p[1] }
