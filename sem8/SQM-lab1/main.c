@@ -27,10 +27,12 @@ double erfc (double x) {
     x2 = x * x;
     v = 1.0 / (2.0 * x2);
     u = 1.0 + v * (terms + 1.0);
-    for (int i = terms; i >= 1; i--) {
+    int i = terms;
+    do {
         sum = 1.0 + i * v / u;
         u = sum;
-    }
+        i--;
+    } while (i >= 1);
     return exp(-x2) / (x * sum * sqrtpi);
 }
 

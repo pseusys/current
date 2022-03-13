@@ -1,0 +1,38 @@
+[
+  {
+    "position": {
+      "x": -20,
+      "y": 0
+    },
+    "artefact": 0,
+    "role": "player",
+    "team": "team1"
+  },
+  {
+    "position": {
+      "x": -25,
+      "y": 10
+    },
+    "artefact": 1,
+    "role": "player",
+    "team": "team1"
+  },
+  {
+    "position": {
+      "x": -25,
+      "y": -10
+    },
+    "artefact": 3,
+    "role": "player",
+    "team": "team1"
+  },
+  {
+    "position": {
+      "x": -30,
+      "y": 0
+    },
+    "artefact": 4,
+    "role": "goalie",
+    "team": "team2"
+  }
+]
