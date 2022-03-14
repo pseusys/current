@@ -15,7 +15,6 @@ export class DecisionTreeState {
     private player: Agent | undefined
     private readonly flow: Action[]
     message: any
-    params: Map<string, any>
 
     private what: Instance | undefined
     private where: Flag | undefined
@@ -24,7 +23,6 @@ export class DecisionTreeState {
     constructor(flow: Action[]) {
         this.current = 0;
         this.flow = flow;
-        this.params = new Map<string, any>();
     }
 
     private init() {
@@ -108,10 +106,6 @@ export class DecisionTree {
             return cmd;
         }
         else throw new Error(`Unexpected node in tree: ${JSON.stringify(leaf)}`);
-    }
-
-    param(key: string, value: any) {
-        this.state.params.set(key, value);
     }
 
     run(message: any, player: Agent) {

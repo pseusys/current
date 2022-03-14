@@ -4,9 +4,10 @@ import { create } from "./socket";
 import { Coordinate } from "./locator";
 import { FIELD_X, FIELD_Y, Position, Signal } from "./constants";
 import { Command } from "./command";
-import { goaile } from "./actions_goalie";
-import { player } from "./actions_player";
+import { kickerRoot, kickerState } from "./actions_kicker";
+import { passerRoot, passerState } from "./actions_passer";
 import { reset_player } from "./positioner";
+import { DecisionTree } from "./actions";
 
 export type Role = "goalie" | "player";
 
@@ -16,6 +17,7 @@ export class Agent {
     private readonly role: Role;
     private run: boolean;
     private act: Command | null;
+    private dt: DecisionTree | undefined;
 
     private readonly socket: Socket;
     id: number | undefined;
@@ -55,13 +57,12 @@ export class Agent {
         // Обработка сообщения
         let data = parseMsg(msg); // Разбор сообщения
         if (!data) throw new Error("Parse error \n" + msg);
-        if (data.cmd == "hear" && data.p[1] == "referee" && data.p[2] == "play_on") this.run = true; // Первое (hear) - начало игры
+        if (data.cmd == "hear" && data.p[1] == "referee" && data.p[2].includes("play_on")) this.run = true; // Первое (hear) - начало игры
         if (data.cmd === "hear" && data.p[1] == "referee" && data.p[2].includes("goal")) {
             const coords = reset_player(this);
             (new Command("move", `${coords.x} ${coords.y}`)).send(this.socket);
             this.run = false;
-            player.reset();
-            goaile.reset();
+            this.dt!!.reset();
         }
         if (data.cmd == "init") this.initAgent(data.p); // Инициализация
         this.analyzeEnv(data.cmd, data.p); // Обработка
@@ -71,18 +72,19 @@ export class Agent {
         // Игрок должен быть зарегистрирован на сервере, здесь обрабатывается ответ сервера
         if (p[0] == "r") this.position = "r"; // Правая половина поля
         else this.position = "l";
-        if (p[1]) this.id = Number(p[1]); // id игрока
+        if (p[1]) {
+            this.id = Number(p[1]);
+            if (this.id == 1) this.dt = new DecisionTree(kickerRoot, kickerState, this);
+            else this.dt = new DecisionTree(passerRoot, passerState, this);
+        } // id игрока
     }
 
     private analyzeEnv(cmd: Signal, p: any) {
         // Обработка сообщений от сервера
         // Анализ сообщения
-        if (cmd == "see" && this.run) {
-            if (this.role == "goalie") this.act = goaile.run(p, this);
-            else {
-                player.param("id", this.id)
-                this.act = player.run(p, this);
-            }
+        if (this.run) {
+            if (cmd == "hear") this.dt!!.param("signal", p[2].includes("go"));
+            if (cmd == "see") this.act = this.dt!!.run(p);
         }
     }
 

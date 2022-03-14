@@ -1,9 +1,9 @@
-import { DecisionTree, DecisionTreeLeaf, DecisionTreeState } from "./actions";
+import { DecisionTreeLeaf, DecisionTreeState } from "./actions";
 import { Command } from "./command";
 
 const state = new DecisionTreeState([
-    { name: "dash", what: "gr" },
-    { name: "catch", what: "b" },
+    { name: "dash", what: "fplb" },
+    { name: "dash", what: "fprb", where: "b" },
     { name: "kick", what: "b", where: "fprc" }
 ]);
 
@@ -16,7 +16,7 @@ const turn: DecisionTreeLeaf = {
 };
 
 const dash: DecisionTreeLeaf = {
-    command: _ => new Command("dash", 100)
+    command: _ => new Command("dash", 90)
 };
 
 const approach: DecisionTreeLeaf = {
@@ -25,53 +25,31 @@ const approach: DecisionTreeLeaf = {
     resultFalse: dash
 };
 
-const waitForBall: DecisionTreeLeaf = {
-    command: _ => new Command("say", 'come_here?')
-};
-
 const kick: DecisionTreeLeaf = {
+    run: s => console.log(`kick: ${JSON.stringify(s.findWhat())} ${JSON.stringify(s.findWhere())}`),
     command: s => new Command("kick", `100 ${s.findWhere()?.angle!!}`),
     reset: s => s.reset()
 };
 
-const randomKick: DecisionTreeLeaf = {
-    command: _ => new Command("kick", `100 ${Math.floor(Math.random() * 180 - 90)}`),
-    reset: s => s.reset()
+const search: DecisionTreeLeaf = {
+    command: _ => new Command("kick", "10 -45")
 };
 
 const doKick: DecisionTreeLeaf = {
     condition: s => s.findWhere()?.angle != undefined,
     resultTrue: kick,
-    resultFalse: randomKick
-};
-
-const ctch: DecisionTreeLeaf = {
-    run: s => console.log(`Goalie: trying to ${s.name()} ${s.findWhat()?.angle!!} ${s.findWhat()?.distance!!}`),
-    command: s => new Command("catch", s.findWhat()?.angle!!)
-};
-
-const kickOrCatch: DecisionTreeLeaf = {
-    condition: s => s.name() == "kick",
-    resultTrue: doKick,
-    resultFalse: ctch
+    resultFalse: search
 };
 
 const intercept: DecisionTreeLeaf = {
-    run: s => (s.findWhat()?.distance!! <= 0.75 && s.name() == "catch") ? s.proceed() : undefined,
     condition: s => s.findWhat()?.distance!! > 1.5,
     resultTrue: approach,
-    resultFalse: kickOrCatch
-};
-
-const ballVisible: DecisionTreeLeaf = {
-    condition: s => s.findWhat()?.distance!! > 15,
-    resultTrue: waitForBall,
-    resultFalse: intercept
+    resultFalse: doKick
 };
 
 const searchBall: DecisionTreeLeaf = {
     condition: s => s.findWhat() != undefined,
-    resultTrue: ballVisible,
+    resultTrue: intercept,
     resultFalse: seek
 };
 
@@ -88,10 +66,18 @@ const searchGoal: DecisionTreeLeaf = {
     resultFalse: seek
 };
 
+const searchGoalTracingBall: DecisionTreeLeaf = {
+    run: s => (s.signalDone() && s.name() == "dash" && s.findWhere()) ? s.proceed() : undefined,
+    condition: s => s.findWhat() != undefined,
+    resultTrue: searchGoal,
+    resultFalse: seek
+};
+
 const root: DecisionTreeLeaf = {
     condition: s => s.name() == "dash",
-    resultTrue: searchGoal,
+    resultTrue: searchGoalTracingBall,
     resultFalse: searchBall
 }
 
-export const goaile = new DecisionTree(root, state);
+export const kickerRoot = root;
+export const kickerState = state;

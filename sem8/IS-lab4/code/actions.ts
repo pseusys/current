@@ -1,13 +1,11 @@
 import { Command } from "./command";
-import { findFlag, Flag, FlagName, getVisible, Instance, Player } from "./locator";
+import { findFlag, Flag, FlagName, getVisible, Instance, speed } from "./locator";
 import { Agent } from "./agent";
-
-type TargetName = FlagName | "b" | "p"
 
 export interface Action {
     name: string,
-    what: TargetName,
-    where?: FlagName
+    what: FlagName | "b",
+    where?: FlagName | "p" | "b"
 }
 
 export class DecisionTreeState {
@@ -18,8 +16,10 @@ export class DecisionTreeState {
     params: Map<string, any>
 
     private what: Instance | undefined
-    private where: Flag | undefined
-    private leader: Player | undefined
+    private where: Instance | undefined
+    private seenFlags: Flag[] = []
+    private whereSpeed: Instance | undefined
+    private speedCounter = 0
 
     constructor(flow: Action[]) {
         this.current = 0;
@@ -27,44 +27,48 @@ export class DecisionTreeState {
         this.params = new Map<string, any>();
     }
 
-    private init() {
+    private init(newFrame: boolean) {
         const now = this.flow[this.current];
-        this.leader = getVisible(this.message).seenPlayers.find(player => (player.team == this.player!!.teamName) && (player.id == 1));
+        const kicker = getVisible(this.message).seenPlayers.find(player => (player.team == this.player!!.teamName));
         this.what = now.what != "b" ? findFlag(this.message, now.what as FlagName) : getVisible(this.message).seenBall;
         if (now.where == undefined) this.where = undefined;
-        else this.where = findFlag(this.message, now.where as FlagName);
+        else {
+            const nw = now.where != "p" ? findFlag(this.message, now.where as FlagName) : kicker;
+            if (newFrame) {
+                if (this.speedCounter == 0) {
+                    const flags = getVisible(this.message).seenFlags;
+                    const seenNames = this.seenFlags.map((fl) => fl.name);
+                    const anchor = flags.find((flag) => seenNames.includes(flag.name));
+                    if (nw && this.where && anchor) this.whereSpeed = speed(anchor, this.seenFlags.find(flag => flag.name == anchor.name)!!, this.where, nw);
+                    this.seenFlags = flags;
+                    this.speedCounter = 5;
+                } else this.speedCounter--;
+            }
+            this.where = nw;
+        }
     }
 
-    setup(message: any, player: Agent) {
+    ply(player: Agent) {
         this.player = player;
+    }
+
+    msg(message: any) {
         this.message = message;
-        this.init();
+        this.init(true);
     }
 
     reset() {
         this.current = 0;
-        this.init();
+        this.init(true);
     }
 
     proceed() {
         this.current++;
-        this.init();
+        this.init(false);
     }
 
     name(): string {
         return this.flow[this.current].name;
-    }
-
-    isTeamLeader(): boolean {
-        return this.player!!.id == 1
-    }
-
-    getRole(): "l" | "r" {
-        return this.player!!.id == 2 ? "r" : "l"
-    }
-
-    findTeamLeader(): Player | undefined {
-        return this.leader;
     }
 
     findWhat(): Instance | undefined {
@@ -73,6 +77,15 @@ export class DecisionTreeState {
 
     findWhere(): Instance | undefined {
         return this.where;
+    }
+
+    findWhereSpeed(): Instance | undefined {
+        // console.log(`Delta: ${JSON.stringify(this.whereSpeed)}`);
+        return this.whereSpeed;
+    }
+
+    signalDone(): boolean {
+        return this.params.get("signal");
     }
 }
 
@@ -91,9 +104,10 @@ export class DecisionTree {
     private readonly root: DecisionTreeLeaf
     private readonly state: DecisionTreeState
 
-    constructor(root: DecisionTreeLeaf, state: DecisionTreeState) {
+    constructor(root: DecisionTreeLeaf, state: DecisionTreeState, player: Agent) {
         this.root = root;
         this.state = state;
+        this.state.ply(player);
     }
 
     private execute(leaf: DecisionTreeLeaf): Command {
@@ -114,8 +128,8 @@ export class DecisionTree {
         this.state.params.set(key, value);
     }
 
-    run(message: any, player: Agent) {
-        this.state.setup(message, player);
+    run(message: any): Command {
+        this.state.msg(message);
         return this.execute(this.root);
     }
 

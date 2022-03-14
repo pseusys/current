@@ -23,6 +23,17 @@ export interface Coordinate {
     y: number;
 }
 
+export function speed(selfPrev: Instance, selfCurr: Instance, prev: Instance, curr: Instance): Instance {
+    const th = curr.angle;
+    const self: Instance = { distance: selfPrev.distance - selfCurr.distance, angle: selfPrev.angle - selfCurr.angle };
+    console.log(`Self: ${JSON.stringify(self)}`);
+    const diff: Instance = { distance: curr.distance - prev.distance, angle: curr.angle - prev.angle };
+    console.log(`Diff: ${JSON.stringify(diff)}`);
+    const unit: Instance = { distance: Math.cos(th) + Math.sin(th), angle: Math.cos(th) - Math.sin(th) };
+    console.log(`Unit: ${JSON.stringify(unit)}`);
+    return { distance: diff.distance * unit.distance + self.angle, angle: curr.distance * diff.angle * unit.angle + self.distance };
+}
+
 export function findFlag(p: any, name: FlagName): Flag | undefined {
     return getVisible(p).seenFlags.find((flag) => flag.name == name );
 }
@@ -33,7 +44,7 @@ export function getVisible(p: any): { seenFlags: Flag[], seenPlayers: Player[], 
     let seenBall: Instance | undefined = undefined;
 
     // Пройдемся по res.p из app.ts
-    for (let i = 1; i < p.length; ++i) {
+    if (p) for (let i = 1; i < p.length; ++i) {
         // Если есть "cmd": { "р": [.............] } и есть угол и расстояние
         if (p[i].cmd.p.length >= 0 && p[i].p.length >= 2) {
             // Если игрок видит флаг

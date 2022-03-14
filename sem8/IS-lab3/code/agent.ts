@@ -74,10 +74,7 @@ export class Agent {
         // Анализ сообщения
         if (cmd == "see" && this.run) {
             if (this.role == "goalie") this.act = goaile.run(p, this);
-            else {
-                player.param("id", this.id)
-                this.act = player.run(p, this);
-            }
+            else this.act = player.run(p, this);
         }
     }
 
