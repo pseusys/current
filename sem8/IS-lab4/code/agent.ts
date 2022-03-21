@@ -1,18 +1,19 @@
 import { parseMsg } from "./msg"; // Подключение модуля разбора сообщений от сервера
 import { Socket } from "dgram";
 import { create } from "./socket";
-import { Coordinate } from "./locator";
+import { Coordinate, getVisible } from "./locator";
 import { FIELD_X, FIELD_Y, Position, Signal } from "./constants";
 import { Command } from "./command";
 import { kickerRoot, kickerState } from "./actions_kicker";
 import { passerRoot, passerState } from "./actions_passer";
 import { reset_player } from "./positioner";
 import { DecisionTree } from "./actions";
+import { TeamName } from "./app";
 
 export type Role = "goalie" | "player";
 
 export class Agent {
-    readonly teamName: string;
+    readonly teamName: TeamName;
     private position: Position;
     private readonly role: Role;
     private run: boolean;
@@ -23,7 +24,7 @@ export class Agent {
     id: number | undefined;
     artefact: number;
 
-    constructor(team: string, artefact: number, position: Position, coordinate: Coordinate, role: Role) {
+    constructor(team: TeamName, artefact: number, position: Position, coordinate: Coordinate, role: Role) {
         this.teamName = team;
         this.artefact = artefact;
         this.role = role;
@@ -74,15 +75,15 @@ export class Agent {
         else this.position = "l";
         if (p[1]) {
             this.id = Number(p[1]);
-            if (this.id == 1) this.dt = new DecisionTree(kickerRoot, kickerState, this);
-            else this.dt = new DecisionTree(passerRoot, passerState, this);
+            if (this.id == 1) this.dt = new DecisionTree(kickerRoot, kickerState(), this);
+            else this.dt = new DecisionTree(passerRoot, passerState(), this);
         } // id игрока
     }
 
     private analyzeEnv(cmd: Signal, p: any) {
         // Обработка сообщений от сервера
         // Анализ сообщения
-        if (this.run) {
+        if (this.run && (this.teamName == "team1")) {
             if (cmd == "hear") this.dt!!.param("signal", p[2].includes("go"));
             if (cmd == "see") this.act = this.dt!!.run(p);
         }

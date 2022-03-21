@@ -11,10 +11,46 @@
   {
     "position": {
       "x": -30,
-      "y": -15
+      "y": -25
     },
     "artefact": 1,
     "role": "player",
     "team": "team1"
+  },
+  {
+    "position": {
+      "x": -3,
+      "y": 3
+    },
+    "artefact": 3,
+    "role": "player",
+    "team": "team2"
+  },
+  {
+    "position": {
+      "x": -1,
+      "y": 3
+    },
+    "artefact": 5,
+    "role": "player",
+    "team": "team2"
+  },
+  {
+    "position": {
+      "x": -50,
+      "y": 7
+    },
+    "artefact": 2,
+    "role": "goalie",
+    "team": "team2"
+  },
+  {
+    "position": {
+      "x": -50,
+      "y": 5
+    },
+    "artefact": 4,
+    "role": "player",
+    "team": "team2"
   }
 ]

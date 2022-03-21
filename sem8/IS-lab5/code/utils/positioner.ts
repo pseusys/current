@@ -1,7 +1,7 @@
-import * as team from "./layout.json"
-import { Agent, Role } from "./agent";
+import * as team from "../layout.json"
+import { Agent, Role } from "../agent";
 import { TeamName } from "./app";
-import { Coordinate } from "./locator";
+import { Coordinate } from "../automaton/locator";
 
 
 export function create_players(rightTeam: TeamName, leftTeam: TeamName): Agent[] {

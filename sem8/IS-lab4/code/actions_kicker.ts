@@ -1,12 +1,6 @@
 import { DecisionTreeLeaf, DecisionTreeState } from "./actions";
 import { Command } from "./command";
 
-const state = new DecisionTreeState([
-    { name: "dash", what: "fplb" },
-    { name: "dash", what: "fprb", where: "b" },
-    { name: "kick", what: "b", where: "fprc" }
-]);
-
 const seek: DecisionTreeLeaf = {
     command: _ => new Command("turn", 45)
 };
@@ -16,7 +10,7 @@ const turn: DecisionTreeLeaf = {
 };
 
 const dash: DecisionTreeLeaf = {
-    command: _ => new Command("dash", 90)
+    command: _ => new Command("dash", 58)
 };
 
 const approach: DecisionTreeLeaf = {
@@ -27,12 +21,12 @@ const approach: DecisionTreeLeaf = {
 
 const kick: DecisionTreeLeaf = {
     run: s => console.log(`kick: ${JSON.stringify(s.findWhat())} ${JSON.stringify(s.findWhere())}`),
-    command: s => new Command("kick", `100 ${s.findWhere()?.angle!!}`),
-    reset: s => s.reset()
+    command: s => new Command("kick", `100 ${s.findWhere()?.angle!!}`)
 };
 
 const search: DecisionTreeLeaf = {
-    command: _ => new Command("kick", "10 -45")
+    run: s => console.log(`search: ${JSON.stringify(s.findWhat())} ${JSON.stringify(s.findWhere())}`),
+    command: _ => new Command("kick", "5 -45")
 };
 
 const doKick: DecisionTreeLeaf = {
@@ -42,7 +36,7 @@ const doKick: DecisionTreeLeaf = {
 };
 
 const intercept: DecisionTreeLeaf = {
-    condition: s => s.findWhat()?.distance!! > 1.5,
+    condition: s => s.findWhat()?.distance!! > 1,
     resultTrue: approach,
     resultFalse: doKick
 };
@@ -67,7 +61,7 @@ const searchGoal: DecisionTreeLeaf = {
 };
 
 const searchGoalTracingBall: DecisionTreeLeaf = {
-    run: s => (s.signalDone() && s.name() == "dash" && s.findWhere()) ? s.proceed() : undefined,
+    run: s => (s.params.get("signal") && s.name() == "dash" && s.findWhere()) ? s.proceed() : undefined,
     condition: s => s.findWhat() != undefined,
     resultTrue: searchGoal,
     resultFalse: seek
@@ -80,4 +74,10 @@ const root: DecisionTreeLeaf = {
 }
 
 export const kickerRoot = root;
-export const kickerState = state;
+export function kickerState(): DecisionTreeState {
+    return new DecisionTreeState([
+        { name: "dash", what: "fplb" },
+        { name: "dash", what: "fprb", where: "b" },
+        { name: "kick", what: "b", where: "gr" }
+    ]);
+}

@@ -18,8 +18,10 @@ export class DecisionTreeState {
     private what: Instance | undefined
     private where: Instance | undefined
     private seenFlags: Flag[] = []
+
     private whereSpeed: Instance | undefined
-    private speedCounter = 0
+    private whereStickySpeed: Instance | undefined
+    private whereSpeedCounter = 0
 
     constructor(flow: Action[]) {
         this.current = 0;
@@ -29,21 +31,25 @@ export class DecisionTreeState {
 
     private init(newFrame: boolean) {
         const now = this.flow[this.current];
-        const kicker = getVisible(this.message).seenPlayers.find(player => (player.team == this.player!!.teamName));
         this.what = now.what != "b" ? findFlag(this.message, now.what as FlagName) : getVisible(this.message).seenBall;
         if (now.where == undefined) this.where = undefined;
         else {
-            const nw = now.where != "p" ? findFlag(this.message, now.where as FlagName) : kicker;
-            if (newFrame) {
-                if (this.speedCounter == 0) {
-                    const flags = getVisible(this.message).seenFlags;
-                    const seenNames = this.seenFlags.map((fl) => fl.name);
-                    const anchor = flags.find((flag) => seenNames.includes(flag.name));
-                    if (nw && this.where && anchor) this.whereSpeed = speed(anchor, this.seenFlags.find(flag => flag.name == anchor.name)!!, this.where, nw);
-                    this.seenFlags = flags;
-                    this.speedCounter = 5;
-                } else this.speedCounter--;
+            let nw: Instance | undefined;
+            switch (now.where) {
+                case "b": nw = getVisible(this.message).seenBall; break;
+                case "p": nw = getVisible(this.message).seenPlayers.find(player => (player.team == this.player!!.teamName)); break;
+                default: nw = findFlag(this.message, now.where as FlagName);
             }
+            if (!this.whereStickySpeed) this.whereStickySpeed = nw;
+            if (newFrame && nw && this.whereStickySpeed && (nw.distance != this.whereStickySpeed.distance)) {
+                const flags = getVisible(this.message).seenFlags;
+                const seenNames = this.seenFlags.map((fl) => fl.name);
+                const anchor = flags.find((flag) => seenNames.includes(flag.name));
+                if (anchor) this.whereSpeed = speed(this.seenFlags.find(flag => flag.name == anchor.name)!!, anchor, this.whereStickySpeed, nw, this.whereSpeedCounter);
+                this.seenFlags = flags;
+                this.whereStickySpeed = nw;
+                this.whereSpeedCounter = 0;
+            } else this.whereSpeedCounter++;
             this.where = nw;
         }
     }
@@ -58,6 +64,7 @@ export class DecisionTreeState {
     }
 
     reset() {
+        this.params.clear();
         this.current = 0;
         this.init(true);
     }
@@ -80,12 +87,7 @@ export class DecisionTreeState {
     }
 
     findWhereSpeed(): Instance | undefined {
-        // console.log(`Delta: ${JSON.stringify(this.whereSpeed)}`);
         return this.whereSpeed;
-    }
-
-    signalDone(): boolean {
-        return this.params.get("signal");
     }
 }
 

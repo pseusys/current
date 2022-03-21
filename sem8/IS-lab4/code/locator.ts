@@ -23,15 +23,48 @@ export interface Coordinate {
     y: number;
 }
 
-export function speed(selfPrev: Instance, selfCurr: Instance, prev: Instance, curr: Instance): Instance {
-    const th = curr.angle;
-    const self: Instance = { distance: selfPrev.distance - selfCurr.distance, angle: selfPrev.angle - selfCurr.angle };
-    console.log(`Self: ${JSON.stringify(self)}`);
+function degrees_to_radians(degrees: number): number {
+    return degrees * (Math.PI / 180);
+}
+
+function radians_to_degrees(radians: number): number {
+    return radians * (180 / Math.PI);
+}
+
+function sin(ang: number): number {
+    return Math.sin(degrees_to_radians(ang));
+}
+
+function cos(ang: number): number {
+    return Math.cos(degrees_to_radians(ang));
+}
+
+function asin(ang: number): number {
+    return radians_to_degrees(Math.asin(ang));
+}
+
+export function speed(selfPrev: Instance, selfCurr: Instance, semiPrev: Instance, curr: Instance, time: number): Instance {
+    //console.log("----- NEW MEASUREMENT -----");
+    //console.log(`Self Prev: ${JSON.stringify(selfPrev)}`);
+    //console.log(`Self Curr: ${JSON.stringify(selfCurr)}`);
+    const b = -2 * selfPrev.distance * cos(selfPrev.angle);
+    const D = Math.pow(b, 2) - 4 * (Math.pow(selfPrev.distance, 2) - Math.pow(selfCurr.distance, 2));
+    const self = [(-b + Math.sqrt(D)) / 2, (-b - Math.sqrt(D)) / 2];
+    //console.log(`Self: ${JSON.stringify(self)}`);
+    const real = self.filter(x => x > 0).sort((a, b) => a - b)[0];
+    const prevDist = Math.sqrt(Math.pow(semiPrev.distance, 2) + Math.pow(real!!, 2) - 2 * semiPrev.distance * real!! * cos(semiPrev.angle));
+    const prev: Instance = { distance: prevDist, angle: asin((semiPrev.distance / prevDist) * sin(semiPrev.angle)) };
+    //console.log(`Semi-Prev: ${JSON.stringify(semiPrev)}`);
+    //console.log(`Prev: ${JSON.stringify(prev)}`);
+    //console.log(`Curr: ${JSON.stringify(curr)}`);
     const diff: Instance = { distance: curr.distance - prev.distance, angle: curr.angle - prev.angle };
-    console.log(`Diff: ${JSON.stringify(diff)}`);
-    const unit: Instance = { distance: Math.cos(th) + Math.sin(th), angle: Math.cos(th) - Math.sin(th) };
-    console.log(`Unit: ${JSON.stringify(unit)}`);
-    return { distance: diff.distance * unit.distance + self.angle, angle: curr.distance * diff.angle * unit.angle + self.distance };
+    //console.log(`Diff: ${JSON.stringify(diff)}`);
+    const th = curr.angle;
+    const unit: Instance = { distance: cos(th) + sin(th), angle: cos(th) - sin(th) };
+    //console.log(`Unit: ${JSON.stringify(unit)}`);
+    const res = { distance: diff.distance * unit.distance, angle: diff.angle * unit.angle };
+    //console.log(`Result: ${JSON.stringify(res)}`);
+    return { distance: res.distance / time, angle: res.angle / time };
 }
 
 export function findFlag(p: any, name: FlagName): Flag | undefined {
