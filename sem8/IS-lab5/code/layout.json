@@ -7,5 +7,14 @@
     "artefact": 0,
     "role": "goalie",
     "team": "team1"
+  },
+  {
+    "position": {
+      "x": -30,
+      "y": 0
+    },
+    "artefact": 1,
+    "role": "player",
+    "team": "team2"
   }
 ]

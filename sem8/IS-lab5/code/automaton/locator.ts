@@ -1,11 +1,12 @@
 import * as flags from "../utils/flags.json";
 import { TeamName } from "../utils/app";
-import { FIELD_X, FIELD_Y, Position } from "../utils/constants";
+import { Position, SPEED_TIME } from "../utils/constants";
+import { cosine, dist, distBetween, locate, speed, triangulate } from "./math";
 
 type FlagName = keyof typeof flags;
 
 
-interface Instance {
+export interface Instance {
     dist: number;
     angle: number;
 }
@@ -16,7 +17,7 @@ interface RawPlayer extends Instance {
     goalie: boolean | null;
 }
 
-interface RawFlag extends Instance {
+export interface RawFlag extends Instance {
     name: FlagName;
 }
 
@@ -26,9 +27,6 @@ export interface Coordinate {
     y: number;
 }
 
-interface Flag extends Coordinate {
-    d: number;
-}
 
 interface Signal {
     author: string;
@@ -36,64 +34,10 @@ interface Signal {
     msg: string;
 }
 
-type Ball = Instance & Coordinate
+
+export type Object = Instance & Coordinate
 
 type Player = Coordinate & RawPlayer
-
-
-function isExistCoord(p: Coordinate) {
-    return p.x <= FIELD_X && p.x >= -FIELD_X && p.y <= FIELD_Y && p.y >= -FIELD_Y;
-}
-
-function distBetween(f1: Instance, f2: Instance): number {
-    return Math.sqrt(f1.dist ** 2 + f2.dist ** 2 - 2 * f1.dist * f2.dist * Math.cos(Math.abs(f1.angle - f2.angle)));
-}
-
-function coord(f1: RawFlag, f2: RawFlag, f3: RawFlag | null = null): Coordinate {
-    const flag1 = { x: flags[f1.name].x, y: flags[f1.name].y, d: f1.dist };
-    const flag2 = { x: flags[f2.name].x, y: flags[f2.name].y, d: f2.dist };
-    const flag3 = (f3) ? { x: flags[f3.name].x, y: flags[f3.name].y, d: f3.dist } : null;
-    return triangulate(flag1, flag2, flag3);
-}
-
-function triangulate(f1: Flag, f2: Flag, f3: Flag | null = null): Coordinate {
-    let possiblePoints: Flag[] = [];
-    const createQuadDist = (p: number, d: number): number[] => {
-        const part = Math.sqrt(f1.d ** 2 - d ** 2) || 0;
-        return [p + part, p - part];
-    }
-
-    if (f1.x == f2.x) {
-        const y = (f2.y**2 - f1.y**2 + f1.d**2 - f2.d**2) / (2 * (f2.y - f1.y));
-        possiblePoints.push(...createQuadDist(f1.x, (y - f1.y)).map(val => { return { x: val, y: y, d: 0 }}));
-
-    } else if (f1.y == f2.y) {
-        const x = (f2.x**2 - f1.x**2 + f1.d**2 - f2.d**2) / (2 * (f2.x - f1.x));
-        possiblePoints.push(...createQuadDist(f1.y, (x - f1.x)).map(val => { return { x: x, y: val, d: 0 }}));
-
-    } else {
-        const alpha = (f1.y - f2.y) / (f2.x - f1.x);
-        const beta = (f2.y**2 - f1.y**2 + f2.x**2 - f1.x**2 + f1.d**2 - f2.d**2) / (2 * (f2.x - f1.x));
-
-        const a = alpha ** 2 + 1;
-        const b = -2 * (alpha * (f1.x - beta) + f1.y);
-        const c = (f1.x - beta) ** 2 + f1.y ** 2 - f1.d ** 2;
-
-        const yPart = Math.sqrt(b ** 2 - 4 * a * c) || 0;
-        const resY1 = (-b + yPart) / (2 * a);
-        const resY2 = (-b - yPart) / (2 * a);
-
-        possiblePoints.push(...createQuadDist(f1.x, (resY1 - f1.y)).map(val => { return { x: val, y: resY1, d: 0 }}));
-        possiblePoints.push(...createQuadDist(f1.x, (resY2 - f1.y)).map(val => { return { x: val, y: resY2, d: 0 }}));
-    }
-
-    if (f3 != null) possiblePoints = possiblePoints.sort((a, b) => {
-        const lossA = Math.abs((a.x - f3.x) ** 2 + (a.y - f3.y) ** 2 - f3.d ** 2);
-        const lossB = Math.abs((b.x - f3.x) ** 2 + (b.y - f3.y) ** 2 - f3.d ** 2);
-        return lossA - lossB;
-    });
-    return possiblePoints.find(point => isExistCoord(point))!!;
-}
 
 
 function getVisible(p: any): { seenFlags: RawFlag[], seenPlayers: RawPlayer[], seenBall: Instance | undefined } {
@@ -110,7 +54,7 @@ function getVisible(p: any): { seenFlags: RawFlag[], seenPlayers: RawPlayer[], s
     return { seenFlags, seenPlayers, seenBall };
 }
 
-function getCoords(me: Coordinate, object: Instance | undefined, visibleFlags: RawFlag[]): Ball | undefined {
+function getCoords(me: Coordinate, object: Instance | undefined, visibleFlags: RawFlag[]): Object | undefined {
     if (!object) return undefined;
     const end1 = distBetween(visibleFlags[0], { dist: 0, angle: object.angle });
     const end2 = distBetween(visibleFlags[1], { dist: 0, angle: object.angle });
@@ -127,59 +71,127 @@ function getPlayerCoords(me: Coordinate, player: RawPlayer, visibleFlags: RawFla
     return { ...coords, ...player };
 }
 
+
+function predictPosition(base: Object, prev: Coordinate, curr: Coordinate, diff: number, angle: number): Object {
+    const len = dist(curr, base);
+    return {
+        x: base.x,
+        y: base.y,
+        dist: len,
+        angle: (diff ? 180 - cosine(dist(prev!!, base), len, diff) : base.angle) + angle
+    };
+}
+
 export class WorldInfo {
-    private teamName: TeamName;
-    private panic: boolean;
+    private readonly side: Position;
+    private readonly teamName: TeamName;
+    private ballSpeedCounter: number;
+    private ballSpeedState?: Object;
+    private ballSpeedFlags: RawFlag[];
+    private ballSpeedAngle: number;
+    private me: Coordinate | undefined;
+    private validAngle: number;
 
     time: number;
     signals: Signal[];
-    ballPos?: Ball; // If ballPos angle or dist are NaN then x and y are estimated.
-    ballSpeed?: Ball;
     team: Player[];
     enemy: Player[];
-    prot: RawFlag;
-    goal: RawFlag;
+    prot?: Object;
+    goal?: Object;
+    ball?: Object;
+    ballSpeed?: Object;
 
     constructor(side: Position, team: TeamName) {
-        this.panic = false;
+        this.side = side;
         this.teamName = team;
+        this.ballSpeedCounter = 0;
+        this.ballSpeedFlags = [];
+        this.ballSpeedAngle = 0;
+        this.validAngle = 0;
+
         this.time = 0;
         this.signals = [];
         this.team = [];
         this.enemy = [];
-        this.prot = side == "l" ? { name: "gl", dist: NaN, angle: NaN } : { name: "gr", dist: NaN, angle: NaN };
-        this.goal = side == "r" ? { name: "gl", dist: NaN, angle: NaN } : { name: "gr", dist: NaN, angle: NaN };
     }
 
-    update(input: any) {
+    update(input: any, angle: number): boolean | null {
         this.time = input[0];
         switch (input.cmd) {
-            case "hear": this.updateHear(input.p); break;
-            case "see": this.updateSee(input.p); break;
+            case "hear":
+                this.updateHear(input.p);
+                return false;
+            case "see":
+                return this.updateSee(input.p, angle) ? true : null;
+            default: return false;
         }
     }
 
-    private updateSee(input: any) {
+    private updateSee(input: any, angle: number): boolean {
         const visible = getVisible(input);
-        if (visible.seenFlags.length < 2) { this.panic = true; return; }
-        const me = coord(visible.seenFlags[0], visible.seenFlags[1], visible.seenFlags[2] ? visible.seenFlags[2] : null);
+        if (visible.seenFlags.length < 2) return false;
+        const me = locate(visible.seenFlags[0], visible.seenFlags[1], visible.seenFlags[2] ? visible.seenFlags[2] : null);
+        if (!me) return false;
+        const len = this.me ? Math.round(dist(this.me, me)) : null;
 
-        const prot = visible.seenFlags.find(flag => flag.name == this.prot.name);
+        let prot: Object | undefined, goal: Object | undefined;
+        visible.seenFlags.forEach(flag => {
+            if (flag.name == "gr") {
+                if (this.side == "r") prot = getCoords(me, flag, visible.seenFlags);
+                else goal = getCoords(me, flag, visible.seenFlags);
+            } else if (flag.name == "gl") {
+                if (this.side == "l") prot = getCoords(me, flag, visible.seenFlags);
+                else goal = getCoords(me, flag, visible.seenFlags);
+            }
+        });
         if (prot) this.prot = prot;
-        const goal = visible.seenFlags.find(flag => flag.name == this.goal.name);
+        else if ((len != undefined) && this.prot) this.prot = predictPosition(this.prot, this.me!!, me, len, angle - this.validAngle);
         if (goal) this.goal = goal;
+        else if ((len != undefined) && this.goal) {
+            this.goal = predictPosition(this.goal, this.me!!, me, len, angle - this.validAngle);
+            console.log(`Goal predicted with rot: ${angle - this.validAngle}, raw prediction ${this.goal.angle}, trans: ${len}`);
+        }
 
-        const ballPos = getCoords(me, visible.seenBall, visible.seenFlags);
-        this.ballSpeed = (ballPos) && (this.ballPos) ? { x: ballPos.x - this.ballPos.x, y: ballPos.y - this.ballPos.y, dist: ballPos.dist - this.ballPos.dist, angle: ballPos.angle - this.ballPos.angle } : undefined;
-        const estimated = (this.ballSpeed) && (this.ballPos) ? { x: this.ballPos!!.x + this.ballSpeed.x, y: this.ballPos.y + this.ballSpeed.y, dist: NaN, angle: NaN } : undefined;
-        this.ballPos = ballPos ? ballPos : estimated;
+        const ball = getCoords(me, visible.seenBall, visible.seenFlags);
+        this.ballSpeedCounter++;
+        if (ball && (this.ballSpeedCounter == SPEED_TIME)) {
+            if (this.ballSpeedState && this.me) {
+                const anchor = this.ballSpeedFlags.find(flag => visible.seenFlags.find(seen => flag.name == seen.name))?.name;
+                if (anchor) {
+                    const currAnchor = visible.seenFlags.find(flag => flag.name == anchor);
+                    const prevAnchor = this.ballSpeedFlags.find(flag => flag.name == anchor);
+                    prevAnchor!!.angle -= angle - this.ballSpeedAngle;
+                    this.ballSpeed = speed(prevAnchor!!, currAnchor!!, this.ballSpeedState, ball, SPEED_TIME);
+                }
+            }
+            this.ballSpeedState = ball;
+            this.ballSpeedFlags = visible.seenFlags;
+            this.ballSpeedAngle = angle;
+            this.ballSpeedCounter = 0;
+        }
+        if (ball) this.ball = ball;
+        else this.ball = undefined;
 
         this.team = visible.seenPlayers.filter(player => player.team == this.teamName).map(player => getPlayerCoords(me, player, visible.seenFlags));
         this.enemy = visible.seenPlayers.filter(player => player.team != this.teamName).map(player => getPlayerCoords(me, player, visible.seenFlags));
+
+        this.validAngle = angle;
+        this.me = me;
+        return true;
     }
 
     private updateHear(input: any) {
         this.signals.push(input[2]);
         // TODO: check
+    }
+
+    ballPos(predict: number): Object | undefined {
+        if (this.ball && this.ballSpeed) return {
+            x: this.ball.x + this.ballSpeed.x * predict,
+            y: this.ball.y + this.ballSpeed.y * predict,
+            dist: this.ball.dist + this.ballSpeed.dist * predict,
+            angle: this.ball.angle + this.ballSpeed.angle * predict
+        }; else if (this.ball && (predict == 0)) return this.ball;
+        else return undefined;
     }
 }

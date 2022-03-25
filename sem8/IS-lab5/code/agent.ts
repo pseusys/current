@@ -8,6 +8,7 @@ import { TeamName } from "./utils/app";
 import { Coordinate } from "./automaton/locator";
 import { Automaton } from "./automaton/automaton";
 import { GoalieAutomaton } from "./automaton/goalie_auto";
+import { KickerAutomaton } from "./automaton/kicker_auto";
 
 export type Role = "goalie" | "player";
 
@@ -38,7 +39,8 @@ export class Agent {
         }, role == "goalie");
 
         if (isNaN(coordinate.x) || isNaN(coordinate.y) || coordinate.x < -FIELD_X || coordinate.x > FIELD_X || coordinate.y < -FIELD_Y || coordinate.y > FIELD_Y) this.log("Неверные аргументы!");
-        else (new Command("move", `${coordinate.x} ${coordinate.y}`)).send(this.socket)
+        else (new Command("move", `${coordinate.x} ${coordinate.y}`)).send(this.socket);
+        setTimeout(() => { if (position == "r") (new Command("turn", 180)).send(this.socket) }, 150);
     }
 
     private log(msg: string) {
@@ -55,7 +57,7 @@ export class Agent {
             this.run = false;
         }
         if (data.cmd == "init") this.initAgent(data.p);
-        if (this.run && (this.teamName == "team1")) this.act = this.auto!!.getCommand(data);
+        if (this.run) this.act = this.auto!!.getCommand(data);
     }
 
     private initAgent(p: [string, string, string]) {
@@ -63,8 +65,8 @@ export class Agent {
         else this.position = "l";
         if (p[1]) {
             this.id = Number(p[1]);
-            if (this.id == 1) this.auto = new GoalieAutomaton(this.position, this.teamName);
-            // else this.dt = new DecisionTree(passerRoot, passerState(), this);
+            if (this.role == "goalie") this.auto = new GoalieAutomaton(this.position, this.teamName, false);
+            else this.auto = new KickerAutomaton(this.position, this.teamName, true);
         }
     }
 

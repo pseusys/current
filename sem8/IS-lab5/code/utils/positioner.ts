@@ -4,7 +4,7 @@ import { TeamName } from "./app";
 import { Coordinate } from "../automaton/locator";
 
 
-export function create_players(rightTeam: TeamName, leftTeam: TeamName): Agent[] {
+export function create_players(leftTeam: TeamName, rightTeam: TeamName): Agent[] {
     const artefacts: number[] = [];
     return team.map((player) => {
         if (artefacts.includes(player.artefact)) throw Error(`Artefact ${player.artefact} is not unique!`);

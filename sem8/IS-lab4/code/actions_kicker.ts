@@ -10,7 +10,7 @@ const turn: DecisionTreeLeaf = {
 };
 
 const dash: DecisionTreeLeaf = {
-    command: _ => new Command("dash", 58)
+    command: s => new Command("dash", s.name() == "kick" ? 100 : 58)
 };
 
 const approach: DecisionTreeLeaf = {
@@ -26,7 +26,7 @@ const kick: DecisionTreeLeaf = {
 
 const search: DecisionTreeLeaf = {
     run: s => console.log(`search: ${JSON.stringify(s.findWhat())} ${JSON.stringify(s.findWhere())}`),
-    command: _ => new Command("kick", "5 -45")
+    command: _ => new Command("kick", "5 45")
 };
 
 const doKick: DecisionTreeLeaf = {

@@ -6,42 +6,52 @@ import { Command } from "../utils/command";
 
 
 function init(info: WorldInfo, state: State) {
-    state.local.set("goalie", true);
     state.local.set("catch", 0);
 }
 
-function beforeAction(info: WorldInfo, state: State) {
-    if (info.ballPos) state.variables.set("dist", info.ballPos.dist);
+function before(info: WorldInfo, state: State) {
+    if (info.ball) state.variables.set("dist", info.ball.dist);
 }
 
-function ctch(info: WorldInfo, state: State): Command | null {
-    if (!info.ballPos?.angle && !info.ballPos?.dist) {
+function start(info: WorldInfo, state: State): Command | null {
+    state.next = false;
+    if (!info.ball) {
+        return new Command("turn", 60);
+    } else {
         state.next = true;
         return null;
     }
-    state.next = false;
-    if (info.ballPos.dist > 0.5) {
-        if (state.local.get("goalie")) {
-            if (state.local.get("catch") < 3) {
-                state.local.set("catch", state.local.get("catch") + 1);
-                return new Command("catch", info.ballPos.angle);
-            } else state.local.set("catch", state.local.get("catch") + 1);
-        }
-        if (Math.abs(info.ballPos.angle) > 15) return new Command("turn", info.ballPos.angle);
-        else return new Command("dash", info.ballPos.angle);
+}
+
+function ctch(info: WorldInfo, state: State): Command | null {
+    if (!info.ball) {
+        state.next = true;
+        return null;
     }
-    state.next = true;
+    if (info.ball.dist >= 1.5) {
+        if (Math.abs(info.ball.angle) > 15) return new Command("turn", info.ball.angle);
+        else return new Command("dash", 50);
+    }
+    state.next = false;
+    if (info.ball.dist > 0.5) {
+        if (state.local.get("catch") < 3) {
+            state.local.set("catch", state.local.get("catch") + 1);
+            return new Command("catch", info.ball.angle);
+        } else {
+            state.next = true;
+            state.local.set("catch", 0);
+        }
+    }
     return null;
 }
 
 function kick(info: WorldInfo, state: State): Command | null {
     state.next = true;
-    if (!info.ballPos) return null;
-    if (info.ballPos.dist > 0.5) return null;
+    if (!info.ball) return null;
     const player = info.team ? info.team[0] : null;
     let target;
-    if ((info.goal && !isNaN(info.prot.angle) || !isNaN(info.prot.dist)) && player) target = info.goal.dist < player.dist ? info.goal : player;
-    else if (info.goal && !isNaN(info.prot.angle) || !isNaN(info.prot.dist)) target = info.goal;
+    if (info.goal && player) target = info.goal.dist < player.dist ? info.goal : player;
+    else if (info.goal) target = info.goal;
     else if (player) target = player;
     if (target) return new Command("kick", `${target.dist * 2 + 40} ${target.angle}`);
     return new Command("kick", "30 45");
@@ -49,9 +59,9 @@ function kick(info: WorldInfo, state: State): Command | null {
 
 function goBack(info: WorldInfo, state: State): Command | null {
     state.next = false;
-    if (!info.prot || isNaN(info.prot.angle) || isNaN(info.prot.dist)) return new Command("turn", 60);
+    if (!info.prot) return new Command("turn", 60);
     if (Math.abs(info.prot.angle) > 2) return new Command("turn", info.prot.angle);
-    if (info.prot.dist < 2) {
+    if (info.prot.dist < 5) {
         state.next = true;
         return new Command("turn", 180);
     }
@@ -61,50 +71,38 @@ function goBack(info: WorldInfo, state: State): Command | null {
 function lookAround(info: WorldInfo, state: State): Command | null {
     state.next = false;
     state.sync = "lookAround";
-    if (!state.local.get("look")) state.local.set("look", "left");
-    switch (state.local.get("look")) {
-        case "left":
-            state.local.set("look", "center");
-            return new Command("turn", -60);
-        case "center":
-            state.local.set("look", "right");
-            return new Command("turn", 60);
-        case "right":
-            state.local.set("look", "back");
-            return new Command("turn", 60);
-        case "back":
-            state.local.set("look", "left");
-            state.next = true;
-            state.sync = undefined;
-            return new Command("turn", -60);
-        default:
-            state.next = true
-            return null;
+    if (!state.local.get("look")) state.local.set("look", 0);
+    if (state.local.get("look") < 5) state.local.set("look", state.local.get("look") + 1);
+    else {
+        state.local.set("look", 0);
+        state.next = true;
+        state.sync = undefined;
     }
+    return new Command("turn", 60);
 }
 
 function canIntercept(info: WorldInfo, state: State): boolean {
     state.next = true;
-    if (!info.ballPos) return false;
+    if (!info.ball) return false;
     if (info.enemy) return !info.enemy.find(rival => {
-        const degrees = Math.sign(rival.angle) == Math.sign(info.ballPos!!.angle) ? Math.max(Math.abs(rival.angle), Math.abs(info.ballPos!!.angle)) - Math.min(Math.abs(rival.angle), Math.abs(rival.angle)) : Math.abs(rival.angle) + Math.abs(info.ballPos!!.angle);
-        const rivalDistanceToBall = Math.sqrt(rival.dist ** 2 + info.ballPos!!.dist ** 2 - 2 * rival.dist * info.ballPos!!.dist * Math.cos(degrees * Math.PI / 180));
-        return rivalDistanceToBall < info.ballPos!!.dist
+        const degrees = Math.sign(rival.angle) == Math.sign(info.ball!!.angle) ? Math.max(Math.abs(rival.angle), Math.abs(info.ball!!.angle)) - Math.min(Math.abs(rival.angle), Math.abs(rival.angle)) : Math.abs(rival.angle) + Math.abs(info.ball!!.angle);
+        const rivalDistanceToBall = Math.sqrt(rival.dist ** 2 + info.ball!!.dist ** 2 - 2 * rival.dist * info.ball!!.dist * Math.cos(degrees * Math.PI / 180));
+        return rivalDistanceToBall < info.ball!!.dist
     });
     if (!info.ballSpeed) return true;
-    return info.ballPos.dist <= info.ballPos.dist - info.ballSpeed.dist + 0.5;
-
+    return info.ball.dist <= info.ball.dist - info.ballSpeed.dist + 0.5;
 }
 
 function runToBall(info: WorldInfo, state: State): Command | null {
     state.next = false;
-    if (!info.ballPos) return goBack(info, state);
-    if (info.ballPos.dist <= 2) {
+    if (!info.ball) return goBack(info, state);
+    console.log(info.ball.dist);
+    if (info.ball.dist < 1.5) {
         state.next = true;
         return null;
     }
-    if (Math.abs(info.ballPos.angle) > 10) return new Command("turn", info.ballPos.angle);
-    else return new Command("dash", 110);
+    if (Math.abs(info.ball.angle) > 10) return new Command("turn", info.ball.angle);
+    else return new Command("dash", 100);
 }
 
 function ok(info: WorldInfo, state: State): Command | null {
@@ -117,8 +115,7 @@ function empty(info: WorldInfo, state: State) {
 }
 
 const actions = new Map<string, Act | Sync | SyncGuard>();
-actions.set("init", init);
-actions.set("beforeAction", beforeAction);
+actions.set("start", start);
 actions.set("ctch", ctch);
 actions.set("kick", kick);
 actions.set("goBack", goBack);
@@ -154,7 +151,7 @@ const start_to_close: Edge = {
     to: "close",
     content: [
         { guard: [
-            { left: { type: "timer", name: "dist" }, operator: "lt", rightVal: 2 }
+            { left: { type: "var", name: "dist" }, operator: "lt", rightVal: 1.5 }
         ] }
     ]
 };
@@ -165,7 +162,7 @@ const start_to_near: Edge = {
     content: [
         { guard: [
             { left: { type: "var", name: "dist" }, operator: "lt", rightVal: 10 },
-            { leftVal: 2, operator: "lte", right: { type: "var", name: "dist" } }
+            { leftVal: 1.5, operator: "lte", right: { type: "var", name: "dist" } }
         ] }
     ]
 };
@@ -230,7 +227,7 @@ const near_to_start: Edge = {
     from: "near",
     to: "start",
     content: [ {
-        sync: "empty",
+        sync: "ok",
         assign: [
             { name: "t", value: 0, type: "timer" }
         ]
@@ -241,7 +238,7 @@ const near_to_intercept: Edge = {
     from: "near",
     to: "intercept",
     content: [
-        { sync: "canIntercept" }
+        { syncGuard: "canIntercept" }
     ]
 };
 
@@ -275,21 +272,24 @@ const goalieState = {
     next: true,
     sync: undefined,
     timers: timers,
-    variables: variables
+    variables: variables,
+    angle: 0
 };
 
 const goalieBody: Body = {
     actions: actions,
-    currentEdge: 0,
-    currentNode: undefined,
+    currentEdge: undefined,
+    currentNode: 0,
     edges: edges,
     nodes: nodes,
-    state: goalieState
+    state: goalieState,
+    before: before,
+    init: init
 };
 
 
 export class GoalieAutomaton extends Automaton {
-    constructor(side: Position, team: TeamName) {
-        super(side, team, goalieBody);
+    constructor(side: Position, team: TeamName, log: boolean = false) {
+        super(side, team, goalieBody, log);
     }
 }

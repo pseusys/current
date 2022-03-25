@@ -3,8 +3,6 @@ import { WorldInfo } from "./locator";
 import { Position } from "../utils/constants";
 import { TeamName } from "../utils/app";
 
-const BEFORE_ACTION = "beforeAction";
-
 
 export type Act = (info: WorldInfo, state: State) => void;
 
@@ -38,6 +36,7 @@ export interface State {
     timers: Map<string, number>;
     next: boolean;
     sync?: string;
+    angle: number;
 }
 
 export interface Node {
@@ -65,26 +64,49 @@ export interface Body {
     nodes: Node[];
     edges: Edge[];
     actions: Map<string, Act | Sync | SyncGuard>;
+    init?: Act;
+    before?: Act;
 }
 
 
 export class Automaton {
     private readonly worldInfo: WorldInfo;
     private body: Body;
+    private readonly log: boolean;
+    private stackCounter = 0;
+    private stackTrace = "";
 
     private lastTime: number;
 
-    constructor(side: Position, team: TeamName, body: Body) {
+    constructor(side: Position, team: TeamName, body: Body, log: boolean) {
         this.worldInfo = new WorldInfo(side, team);
         this.body = body;
         this.lastTime = 0;
+        this.log = log;
+        if (this.body.init) this.body.init(this.worldInfo, body.state);
     }
 
     getCommand(input: any): Command | null {
-        this.worldInfo.update(input);
+        this.stackCounter = 0;
+        this.stackTrace = "";
+        const update = this.worldInfo.update(input, this.body.state.angle);
+        switch (update) {
+            case false: return null;
+            case null: {
+                this.body.state.angle += 60;
+                this.body.state.angle %= 360;
+                return new Command("turn", 60);
+            }
+        }
         this.increaseTimers();
-        if (this.body.actions.get(BEFORE_ACTION)) this.body.actions.get(BEFORE_ACTION)!!(this.worldInfo, this.body.state);
-        return this.execute();
+        if (this.body.before) this.body.before(this.worldInfo, this.body.state);
+        const command = this.execute();
+        if (this.log) console.log(`${command?.name} ${command?.value}`);
+        if (command?.name == "turn") {
+            this.body.state.angle += Number(command.value);
+            this.body.state.angle %= 360;
+        }
+        return command;
     }
 
     private increaseTimers() {
@@ -98,17 +120,21 @@ export class Automaton {
     }
 
     private execute(): Command | null {
-        console.log(`Executing with next = ${this.body.state.next}`);
-        if (this.body.state.sync) {
-            const name = this.body.state.sync;
-            return (this.body.actions.get(name) as Sync)(this.worldInfo, this.body.state);
-        } else if (this.body.state.next) {
-            if (this.body.currentNode != undefined) return this.nextState();
-            else if (this.body.currentEdge != undefined) return this.nextEdge();
-            else throw Error(`Current state (${this.body.state}) doesn't have current!`);
-        } else if (this.body.currentNode != undefined) return this.executeState();
-        else if (this.body.currentEdge != undefined) return this.executeEdge();
-        else throw Error(`Unexpected state: ${this.body.state}`);
+        this.stackCounter++;
+        try {
+            if (this.body.state.sync) {
+                const name = this.body.state.sync;
+                return (this.body.actions.get(name) as Sync)(this.worldInfo, this.body.state);
+            } else if (this.body.state.next) {
+                if (this.body.currentNode != undefined) return this.nextState();
+                else if (this.body.currentEdge != undefined) return this.nextEdge();
+                else throw Error(`Current state (${this.body.state}) doesn't have current!`);
+            } else if (this.body.currentNode != undefined) return this.executeState();
+            else if (this.body.currentEdge != undefined) return this.executeEdge();
+            else throw Error(`Unexpected state: ${this.body.state}`);
+        } catch (e) {
+            throw Error(`ERROR:\nTrace: ${this.stackTrace}\nState: ${JSON.stringify(this.body.state)}\nStack calls: ${this.stackCounter}\nCurrent edge: ${this.body.currentEdge}\nCurrent node: ${this.body.currentNode}`);
+        }
     }
 
     private nextState(): Command | null {
@@ -120,18 +146,19 @@ export class Automaton {
 
             const condition = edge.content.find(content => {
                 if (content.guard) {
-                    if (content.guard.every(rule => !this.checkGuard(rule))) return false;
+                    if (!content.guard.every(rule => this.checkGuard(rule))) return false;
                 } else if (content.syncGuard) {
                     if (!this.body.actions.get(content.syncGuard)) throw Error(`Unexpected syncGuard: ${content.syncGuard}`);
                     if (!(this.body.actions.get(content.syncGuard) as SyncGuard)(this.worldInfo, this.body.state)) return false;
-                } else return true;
+                }
+                return true;
             });
 
             if (condition) {
                 this.body.currentNode = undefined;
                 this.body.currentEdge = ind;
                 this.body.state.next = false;
-                console.log(`Going to edge ${this.body.currentEdge}`);
+                if (this.log) console.log(`Going to edge ${this.body.currentEdge}`);
                 return this.execute();
             }
         }
@@ -143,13 +170,17 @@ export class Automaton {
         this.body.currentEdge = undefined;
         this.body.currentNode = this.body.nodes.findIndex(node => node.name == name);
         this.body.state.next = false;
-        console.log(`Going to node ${this.body.currentNode}`);
+        //if (this.log) console.log(`Going to node ${this.body.currentNode}`);
         return this.execute();
     }
 
     private executeState(): Command | null {
+        this.stackTrace += `${this.body.currentNode!!} -> `;
         const node = this.body.nodes[this.body.currentNode!!];
-        console.log(`Executing node ${node.name}`);
+        if (this.log) {
+            console.log(`Executing node ${node.name}`);
+            //console.log(`Goal: ${JSON.stringify(this.worldInfo.goal)}`);
+        }
         if (this.body.actions.get(node.name)) {
             const action = this.body.actions.get(node.name)!!(this.worldInfo, this.body.state);
             if (!action && this.body.state.next) return this.execute();
@@ -162,9 +193,9 @@ export class Automaton {
 
     private executeEdge(): Command | null {
         const edges = this.body.edges[this.body.currentEdge!!];
-        console.log(`Executing edge ${edges.from}_to_${edges.to}`);
+        //if (this.log) console.log(`Executing edge ${edges.from}_to_${edges.to}`);
         for (let content of edges.content) {
-            if (content.guard && content.guard.every(rule => !this.checkGuard(rule))) continue;
+            if (content.guard && !content.guard.every(rule => this.checkGuard(rule))) continue;
 
             if (content.assign) {
                 content.assign.forEach(assign => {
@@ -179,15 +210,13 @@ export class Automaton {
             if (content.sync) {
                 if (!this.body.actions.get(content.sync)) throw `Unexpected synch: ${content.sync}`;
                 const action = (this.body.actions.get(content.sync) as Sync)(this.worldInfo, this.body.state);
-                console.log(`Action: ${JSON.stringify(action)}`);
+                //if (this.log && edges.from == 'intercept' && edges.to == 'start') console.log(JSON.stringify(action));
                 if (!action) {
-                    console.log("Exit 1");
                     this.body.state.next = true;
                     return this.execute();
                 } else return action;
             }
         }
-        console.log("Exit 2");
         this.body.state.next = true;
         return this.execute();
     }
@@ -195,6 +224,7 @@ export class Automaton {
     private checkGuard(guard: Guard): boolean {
         if (guard.left) guard.leftVal = guard.left.type == "timer" ? this.body.state.timers.get(guard.left.name) : this.body.state.variables.get(guard.left.name);
         if (guard.right) guard.rightVal = guard.right.type == "timer" ? this.body.state.timers.get(guard.right.name) : this.body.state.variables.get(guard.right.name);
+        if ((guard.leftVal == undefined) || (guard.rightVal == undefined)) return false;
 
         switch (guard.operator) {
             case "e": return guard.leftVal == guard.rightVal;
