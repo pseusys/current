@@ -1,21 +1,21 @@
-['gripp', ['kashel'', 'vysokaya temperatura', 'golovnaya bol'']].
-['dermatit', ['ekzemy', 'pokrasnenie kozhi']].
-['astma', ['kashel'', 'hripy']].
-['gaymorit', ['nasmork', 'vysokaya temperatura', 'golovnaya bol'']].
-['otit', ['ushnaya bol'', 'vysokaya temperatura', 'golovnaya bol'']].
-['angina', ['bol' v gorle', 'vysokaya temperatura', 'golovnaya bol'']].
+['gripp', ['kashel', 'vysokaya temperatura', 'golovnaya bol']].
+['dermatitis', ['ekzemy', 'pokrasnenie kozhi']].
+['astma', ['kashel', 'hripy']].
+['gaymorit', ['nasmork', 'vysokaya temperatura', 'golovnaya bol']].
+['otit', ['ushnaya bol', 'vysokaya temperatura', 'golovnaya bol']].
+['angina', ['bol v gorle', 'vysokaya temperatura', 'golovnaya bol']].
 ['rozhistoje vospalenije', ['pokrasnenie kozhi', 'vysokaya temperatura']].
 ['infekcionnyj mononukleoz', ['uvelichenie limfouzlov', 'vysokaya temperatura']].
-['holycestit', ['bol' v pravom podreberje', 'temnaja mocha', 'svetlyj kal']].
-['pozvonochnaja gryzha', ['nojushaja bol' v pojasnitse']].
-['meningit', ['vysokaya temperatura', 'golovnaya bol', 'bol' pri vrashenii golovy']].
+['holycestit', ['bol v pravom podreberje', 'temnaja mocha', 'svetlyj kal']].
+['pozvonochnaja gryzha', ['nojushaja bol v pojasnitse']].
+['meningit', ['vysokaya temperatura', 'golovnaya bol', 'bol pri vrashenii golovy']].
 ['infekcionnyj encefalit', ['pokrasnenije v meste ukusa', 'vysokaya temperatura']].
-['koronavirus', ['golovnaya bol'', 'vysokaya temperatura', 'narushenie obonjanija', 'narushenie pamjati']].
+['koronavirus', ['golovnaya bol', 'vysokaya temperatura', 'narushenie obonjanija', 'narushenie pamjati']].
 ['demencija', ['narushenie pamjati', 'zatrudnenie vosprijatija bystroj rechi']].
-['perelom', ['deformacija povrezhdennoj konechnosti', 'bol' v povrezhdennoj konechnosti', 'neznachitel'naja temperatura']].
-['vospalenije legkih', ['kashel'', 'zatrudnenie dychanija', 'neznachitel'naja temperatura']].
+['perelom', ['deformacija povrezhdennoj konechnosti', 'bol v povrezhdennoj konechnosti', 'neznachitelnaja temperatura']].
+['vospalenije legkih', ['kashel', 'zatrudnenie dychanija', 'neznachitelnaja temperatura']].
 ['pedicoolez', ['zud v golove', 'pokrasnenije v meste ukusa']].
 ['lishaj', ['ekzemy', 'pokrasnenie kozhi']].
-['konjuktivit', ['pokrasnenije glaza', 'zud v oblasti glaza', 'povyshennaya sonlivost'']].
+['konjuktivit', ['pokrasnenije glaza', 'zud v oblasti glaza', 'povyshennaya sonlivost']].
 ['gerpes', ['pokrasnenije v oblasti gub', 'zud v oblasti gub']].
-['stomatit', ['vospalenie rta', 'vysokaya temperatura', 'bol' v gorle']].
+['stomatit', ['vospalenie rta', 'vysokaya temperatura', 'bol v gorle']].
