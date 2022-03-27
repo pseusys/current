@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2020",
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "noEmit": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  },
+
+  "exclude":["node_modules", "logs"]
+}
