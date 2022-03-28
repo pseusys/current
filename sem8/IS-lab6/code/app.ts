@@ -1,11 +1,8 @@
 import { create_players } from "./utils/positioner";
 
-export type TeamName = "team1" | "team2";
+create_players("SOMA", "l");
 
-let teamName = "team1" as TeamName;
-let teamEnemyName = "team2"as TeamName;
-
-create_players(teamName, "l");
 setTimeout(() => {
-    create_players(teamEnemyName, "r");
+    // Init right team, something like:
+    create_players("non-SOMA", "r");
 }, 2000);

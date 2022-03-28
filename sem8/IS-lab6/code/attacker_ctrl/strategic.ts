@@ -13,7 +13,7 @@ export class AttackerStrategic extends StrategicController {
         const intercept = this.intercept();
         if (intercept) return intercept;
 
-        if (this.last == "intercept") accumulator.set(StrategicController.states.newAction, "return");
+        if (this.worldInfo.kickIn || (this.last == "intercept")) accumulator.set(StrategicController.states.newAction, "return");
         else accumulator.delete(StrategicController.states.newAction)
         this.last = "previous";
         return null;

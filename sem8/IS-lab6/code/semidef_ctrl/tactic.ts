@@ -25,9 +25,9 @@ export class SemidefTactic extends TacticController {
     private return(): Command | null {
         const home = this.worldInfo.flags.find(flag => {
             switch (this.id) {
-                case 20: return flag.name == "fct";
+                case 20: return flag.name == (this.side == "l" ? "fct" : "fcb");
                 case 21: return flag.name == "fc";
-                case 22: return flag.name == "fcb";
+                case 22: return flag.name == (this.side == "l" ? "fcb" : "fct");
                 default: throw Error(`Strange defender, artefact: ${this.id}`);
             }
         });

@@ -1,11 +1,8 @@
-import { TeamName } from "../app";
-
-
 export class Logger {
     private readonly id: number;
-    private readonly team: TeamName;
+    private readonly team: string;
 
-    constructor(id: number, team: TeamName) {
+    constructor(id: number, team: string) {
         this.id = id;
         this.team = team;
     }

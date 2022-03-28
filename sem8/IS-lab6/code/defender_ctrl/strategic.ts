@@ -13,7 +13,7 @@ export class DefenderStrategic extends StrategicController {
         const intercept = this.intercept();
         if (intercept) return intercept;
 
-        if (this.back) accumulator.set(StrategicController.states.newAction, "return");
+        if (this.worldInfo.kickIn || this.back) accumulator.set(StrategicController.states.newAction, "return");
         else accumulator.delete(StrategicController.states.newAction);
         this.back = false;
         return null;
@@ -22,7 +22,7 @@ export class DefenderStrategic extends StrategicController {
     protected immediate(accumulator: Map<string, any>): Command | null {
         if (accumulator.get(DefenderEntry.states.can_kick)) {
             const closest = this.worldInfo.team.sort((a, b) => a.dist - b.dist).filter(player => (player.id) && (player.id > 4))[0];
-            if (closest) return new Command("kick", `${closest.dist + 30} ${closest.angle}`);
+            if (closest) return new Command("kick", `${closest.dist + 10} ${closest.angle}`);
             else if (this.worldInfo.goal) return new Command("kick", `100 ${this.worldInfo.goal.angle}`);
             else {
                 const centre = this.worldInfo.flags.find(flag => flag.name == "fc");

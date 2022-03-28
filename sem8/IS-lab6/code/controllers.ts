@@ -36,10 +36,21 @@ export class EntryController extends Controller {
         let result: Command | null;
         const upd = this.worldInfo.update(input, this.angle);
         if (upd == true) result = this.execute(input);
-        else if (upd == null) result = new Command("turn", 60);
+        else if (upd == null) result = this.unstuck();
         else result = null;
         if (result && (result.name == "turn")) this.angle = (this.angle + Number(result.value)) % 360;
         return result;
+    }
+
+    private unstuck(): Command | null {
+        for (let centre of ["fc", "fprc", "fplc"]) {
+            const view = this.worldInfo.flags.find(flag => flag.name == centre);
+            if (view) {
+                if (Math.abs(view.angle) > 10) return new Command("turn", view.angle);
+                else return new Command("dash", 100);
+            }
+        }
+        return new Command("turn", 60);
     }
 
     protected execute(input: any, accumulator: Map<string, any> = new Map()): Command | null {

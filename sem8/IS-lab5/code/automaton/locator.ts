@@ -72,8 +72,10 @@ function getPlayerCoords(me: Coordinate, player: RawPlayer, visibleFlags: RawFla
 }
 
 
-function predictPosition(base: Object, prev: Coordinate, curr: Coordinate, diff: number, angle: number): Object {
+function predictPosition(base: Object, prev: Coordinate, curr: Coordinate, angle: number): Object {
     const len = dist(curr, base);
+    let diff = dist(prev, curr);
+    if (diff < 1) diff = Math.round(diff);
     return {
         x: base.x,
         y: base.y,
@@ -132,7 +134,6 @@ export class WorldInfo {
         if (visible.seenFlags.length < 2) return false;
         const me = locate(visible.seenFlags[0], visible.seenFlags[1], visible.seenFlags[2] ? visible.seenFlags[2] : null);
         if (!me) return false;
-        const len = this.me ? Math.round(dist(this.me, me)) : null;
 
         let prot: Object | undefined, goal: Object | undefined;
         visible.seenFlags.forEach(flag => {
@@ -145,12 +146,9 @@ export class WorldInfo {
             }
         });
         if (prot) this.prot = prot;
-        else if ((len != undefined) && this.prot) this.prot = predictPosition(this.prot, this.me!!, me, len, angle - this.validAngle);
+        else if (this.prot) this.prot = predictPosition(this.prot, this.me!!, me, angle - this.validAngle);
         if (goal) this.goal = goal;
-        else if ((len != undefined) && this.goal) {
-            this.goal = predictPosition(this.goal, this.me!!, me, len, angle - this.validAngle);
-            console.log(`Goal predicted with rot: ${angle - this.validAngle}, raw prediction ${this.goal.angle}, trans: ${len}`);
-        }
+        else if (this.goal) this.goal = predictPosition(this.goal, this.me!!, me, angle - this.validAngle);
 
         const ball = getCoords(me, visible.seenBall, visible.seenFlags);
         this.ballSpeedCounter++;

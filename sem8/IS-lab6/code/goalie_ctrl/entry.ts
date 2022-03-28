@@ -1,6 +1,5 @@
 import { EntryController } from "../controllers";
 import { Position } from "../utils/constants";
-import { TeamName } from "../app";
 import { GoalieTactic } from "./tactic";
 import { WorldInfo } from "../utils/locator";
 import { Command } from "../utils/command";
@@ -13,7 +12,7 @@ export class GoalieEntry extends EntryController {
         can_catch: "CAN_CATCH"
     }
 
-    constructor(side: Position, team: TeamName, log: Logger | null = null) {
+    constructor(side: Position, team: string, log: Logger | null = null) {
         const info = new WorldInfo(side, team);
         super(-1, side, new GoalieTactic(side, info, log), info, log);
     }

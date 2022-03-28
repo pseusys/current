@@ -25,8 +25,8 @@ export class AttackerTactic extends TacticController {
     private return(): Command | null {
         const home = this.worldInfo.flags.find(flag => {
             switch (this.id) {
-                case 30: return flag.name == (this.side == "l" ? "fprt" : "fplt");
-                case 33: return flag.name == (this.side == "l" ? "fprb" : "fplb");
+                case 30: return flag.name == (this.side == "l" ? "fprt" : "fplb");
+                case 33: return flag.name == (this.side == "l" ? "fprb" : "fplt");
                 default: throw Error(`Strange defender, artefact: ${this.id}`);
             }
         });

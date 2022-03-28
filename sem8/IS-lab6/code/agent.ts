@@ -4,7 +4,6 @@ import { create } from "./utils/socket";
 import { FIELD_X, FIELD_Y, Position } from "./utils/constants";
 import { Command } from "./utils/command";
 import { reset_player } from "./utils/positioner";
-import { TeamName } from "./app";
 import { Coordinate } from "./utils/locator";
 import { EntryController } from "./controllers";
 import { Logger } from "./utils/logger";
@@ -18,7 +17,7 @@ export type Role = "goalie" | "defender" | "semidef" | "attacker" | "alpha";
 
 
 export class Agent {
-    readonly teamName: TeamName;
+    readonly teamName: string;
     private position: Position;
     private readonly role: Role;
     private run: boolean;
@@ -31,7 +30,7 @@ export class Agent {
     id: number | undefined;
     artefact: number;
 
-    constructor(team: TeamName, artefact: number, position: Position, coordinate: Coordinate, role: Role) {
+    constructor(team: string, artefact: number, position: Position, coordinate: Coordinate, role: Role) {
         this.teamName = team;
         this.artefact = artefact;
         this.role = role;
@@ -69,10 +68,10 @@ export class Agent {
             this.id = Number(p[1]);
             this.log = new Logger(this.id, this.teamName);
             switch (this.role) {
-                case "goalie": this.ctrl = new GoalieEntry(this.position, this.teamName); break;
-                case "defender": this.ctrl = new DefenderEntry(this.artefact, this.position, this.teamName); break;
-                case "semidef": this.ctrl = new SemidefEntry(this.artefact, this.position, this.teamName); break;
-                case "attacker": this.ctrl = new AttackerEntry(this.artefact, this.position, this.teamName); break;
+                case "goalie": this.ctrl = new GoalieEntry(this.position, this.teamName, this.log); break;
+                case "defender": this.ctrl = new DefenderEntry(this.artefact, this.position, this.teamName, this.log); break;
+                case "semidef": this.ctrl = new SemidefEntry(this.artefact, this.position, this.teamName, this.log); break;
+                case "attacker": this.ctrl = new AttackerEntry(this.artefact, this.position, this.teamName, this.log); break;
                 case "alpha": this.ctrl = new AlphaEntry(this.artefact, this.position, this.teamName, this.log); break;
                 default: throw Error(`Strange role: ${this.role}`);
             }

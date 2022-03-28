@@ -1,5 +1,4 @@
 import * as flags from "./flags.json";
-import { TeamName } from "../app";
 import { Position } from "./constants";
 import { cosine, dist, distBetween, locate, triangulate } from "./math";
 
@@ -12,7 +11,7 @@ export interface Instance {
 }
 
 interface RawPlayer extends Instance {
-    team: TeamName | null;
+    team: string | null;
     id: number | null;
     goalie: boolean | null;
 }
@@ -88,7 +87,7 @@ function predictPosition(base: Object, prev: Coordinate, curr: Coordinate, angle
 
 export class WorldInfo {
     private readonly side: Position;
-    private readonly teamName: TeamName;
+    private readonly teamName: string;
     private me: Coordinate | undefined;
     private validAngle: number;
 
@@ -101,7 +100,7 @@ export class WorldInfo {
     flags: RawFlag[];
     kickIn: boolean;
 
-    constructor(side: Position, team: TeamName) {
+    constructor(side: Position, team: string) {
         this.side = side;
         this.teamName = team;
         this.validAngle = 0;
@@ -162,6 +161,6 @@ export class WorldInfo {
 
     private updateHear(input: any) {
         if (input[1] == "referee") this.signals.push(input[2]);
-        this.kickIn = ((input[2].includes("kick_in")) || (input[2].includes("corner_kick"))) && (input[2].slice(-1) == this.side);
+        this.kickIn = (input[2].includes("kick_in")) || (input[2].includes("corner_kick"));
     }
 }

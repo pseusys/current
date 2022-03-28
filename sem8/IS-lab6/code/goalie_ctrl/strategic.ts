@@ -31,7 +31,7 @@ export class GoalieStrategic extends StrategicController {
         if (accumulator.get(GoalieEntry.states.can_kick)) {
             this.last = "kick";
             const closest = this.worldInfo.team.sort((a, b) => a.dist - b.dist)[0];
-            if (closest) return new Command("kick", `${closest.dist + 30} ${closest.angle}`);
+            if (closest) return new Command("kick", `${closest.dist + 10} ${closest.angle}`);
             else if (this.worldInfo.goal) return new Command("kick", `100 ${this.worldInfo.goal.angle}`);
             else return new Command("kick", `60 0`);
         } else if (accumulator.get(GoalieEntry.states.can_catch)) {
