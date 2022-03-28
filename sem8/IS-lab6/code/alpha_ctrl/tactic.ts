@@ -21,7 +21,7 @@ export class AlphaTactic extends TacticController {
     private return(): Command | null {
         if (!this.worldInfo.ball) return new Command("turn", 60);
         if (Math.abs(this.worldInfo.ball.angle) > 10) return new Command("turn", this.worldInfo.ball.angle);
-        if (this.worldInfo.ball.dist > 0.5) return new Command("dash", 100);
+        if (this.worldInfo.ball.dist > 0.5) return new Command("dash", 85);
         return null;
     }
 }
