@@ -38,7 +38,7 @@ export class Agent {
         this.angle = 0;
         this.speed = 0;
         this.turnSpeed = 0;
-        this.flow = new ActionFlow([{ act: "kick", fl: "gl" }]);
+        this.flow = new ActionFlow([{ act: "kick", fl: "gr" }]);
 
         this.socket = create(this.teamName, msg => {
             // Получение сообщения
