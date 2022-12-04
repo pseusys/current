@@ -1,0 +1,93 @@
+[
+  {
+    "position": {
+      "x": -40,
+      "y": 0
+    },
+    "artefact": 0,
+    "role": "goalie"
+  },
+
+  {
+    "position": {
+      "x": -30,
+      "y": -10
+    },
+    "artefact": 10,
+    "role": "defender"
+  },
+  {
+    "position": {
+      "x": -30,
+      "y": 0
+    },
+    "artefact": 11,
+    "role": "defender"
+  },
+  {
+    "position": {
+      "x": -30,
+      "y": 10
+    },
+    "artefact": 12,
+    "role": "defender"
+  },
+
+  {
+    "position": {
+      "x": -20,
+      "y": -15
+    },
+    "artefact": 20,
+    "role": "semidef"
+  },
+  {
+    "position": {
+      "x": -20,
+      "y": 0
+    },
+    "artefact": 21,
+    "role": "semidef"
+  },
+  {
+    "position": {
+      "x": -20,
+      "y": 15
+    },
+    "artefact": 22,
+    "role": "semidef"
+  },
+
+  {
+    "position": {
+      "x": -10,
+      "y": -20
+    },
+    "artefact": 30,
+    "role": "attacker"
+  },
+  {
+    "position": {
+      "x": -10,
+      "y": -5
+    },
+    "artefact": 31,
+    "role": "alpha"
+  },
+  {
+    "position": {
+      "x": -10,
+      "y": 5
+    },
+    "artefact": 32,
+    "role": "alpha"
+  },
+  {
+    "position": {
+      "x": -10,
+      "y": 20
+    },
+    "artefact": 33,
+    "role": "attacker"
+  }
+]
