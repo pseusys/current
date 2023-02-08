@@ -1,7 +1,6 @@
 import java.rmi.*;
 
 public  class HelloImpl implements Hello {
-
     private final String message;
 
     public HelloImpl(String s) {

@@ -15,7 +15,7 @@ public class HelloClient {
             String res = h.sayHello();
             System.out.println(res);
 
-        } catch (Exception e)  {
+        } catch (Exception e) {
             System.err.println("Error on client: " + e);
         }
     }
