@@ -11,3 +11,5 @@ sem5/WEB-earthquake/public/
 **/ML-*/*.csv
 **/ML-*/*.json
 **/ML-*/*.data
+**/*.pdf
+

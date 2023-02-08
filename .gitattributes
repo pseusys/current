@@ -3,3 +3,7 @@
 
 **.ipynb filter=nbstripout
 **.ipynb diff=ipynb
+
+**.png binary
+**.jpg binary
+
