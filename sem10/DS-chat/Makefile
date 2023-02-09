@@ -18,5 +18,5 @@ server:
 
 client:
 	javac -d build -sourcepath src src/ChatClient.java
-	java -cp build ChatClient -n "$(NAME)" -h
+	java -cp build ChatClient -n "$(NAME)"
 .PHONY: client

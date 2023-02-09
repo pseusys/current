@@ -3,7 +3,7 @@ import java.rmi.registry.*;
 import java.rmi.RemoteException;
 
 
-public class ChatServer {
+public class ChatServer extends ConsoleApp {
     private static Registry initRegistry() throws RemoteException {
         try {
             return LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
@@ -13,7 +13,11 @@ public class ChatServer {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IllegalArgumentException {
+        initApp(args, ChatClient.class);
+    }
+
+    public static void launch() {
         try {
             HelloImpl h = new HelloImpl("Hello world, ");
             Hello h_stub = (Hello) UnicastRemoteObject.exportObject(h, 0);
