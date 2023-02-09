@@ -1,0 +1,38 @@
+\documentclass{amsart}
+
+\usepackage[margin=0.6in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage{amsthm,amsmath,amsfonts,amssymb,amstext}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{array}
+
+\graphicspath{ {./img/} }
+
+\newtheorem{problem}{Exercise}
+\renewcommand*{\proofname}{Solution}
+
+\newcommand{\problemset}[1]{
+	\begin{center}
+		\Large #1
+	\end{center}
+}
+
+
+\newcommand\bnot[1]{\overline{#1\vphantom{b}}}
+\newcommand{\tabitem}{~~\textbullet~~}
+
+\newcolumntype{L}{>{$}l<{$}}
+\newcolumntype{C}{>{$}c<{$}}
+
+\begin{document}
+	\begin{tabbing}
+		Université Grenoble Alpes \hspace{9.9cm} \= Student: \= Alexander Sergeev \\
+		Master 1 Informatique / MOSIG \> Date: \> \today
+	\end{tabbing}
+	\hrule
+	\vspace{1cm}
+
+	\input{body.tex}
+\end{document}

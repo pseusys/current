@@ -1,15 +1,34 @@
-**/.idea
-**/node_modules
+# IDE config roots:
+**/.idea/
+**/.vscode/
+
+# JavaScript and TypeScript library sources and dependency locks:
+**/node_modules/
 **/package-lock.json
-**/cmake-build-debug
-**/build
+
+# C and C++ build folders: 
+**/cmake-build-debug/
+**/build/
+
+# Website build public folder:
 sem5/WEB-earthquake/public/
+
+# Video demonstration files:
 **.mp4
-**/venv/**
+
+# Python virtual environments and caches:
+**/venv/
 **/__pycache__/
 **/.ipynb_checkpoints/
+
+# Machine learning course third party data files:
 **/ML-*/*.csv
 **/ML-*/*.json
 **/ML-*/*.data
-**/*.pdf
+
+# LaTeX artifacts:
+*.aux
+*.log
+*.gz
+*.pdf
 
