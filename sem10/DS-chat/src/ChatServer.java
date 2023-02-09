@@ -14,7 +14,7 @@ public class ChatServer extends ConsoleApp {
     }
 
     public static void main(String[] args) throws IllegalArgumentException {
-        initApp(args, ChatClient.class);
+        initApp(args, ChatServer.class);
     }
 
     public static void launch() {

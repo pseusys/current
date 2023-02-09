@@ -1,3 +1,4 @@
+import java.util.function.Function;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -101,14 +102,20 @@ public class ConsoleApp {
         return arguments.containsKey(name);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> T getArgument(String name) {
-        if (!arguments.containsKey(name)) throw new RuntimeException("Argument '" + name + "' not found!");
-        return (T) arguments.get(name);
+    public static String getArgument(String name) {
+        return getArgument(name, Object::toString);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> T getArgumentDefault(String name, T def) {
-        return (T) arguments.getOrDefault(name, def);
+    public static <T> T getArgument(String name, Function<Object, T> convertor) {
+        if (!arguments.containsKey(name)) throw new RuntimeException("Argument '" + name + "' not found!");
+        return convertor.apply(arguments.get(name));
+    }
+
+    public static String getArgumentDefault(String name, String def) {
+        return getArgumentDefault(name, def, Object::toString);
+    }
+
+    public static <T> T getArgumentDefault(String name, T def, Function<Object, T> convertor) {
+        return convertor.apply(arguments.getOrDefault(name, def));
     }
 }
