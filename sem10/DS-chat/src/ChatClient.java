@@ -1,8 +1,8 @@
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 
 import java.rmi.registry.*;
 import java.rmi.server.*;
-import java.nio.charset.StandardCharsets;
 import java.rmi.*;
 
 import interfaces.CallbackInterface;
@@ -16,13 +16,16 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
     private static final int PORT_NUMBER = 65535; // TODO: fix port range!
     private static final String secret = Utils.randomString();
 
+
     private String name, id;
+
 
     public static void main(String[] args) throws IllegalArgumentException {
         addArgument('a', "address", "Address of machine to run the client on (default: 'localhost').");
         addArgument('n', "name", "Client name to display in chat (required!).");
         initApp(args, ChatClient.class);
     }
+
 
     public ChatClient() {
         try {
@@ -41,6 +44,7 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
         }
     }
 
+
     private String bind(Registry registry) throws AccessException, RemoteException, NoSuchAlgorithmException {
         try {
             String lid = Utils.hash(secret + name);
@@ -52,6 +56,7 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
             throw new RuntimeException("Exception on client '" + name + "': user with this name already exists!");
         }
     }
+
 
     @Override
     public String getName() throws RemoteException {

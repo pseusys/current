@@ -9,6 +9,7 @@ import java.util.Random;
 public class Utils {
     private static Random random = new Random();
 
+
     public static String randomString() {
         byte[] array = new byte[8];
         random.nextBytes(array);

@@ -1,9 +1,9 @@
 import java.util.*;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 
 import java.rmi.registry.*;
 import java.rmi.server.*;
-import java.nio.charset.StandardCharsets;
 import java.rmi.*;
 
 import interfaces.CallbackInterface;
@@ -17,14 +17,18 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
     public static final int SERVER_PORT = 0;
     public static final String SERVER_NAME = "ChatServer";
 
+
     private static final String secret = Utils.randomString();
     private static final Map<String, CallbackInterface> clients = new HashMap<>();
 
+
     private Registry registry;
+
 
     public static void main(String[] args) throws IllegalArgumentException {
         initApp(args, ChatServer.class);
     }
+
 
     public ChatServer() {
         try {
@@ -38,6 +42,7 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
         }
     }
 
+
     private Registry initRegistry() throws RemoteException {
         try {
             return LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
@@ -46,6 +51,7 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
             else return LocateRegistry.getRegistry(Registry.REGISTRY_PORT);
         }
     }
+
 
     @Override
     public String connect(String userId) throws RemoteException {
