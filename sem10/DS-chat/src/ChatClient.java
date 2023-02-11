@@ -17,7 +17,7 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
     private static final String secret = Utils.randomString();
 
 
-    private String name, id;
+    private String name, id, bindId;
 
 
     public static void main(String[] args) throws IllegalArgumentException {
@@ -33,11 +33,13 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
 
             Registry registry = LocateRegistry.getRegistry(getArgumentDefault("host", "localhost"));
             ChatInterface server = (ChatInterface) registry.lookup(ChatServer.SERVER_NAME);
-    
-            id = server.connect(bind(registry));
+
+            connect(registry, server);
             if (id == null) throw new RuntimeException("Couldn't authenticate user!");
 
             server.sendMessage(id, "Hello from user '" + name + "'!");
+
+            disconnect(registry, server);
 
         } catch (Exception e) {
             System.err.println("Error on client: " + e);
@@ -45,16 +47,23 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
     }
 
 
-    private String bind(Registry registry) throws AccessException, RemoteException, NoSuchAlgorithmException {
+    private void connect(Registry registry, ChatInterface server) throws AccessException, RemoteException, NoSuchAlgorithmException {
         try {
-            String lid = Utils.hash(secret + name);
-            int port = Math.abs(lid.hashCode() % PORT_NUMBER);
-            System.out.println("Binding user '" + name + "' with id '" + lid.getBytes(StandardCharsets. US_ASCII) + "' to port: " + port);
-            registry.bind(lid, (CallbackInterface) UnicastRemoteObject.exportObject(this, port));
-            return lid;
+            bindId = Utils.hash(secret + name);
+            int port = Math.abs(bindId.hashCode() % PORT_NUMBER);
+            System.out.println("Binding user '" + name + "' with id '" + bindId.getBytes(StandardCharsets. US_ASCII) + "' to port: " + port);
+
+            registry.bind(bindId, (CallbackInterface) UnicastRemoteObject.exportObject(this, port));
+            id = server.connect(bindId);
         } catch (AlreadyBoundException e) {
             throw new RuntimeException("Exception on client '" + name + "': user with this name already exists!");
         }
+    }
+
+    private void disconnect(Registry registry, ChatInterface server) throws RemoteException, NotBoundException {
+        server.disconnect(id);
+        registry.unbind(bindId);
+        UnicastRemoteObject.unexportObject(this, true);
     }
 
 

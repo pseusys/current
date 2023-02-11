@@ -84,4 +84,13 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
         // TODO: implement!
         return null;
     }
+
+    @Override
+    public void disconnect(String userId) throws RemoteException {
+        if (!clients.keySet().contains(userId)) throw new RemoteException("Disconnecting unidentified client '" + userId.getBytes(StandardCharsets. US_ASCII) + "'");
+        
+        String sender = clients.get(userId).getName();
+        System.out.println("Disconnecting user '" + sender + "' with id '" + userId.getBytes(StandardCharsets. US_ASCII) + "'");
+        clients.remove(userId);
+    }
 }
