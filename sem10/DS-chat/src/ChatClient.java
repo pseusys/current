@@ -1,5 +1,4 @@
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
 
 import java.rmi.registry.*;
 import java.rmi.server.*;
@@ -8,16 +7,14 @@ import java.rmi.*;
 import interfaces.CallbackInterface;
 import interfaces.ChatInterface;
 import misc.ConsoleApp;
-import misc.Utils;
 import structures.Message;
 
 
 public class ChatClient extends ConsoleApp implements CallbackInterface {
     private static final int PORT_NUMBER = 65535; // TODO: fix port range!
-    private static final String secret = Utils.randomString();
 
 
-    private String name, id, bindId;
+    private String name, id;
 
 
     public static void main(String[] args) throws IllegalArgumentException {
@@ -47,14 +44,13 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
     }
 
 
-    private void connect(Registry registry, ChatInterface server) throws AccessException, RemoteException, NoSuchAlgorithmException {
+    private void connect(Registry registry, ChatInterface server) throws AccessException, RemoteException {
         try {
-            bindId = Utils.hash(secret + name);
-            int port = Math.abs(bindId.hashCode() % PORT_NUMBER);
-            System.out.println("Binding user '" + name + "' with id '" + bindId.getBytes(StandardCharsets. US_ASCII) + "' to port: " + port);
+            int port = Math.abs(name.hashCode() % PORT_NUMBER);
+            System.out.println("Binding user '" + name + "' with id '" + name.getBytes(StandardCharsets. US_ASCII) + "' to port: " + port);
 
-            registry.bind(bindId, (CallbackInterface) UnicastRemoteObject.exportObject(this, port));
-            id = server.connect(bindId);
+            registry.bind(name, (CallbackInterface) UnicastRemoteObject.exportObject(this, port));
+            id = server.connect(name);
         } catch (AlreadyBoundException e) {
             throw new RuntimeException("Exception on client '" + name + "': user with this name already exists!");
         }
@@ -62,7 +58,7 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
 
     private void disconnect(Registry registry, ChatInterface server) throws RemoteException, NotBoundException {
         server.disconnect(id);
-        registry.unbind(bindId);
+        registry.unbind(name);
         UnicastRemoteObject.unexportObject(this, true);
     }
 
