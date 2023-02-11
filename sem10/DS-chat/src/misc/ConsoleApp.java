@@ -1,4 +1,5 @@
 package misc;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
 import java.util.ArrayList;
