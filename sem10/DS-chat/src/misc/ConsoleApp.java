@@ -1,3 +1,5 @@
+package misc;
+import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -89,10 +91,13 @@ public class ConsoleApp {
                     if (arg != def) System.out.println("\t-" + arg.shortName + " --" + arg.longName + value + ": " + arg.help);
                 }
                 if (def != null) System.out.println("Payload:\n\t[" + def.longName + (def.number > 1 ? "..." : "") + "]: " + def.help);
-            } else main.getMethod("launch").invoke(null);
+            } else main.getDeclaredConstructor().newInstance();
 
-        } catch (Exception e) {
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
             System.err.println("Console app method 'launch' failed!");
+            e.printStackTrace();
+        } catch (NoSuchMethodException | InstantiationException e) {
+            System.err.println("Subclass of 'ConsoleApp' should define public constructor with no args!");
             e.printStackTrace();
         }
     }
