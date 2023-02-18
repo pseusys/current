@@ -14,32 +14,40 @@ import ds.interfaces.ChatInterface;
 import ds.misc.ConsoleApp;
 import ds.misc.Utils;
 import ds.structures.Message;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
 
 
 public class ChatServer extends ConsoleApp implements ChatInterface {
     public static final String SERVER_NAME = "ChatServer";
     public static final long FLUSH_HISTORY_RATE = 5 * 60;
-    public static final String STORAGE_PATH = "./storage.str";
+    public static final String DEFAULT_STORAGE_PATH = "./storage.str";
 
 
     private final String secret = Utils.randomString(16);
     private final Map<String, CallbackInterface> clients = new HashMap<>();
 
 
+    private String storagePath;
     private Registry registry;
-    private final List<Message> history = readHistory();
+    private List<Message> history;
     private final ScheduledExecutorService flushTimer = Executors.newScheduledThreadPool(1);
 
 
     public static void main(String[] args) throws IllegalArgumentException {
+        addOption(Option.builder("l").longOpt("load").desc("History file to load from (default: '" + DEFAULT_STORAGE_PATH + "').").hasArg().build());
+        addCommand("save", "Flushes messages history to file (argument: filename).", true);
         initApp(args, ChatServer.class).listenToCommands();
     }
 
 
-    public ChatServer() {
-        flushTimer.scheduleAtFixedRate(this::flushHistory, FLUSH_HISTORY_RATE, FLUSH_HISTORY_RATE, TimeUnit.SECONDS);
+    public ChatServer(CommandLine cli) {
+        flushTimer.scheduleAtFixedRate(() -> this.flushHistory(storagePath), FLUSH_HISTORY_RATE, FLUSH_HISTORY_RATE, TimeUnit.SECONDS);
 
         try {
+            storagePath = cli.getOptionValue("history", DEFAULT_STORAGE_PATH);
+            history = readHistory();
+
             registry = initRegistry();
             registry.bind(SERVER_NAME, UnicastRemoteObject.exportObject(this, 0));
             System.out.println("Server ready!");
@@ -60,30 +68,30 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
     }
 
     @SuppressWarnings("unchecked")
-    private static List<Message> readHistory() {
+    private List<Message> readHistory() {
         try {
-            FileInputStream fis = new FileInputStream(STORAGE_PATH);
+            FileInputStream fis = new FileInputStream(storagePath);
             ObjectInputStream ois = new ObjectInputStream(fis);
             return (ArrayList<Message>) ois.readObject();
         } catch (IOException ioe) {
-            System.out.println("History file '" + STORAGE_PATH + "' empty!");
+            System.out.println("History file '" + storagePath + "' empty!");
             return new ArrayList<>();
         } catch (ClassNotFoundException cnfe) {
-            System.err.println("History file '" + STORAGE_PATH + "' corrupted, overwriting!");
+            System.err.println("History file '" + storagePath + "' corrupted, overwriting!");
             return new ArrayList<>();
         }
     }
 
-    private void flushHistory() {
+    private void flushHistory(String storagePath) {
         try {
-            FileOutputStream fileOut = new FileOutputStream(STORAGE_PATH);
+            FileOutputStream fileOut = new FileOutputStream(storagePath);
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
             out.writeObject(history);
             out.close();
             fileOut.close();
-            System.out.println("History file is saved to '" + STORAGE_PATH + "'");
+            System.out.println("History file is saved to '" + storagePath + "'");
         } catch (IOException ioe) {
-            System.err.println("History file '" + STORAGE_PATH + "' can not be saved!");
+            System.err.println("History file '" + storagePath + "' can not be saved!");
         }
     }
 
@@ -142,7 +150,7 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
             case "exit" -> {
                 try {
                     flushTimer.shutdown();
-                    flushHistory();
+                    flushHistory(storagePath);
                     shutdown();
                     System.out.println("Server shut down!");
                 } catch (RemoteException re) {
@@ -151,6 +159,7 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
                     throw new CommandParsingError("Couldn't shutdown properly, wasn't connected!");
                 }
             }
+            case "save" -> flushHistory(content);
         }
     }
 }
