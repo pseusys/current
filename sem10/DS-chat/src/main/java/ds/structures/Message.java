@@ -1,4 +1,4 @@
-package structures;
+package ds.structures;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -9,8 +9,8 @@ public class Message implements Serializable {
     private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 
-    String sender, data;
-    Date date;
+    public String sender, data;
+    public Date date;
 
 
     public Message(String sender, String data) {

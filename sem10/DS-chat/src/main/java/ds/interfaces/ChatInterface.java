@@ -1,10 +1,10 @@
-package interfaces;
+package ds.interfaces;
 
 import java.util.List;
 
 import java.rmi.*;
 
-import structures.Message;
+import ds.structures.Message;
 
 
 public interface ChatInterface extends Remote {

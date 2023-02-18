@@ -1,8 +1,8 @@
-package interfaces;
+package ds.interfaces;
 
 import java.rmi.*;
 
-import structures.Message;
+import ds.structures.Message;
 
 
 public interface CallbackInterface extends Remote {
