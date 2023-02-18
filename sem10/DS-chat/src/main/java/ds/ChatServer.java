@@ -32,14 +32,11 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
 
 
     public static void main(String[] args) throws IllegalArgumentException {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> System.out.println("Bye.")));
-        initApp(args, ChatServer.class);
-        System.out.println("Server finished.");
+        initApp(args, ChatServer.class).listenToCommands();
     }
 
 
     public ChatServer() {
-        // TODO: add termination handling: stop timer, save history.
         flushTimer.scheduleAtFixedRate(this::flushHistory, FLUSH_HISTORY_RATE, FLUSH_HISTORY_RATE, TimeUnit.SECONDS);
 
         try {
@@ -90,6 +87,11 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
         }
     }
 
+    private void shutdown() throws NotBoundException, RemoteException {
+        registry.unbind(SERVER_NAME);
+        UnicastRemoteObject.unexportObject(this, true);
+    }
+
 
     @Override
     public String connect(String userId) throws RemoteException {
@@ -131,5 +133,24 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
         String sender = clients.get(userId).getName();
         System.out.println("Disconnecting user '" + sender + "' with id '" + Utils.id(userId) + "'");
         clients.remove(userId);
+    }
+
+
+    @Override
+    protected void executeCommand(String command, String content) throws CommandParsingError {
+        switch (command) {
+            case "exit" -> {
+                try {
+                    flushTimer.shutdown();
+                    flushHistory();
+                    shutdown();
+                    System.out.println("Server shut down!");
+                } catch (RemoteException re) {
+                    throw new CommandParsingError("Couldn't shutdown properly, remote exception occurred!");
+                } catch (NotBoundException e) {
+                    throw new CommandParsingError("Couldn't shutdown properly, wasn't connected!");
+                }
+            }
+        }
     }
 }

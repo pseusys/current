@@ -20,13 +20,16 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
     private static final SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 
 
+    private ChatInterface server;
+    private Registry registry;
     private String name, id;
 
 
     public static void main(String[] args) throws IllegalArgumentException {
         addOption(Option.builder("a").longOpt("address").desc("Address of machine to run the client on (default: 'localhost').").hasArg().build());
         addOption(Option.builder("n").longOpt("name").desc("Client name to display in chat (default: will be generated).").hasArg().build());
-        initApp(args, ChatClient.class);
+        addCommand("", "Send a message to server.", true);
+        initApp(args, ChatClient.class).listenToCommands();
     }
 
 
@@ -34,12 +37,11 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
         try {
             name = cli.getOptionValue("name", Utils.randomString(5));
 
-            Registry registry = LocateRegistry.getRegistry(cli.getOptionValue("host", "localhost"));
-            ChatInterface server = (ChatInterface) registry.lookup(ChatServer.SERVER_NAME);
+            registry = LocateRegistry.getRegistry(cli.getOptionValue("host", "localhost"));
+            server = (ChatInterface) registry.lookup(ChatServer.SERVER_NAME);
 
-            for (Message message: connect(registry, server)) printMessage(message);
+            for (Message message: connect()) printMessage(message);
             server.sendMessage(id, "Hello from user '" + name + "'!");
-            disconnect(registry, server);
 
         } catch (Exception e) {
             System.err.println("Error on client: " + e);
@@ -47,7 +49,7 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
     }
 
 
-    private List<Message> connect(Registry registry, ChatInterface server) throws RemoteException {
+    private List<Message> connect() throws RemoteException {
         try {
             System.out.println("Binding user '" + name + "' with id '" + Utils.id(name) + "' to port: " + 0);
             registry.bind(name, UnicastRemoteObject.exportObject(this, 0));
@@ -61,7 +63,7 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
         }
     }
 
-    private void disconnect(Registry registry, ChatInterface server) throws RemoteException, NotBoundException {
+    private void disconnect() throws RemoteException, NotBoundException {
         server.disconnect(id);
         registry.unbind(name);
         UnicastRemoteObject.unexportObject(this, true);
@@ -81,5 +83,28 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
     @Override
     public void processMessage(Message message) throws RemoteException {
         printMessage(message);
+    }
+
+
+    @Override
+    protected void executeCommand(String command, String content) throws CommandParsingError {
+        switch (command) {
+            case "" -> {
+                try {
+                    server.sendMessage(id, (content));
+                } catch (RemoteException re) {
+                    throw new CommandParsingError("Couldn't send message, remote exception occurred!");
+                }
+            }
+            case "exit" -> {
+                try {
+                    disconnect();
+                } catch (RemoteException re) {
+                    throw new CommandParsingError("Couldn't disconnect properly, remote exception occurred!");
+                } catch (NotBoundException e) {
+                    throw new CommandParsingError("Couldn't disconnect properly, wasn't connected!");
+                }
+            }
+        }
     }
 }
