@@ -32,7 +32,9 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
 
 
     public static void main(String[] args) throws IllegalArgumentException {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> System.out.println("Bye.")));
         initApp(args, ChatServer.class);
+        System.out.println("Server finished.");
     }
 
 
