@@ -49,7 +49,7 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
 
             registry = initRegistry();
             registry.rebind(SERVER_NAME, UnicastRemoteObject.exportObject(this, 0));
-            System.out.println("Server ready!");
+            System.out.println("Server is ready!");
 
         } catch (RemoteException e) {
             System.err.println("Error on server: " + e);
@@ -59,10 +59,16 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
 
     private Registry initRegistry() throws RemoteException {
         try {
-            return LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
+            Registry reg = LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
+            System.out.println("Registry found running on registry port, connecting...");
+            return reg;
         } catch (ExportException e) {
             if (!e.getMessage().contains("ObjID already in use")) throw e;
-            else return LocateRegistry.getRegistry(Registry.REGISTRY_PORT);
+            else {
+                Registry reg = LocateRegistry.getRegistry(Registry.REGISTRY_PORT);
+                System.out.println("Registry not found, launching...");
+                return reg;
+            }
         }
     }
 
@@ -76,10 +82,10 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
             fis.close();
             return result;
         } catch (IOException ioe) {
-            System.out.println("History file '" + storagePath + "' empty!");
+            System.out.println("History file '" + storagePath + "' doesn't exist, it will be created on first history flush.");
             return new ArrayList<>();
-        } catch (ClassNotFoundException cnfe) {
-            System.err.println("History file '" + storagePath + "' corrupted, overwriting!");
+        } catch (ClassNotFoundException | ClassCastException ce) {
+            System.err.println("History file '" + storagePath + "' corrupted, it will be overwritten on first history flush!");
             return new ArrayList<>();
         }
     }
@@ -91,7 +97,7 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
             out.writeObject(new ArrayList<>(history));
             out.close();
             fileOut.close();
-            System.out.println("History file is saved to '" + storagePath + "'");
+            System.out.println("History file is saved to '" + storagePath + "'.");
         } catch (IOException ioe) {
             System.err.println("History file '" + storagePath + "' can not be saved!");
         }
@@ -100,24 +106,32 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
     private void shutdown() throws NotBoundException, RemoteException {
         registry.unbind(SERVER_NAME);
         UnicastRemoteObject.unexportObject(this, true);
+        System.out.println("Server shut down!");
     }
 
 
     @Override
     public String connect(String userId, CallbackInterface user) throws RemoteException {
+        if (clients.containsKey(userId)) throw new RemoteException("Can't connect user with name '" + userId + "' - ID already in use!");
+        else {
+            Message welcome = new Message(null, null, "New user '" + userId + "' is about to connect!");
+            for (CallbackInterface client: clients.values()) client.processMessage(welcome);
+            history.add(welcome);
+        }
+
         String id = Utils.hash(secret + userId);
-        System.out.println("Binding user '" + Utils.id(userId) + "' to unique ID '" + Utils.id(id) + "'");
         clients.put(id, user);
+        System.out.println("User '" + Utils.id(userId) + "' bound to unique ID '" + Utils.id(id) + "'.");
         return id;
     }
 
     @Override
     public void sendMessage(String id, String text, String receiver) throws RemoteException {
-        if (!clients.containsKey(id)) throw new RemoteException("Received message from unidentified client '" + Utils.id(id) + "'");
+        if (!clients.containsKey(id)) throw new RemoteException("Received message from unidentified client '" + Utils.id(id) + "'!");
         String sender = clients.get(id).getName();
         Message message = new Message(sender, receiver, text);
 
-        System.out.println("Processing message '" + text + "' to " + message.addressee() + " from user '" + sender + "' with id '" + Utils.id(id) + "'");
+        System.out.println("Processing message '" + text + "' to " + message.addressee() + " from user '" + sender + "' with id '" + Utils.id(id) + "'.");
         String receiverID = Utils.hash(secret + receiver);
 
         if (receiver == null) for (CallbackInterface client: clients.values()) client.processMessage(message);
@@ -129,18 +143,21 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
 
     @Override
     public List<Message> getHistory(String id) throws RemoteException {
+        if (!clients.containsKey(id)) throw new RemoteException("Unidentified client '" + Utils.id(id) + "' requested the messages history!");
+        CallbackInterface user = clients.get(id);
+
         List<Message> userMessages = new ArrayList<>();
-        for (Message message: history) if (message.origin == null || Objects.equals(message.origin, id)) userMessages.add(message);
+        for (Message message: history) if (message.origin == null || Objects.equals(message.origin, user.getName())) userMessages.add(message);
+        System.out.println("Sending message history to user with id '" + Utils.id(id) + "'.");
         return userMessages;
     }
 
     @Override
-    public void disconnect(String userId) throws RemoteException {
-        if (!clients.containsKey(userId)) throw new RemoteException("Disconnecting unidentified client '" + Utils.id(userId) + "'");
-        
-        String sender = clients.get(userId).getName();
-        System.out.println("Disconnecting user '" + sender + "' with id '" + Utils.id(userId) + "'");
-        clients.remove(userId);
+    public void disconnect(String id) throws RemoteException {
+        if (!clients.containsKey(id)) throw new RemoteException("Disconnecting unidentified client '" + Utils.id(id) + "'");
+        String sender = clients.get(id).getName();
+        clients.remove(id);
+        System.out.println("User '" + sender + "' with id '" + Utils.id(id) + "' disconnected.");
     }
 
 
@@ -152,7 +169,6 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
                     flushTimer.shutdown();
                     flushHistory(storagePath);
                     shutdown();
-                    System.out.println("Server shut down!");
                 } catch (RemoteException re) {
                     throw new CommandParsingError("Couldn't shutdown properly, remote exception occurred: " + re.getMessage());
                 } catch (NotBoundException e) {

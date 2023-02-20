@@ -21,6 +21,10 @@ public class Message implements Serializable {
     }
 
 
+    public String issuer() {
+        return sender == null ? "server" : sender;
+    }
+
     public String addressee() {
         return origin == null ? "everyone" : ("user '" + origin + "'");
     }

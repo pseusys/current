@@ -11,5 +11,5 @@ public interface ChatInterface extends Remote {
     String connect(String userId, CallbackInterface user) throws RemoteException;
     void sendMessage(String id, String text, String receiver) throws RemoteException;
     List<Message> getHistory(String id) throws RemoteException;
-    void disconnect(String userId) throws RemoteException;
+    void disconnect(String id) throws RemoteException;
 }
