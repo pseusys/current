@@ -25,7 +25,7 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
 
 
     private final String secret = Utils.randomString(16);
-    private final Map<String, CallbackInterface> clients = new HashMap<>();
+    private final Map<String, CallbackInterface> clients = Collections.synchronizedMap(new HashMap<>());
 
 
     private String storagePath;
@@ -46,13 +46,13 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
 
         try {
             storagePath = cli.getOptionValue("history", DEFAULT_STORAGE_PATH);
-            history = readHistory();
+            history = Collections.synchronizedList(readHistory());
 
             registry = initRegistry();
-            registry.bind(SERVER_NAME, UnicastRemoteObject.exportObject(this, 0));
+            registry.rebind(SERVER_NAME, UnicastRemoteObject.exportObject(this, 0));
             System.out.println("Server ready!");
 
-        } catch (Exception e) {
+        } catch (RemoteException e) {
             System.err.println("Error on server: " + e);
             e.printStackTrace();
         }
@@ -72,7 +72,10 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
         try {
             FileInputStream fis = new FileInputStream(storagePath);
             ObjectInputStream ois = new ObjectInputStream(fis);
-            return (ArrayList<Message>) ois.readObject();
+            ArrayList<Message> result = (ArrayList<Message>) ois.readObject();
+            ois.close();
+            fis.close();
+            return result;
         } catch (IOException ioe) {
             System.out.println("History file '" + storagePath + "' empty!");
             return new ArrayList<>();
@@ -102,15 +105,13 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
 
 
     @Override
-    public String connect(String userId) throws RemoteException {
+    public String connect(String userId, CallbackInterface user) throws RemoteException {
         try {
             String id = Utils.hash(secret + userId);
             System.out.println("Binding user '" + Utils.id(userId) + "' to unique ID '" + Utils.id(id) + "'");
-
-            CallbackInterface callback = (CallbackInterface) registry.lookup(userId);
-            clients.put(id, callback);
+            clients.put(id, user);
             return id;
-        } catch (NotBoundException | NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             System.err.println("Error on adding user: " + userId);
             return null;
         }

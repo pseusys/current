@@ -43,24 +43,21 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
             for (Message message: connect()) printMessage(message);
             server.sendMessage(id, "Hello from user '" + name + "'!");
 
-        } catch (Exception e) {
+        } catch (NotBoundException e) {
+            System.err.println("Server is not found!");
+            System.exit(1);
+        } catch (RemoteException e) {
             System.err.println("Error on client: " + e);
         }
     }
 
 
     private List<Message> connect() throws RemoteException {
-        try {
-            System.out.println("Binding user '" + name + "' with id '" + Utils.id(name) + "' to port: " + 0);
-            registry.bind(name, UnicastRemoteObject.exportObject(this, 0));
-            id = server.connect(name);
+        System.out.println("Binding user '" + name + "' with id '" + Utils.id(name) + "' to port: " + 0);
+        id = server.connect(name, (CallbackInterface) UnicastRemoteObject.exportObject(this, 0));
 
-            if (id == null) throw new RuntimeException("Couldn't authenticate user!");
-            return server.getHistory(id);
-
-        } catch (AlreadyBoundException e) {
-            throw new RuntimeException("Exception on client '" + name + "': user with this name already exists!");
-        }
+        if (id == null) throw new RuntimeException("Couldn't authenticate user!");
+        return server.getHistory(id);
     }
 
     private void disconnect() throws RemoteException, NotBoundException {
