@@ -14,6 +14,10 @@ application {
     getMainClass().set(project.hasProperty("mainClass") ? project.getProperty("mainClass") : "NULL")
 }
 
+run {
+    standardInput = System.in
+}
+
 dependencies {
     implementation 'commons-cli:commons-cli:1.5.0'
     implementation 'org.apache.commons:commons-lang3:3.0'

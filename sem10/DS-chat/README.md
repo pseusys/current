@@ -1,9 +1,15 @@
 # Chat Application
 
-## Installation 
-JDK Version 17
+## Requirements and building
+
+1. Gradle 7.6  
+   Can be installed with [this installation guide](https://gradle.org/install/).
+2. JDK 11+
+   Can be installed with [this installation guide](https://openjdk.org/install/).
+
+Build using:
 ``` 
-./gradlew
+./gradlew build
 ```
 
 ## Build and run
