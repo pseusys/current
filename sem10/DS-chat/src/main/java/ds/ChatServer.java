@@ -2,7 +2,6 @@ package ds;
 
 import java.io.*;
 import java.util.*;
-import java.security.NoSuchAlgorithmException;
 
 import java.rmi.registry.*;
 import java.rmi.server.*;
@@ -45,7 +44,7 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
         flushTimer.scheduleAtFixedRate(() -> this.flushHistory(storagePath), FLUSH_HISTORY_RATE, FLUSH_HISTORY_RATE, TimeUnit.SECONDS);
 
         try {
-            storagePath = cli.getOptionValue("history", DEFAULT_STORAGE_PATH);
+            storagePath = cli.getOptionValue("load", DEFAULT_STORAGE_PATH);
             history = Collections.synchronizedList(readHistory());
 
             registry = initRegistry();
@@ -89,7 +88,7 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
         try {
             FileOutputStream fileOut = new FileOutputStream(storagePath);
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(history);
+            out.writeObject(new ArrayList<>(history));
             out.close();
             fileOut.close();
             System.out.println("History file is saved to '" + storagePath + "'");
@@ -106,33 +105,33 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
 
     @Override
     public String connect(String userId, CallbackInterface user) throws RemoteException {
-        try {
-            String id = Utils.hash(secret + userId);
-            System.out.println("Binding user '" + Utils.id(userId) + "' to unique ID '" + Utils.id(id) + "'");
-            clients.put(id, user);
-            return id;
-        } catch (NoSuchAlgorithmException e) {
-            System.err.println("Error on adding user: " + userId);
-            return null;
-        }
+        String id = Utils.hash(secret + userId);
+        System.out.println("Binding user '" + Utils.id(userId) + "' to unique ID '" + Utils.id(id) + "'");
+        clients.put(id, user);
+        return id;
     }
 
     @Override
-    public void sendMessage(String id, String text) throws RemoteException {
+    public void sendMessage(String id, String text, String receiver) throws RemoteException {
         if (!clients.containsKey(id)) throw new RemoteException("Received message from unidentified client '" + Utils.id(id) + "'");
-        
         String sender = clients.get(id).getName();
-        System.out.println("Broadcasting message '" + text + "' from user '" + sender + "' with id '" + Utils.id(id) + "'");
+        Message message = new Message(sender, receiver, text);
 
-        Message message = new Message(sender, text);
+        System.out.println("Processing message '" + text + "' to " + message.addressee() + " from user '" + sender + "' with id '" + Utils.id(id) + "'");
+        String receiverID = Utils.hash(secret + receiver);
+
+        if (receiver == null) for (CallbackInterface client: clients.values()) client.processMessage(message);
+        else if (clients.containsKey(receiverID)) clients.get(receiverID).processMessage(message);
+        else throw new RemoteException("Receiver user '" + receiver + "' not found!");
+
         history.add(message);
-
-        for (CallbackInterface client: clients.values()) client.processMessage(message);
     }
 
     @Override
     public List<Message> getHistory(String id) throws RemoteException {
-        return history;
+        List<Message> userMessages = new ArrayList<>();
+        for (Message message: history) if (message.origin == null || Objects.equals(message.origin, id)) userMessages.add(message);
+        return userMessages;
     }
 
     @Override
@@ -155,7 +154,7 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
                     shutdown();
                     System.out.println("Server shut down!");
                 } catch (RemoteException re) {
-                    throw new CommandParsingError("Couldn't shutdown properly, remote exception occurred!");
+                    throw new CommandParsingError("Couldn't shutdown properly, remote exception occurred: " + re.getMessage());
                 } catch (NotBoundException e) {
                     throw new CommandParsingError("Couldn't shutdown properly, wasn't connected!");
                 }

@@ -18,16 +18,23 @@ import ds.structures.Message;
 
 public class ChatClient extends ConsoleApp implements CallbackInterface {
     private static final SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+    private static final String COLOR_RESET = "\u001B[0m";
+    private static final String COLOR_RED = "\u001B[31m";
+    private static final String COLOR_GREEN = "\u001B[32m";
+    private static final String COLOR_BLUE = "\u001B[34m";
 
 
     private ChatInterface server;
     private Registry registry;
     private String name, id;
+    private boolean colorful;
 
 
     public static void main(String[] args) throws IllegalArgumentException {
         addOption(Option.builder("a").longOpt("address").desc("Address of machine to run the client on (default: 'localhost').").hasArg().build());
         addOption(Option.builder("n").longOpt("name").desc("Client name to display in chat (default: will be generated).").hasArg().build());
+        addOption(Option.builder("c").longOpt("colors").desc("Use colors to indicate message properties instead of description. Colors are: blue for my message, red for broadcast, green for private.").build());
+        addCommand("whisper", "Send a message to specific user (first word should be the user name).", true);
         addCommand("", "Send a message to server.", true);
         initApp(args, ChatClient.class).listenToCommands();
     }
@@ -36,12 +43,13 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
     public ChatClient(CommandLine cli) {
         try {
             name = cli.getOptionValue("name", Utils.randomString(5));
+            colorful = cli.hasOption("colors");
 
             registry = LocateRegistry.getRegistry(cli.getOptionValue("host", "localhost"));
             server = (ChatInterface) registry.lookup(ChatServer.SERVER_NAME);
 
             for (Message message: connect()) printMessage(message);
-            server.sendMessage(id, "Hello from user '" + name + "'!");
+            server.sendMessage(id, "Hello from user '" + name + "'!", null);
 
         } catch (NotBoundException e) {
             System.err.println("Server is not found!");
@@ -67,8 +75,14 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
     }
 
     private void printMessage(Message message) {
-        if (Objects.equals(message.sender, name)) System.out.println("(" + sdf.format(message.date) + ") <<< " + message.data);
-        else System.out.println("(" + sdf.format(message.date) + ") - " + message.sender + " >>> " + message.data);
+        if (colorful) {
+            if (Objects.equals(message.sender, name)) System.out.println("(" + sdf.format(message.date) + ")" + COLOR_BLUE + " <<< " + message.data + COLOR_RESET);
+            else if (message.origin == null) System.out.println("(" + sdf.format(message.date) + ") - " + COLOR_RED + message.sender + " >>> " + message.data + COLOR_RESET);
+            else System.out.println("(" + sdf.format(message.date) + ") - " + COLOR_GREEN + message.sender + " >>> " + message.data + COLOR_RESET);
+        } else {
+            if (Objects.equals(message.sender, name)) System.out.println("(" + sdf.format(message.date) + ") - (" + message.addressee() + ") <<< " + message.data);
+            else System.out.println("(" + sdf.format(message.date) + ") - " + message.sender + " (" + message.addressee() + ") >>> " + message.data);
+        }
     }
 
 
@@ -88,9 +102,20 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
         switch (command) {
             case "": {
                 try {
-                    server.sendMessage(id, (content));
+                    server.sendMessage(id, content, null);
                 } catch (RemoteException re) {
-                    throw new CommandParsingError("Couldn't send message, remote exception occurred!");
+                    throw new CommandParsingError("Couldn't send message, remote exception occurred: " + re.getMessage());
+                }
+                break;
+            }
+            case "whisper": {
+                try {
+                    int whitespace = content.indexOf(' ');
+                    if (whitespace == -1 || whitespace >= content.length() - 2) throw new CommandParsingError("No message is specified!");
+                    server.sendMessage(id, content.substring(whitespace + 1), content.substring(0, whitespace));
+                } catch (RemoteException re) {
+                    re.printStackTrace();
+                    throw new CommandParsingError("Couldn't send message, remote exception occurred: " + re.getMessage());
                 }
                 break;
             }
@@ -98,7 +123,7 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
                 try {
                     disconnect();
                 } catch (RemoteException re) {
-                    throw new CommandParsingError("Couldn't disconnect properly, remote exception occurred!");
+                    throw new CommandParsingError("Couldn't disconnect properly, remote exception occurred: " + re.getMessage());
                 } catch (NotBoundException e) {
                     throw new CommandParsingError("Couldn't disconnect properly, wasn't connected!");
                 }

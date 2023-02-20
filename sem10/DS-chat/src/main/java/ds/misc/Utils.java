@@ -20,10 +20,15 @@ public class Utils {
                 .toString();
     }
 
-    public static String hash(String string) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        digest.update(string.getBytes());
-        return new String(digest.digest());
+    public static String hash(String string) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            digest.update(string.getBytes());
+            return new String(digest.digest());
+        } catch (NoSuchAlgorithmException nae) {
+            nae.printStackTrace();
+            throw new RuntimeException("Strange as it is: it appears that your java distribution lacks SHA-256 :/");
+        }
     }
 
     public static String id(String object) {
