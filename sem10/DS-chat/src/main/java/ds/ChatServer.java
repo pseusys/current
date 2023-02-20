@@ -147,7 +147,7 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
     @Override
     protected void executeCommand(String command, String content) throws CommandParsingError {
         switch (command) {
-            case "exit" -> {
+            case "exit": {
                 try {
                     flushTimer.shutdown();
                     flushHistory(storagePath);
@@ -158,8 +158,12 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
                 } catch (NotBoundException e) {
                     throw new CommandParsingError("Couldn't shutdown properly, wasn't connected!");
                 }
+                break;
             }
-            case "save" -> flushHistory(content);
+            case "save": {
+                flushHistory(content);
+                break;
+            }
         }
     }
 }

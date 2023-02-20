@@ -89,14 +89,15 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
     @Override
     protected void executeCommand(String command, String content) throws CommandParsingError {
         switch (command) {
-            case "" -> {
+            case "": {
                 try {
                     server.sendMessage(id, (content));
                 } catch (RemoteException re) {
                     throw new CommandParsingError("Couldn't send message, remote exception occurred!");
                 }
+                break;
             }
-            case "exit" -> {
+            case "exit": {
                 try {
                     disconnect();
                 } catch (RemoteException re) {
@@ -104,6 +105,7 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
                 } catch (NotBoundException e) {
                     throw new CommandParsingError("Couldn't disconnect properly, wasn't connected!");
                 }
+                break;
             }
         }
     }

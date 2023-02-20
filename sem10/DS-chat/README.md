@@ -1,5 +1,11 @@
 # Chat Application
 
+## Installation 
+JDK Version 17
+``` 
+./gradlew
+```
+
 ## Build and run
 
 ### Server
