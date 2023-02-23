@@ -27,7 +27,6 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
 
 
     private ChatInterface server;
-    private Registry registry;
     private String name, id;
     private boolean colorful;
 
@@ -47,7 +46,7 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
             name = cli.getOptionValue("name", Utils.randomString(5));
             colorful = cli.hasOption("colors");
 
-            registry = LocateRegistry.getRegistry(cli.getOptionValue("host", "localhost"));
+            Registry registry = LocateRegistry.getRegistry(cli.getOptionValue("host", "localhost"));
             server = (ChatInterface) registry.lookup(ChatServer.SERVER_NAME);
 
             for (Message message: connect()) printMessage(message);
@@ -67,10 +66,18 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
         return server.getHistory(id);
     }
 
-    private void disconnect() throws RemoteException, NotBoundException {
-        server.disconnect(id);
-        registry.unbind(name);
-        UnicastRemoteObject.unexportObject(this, true);
+    @Override
+    protected void executeExitCommand() {
+        try {
+            server.disconnect(id);
+        } catch (RemoteException e) {
+            System.out.println("Couldn't disconnect from server (maybe it's not running?)!");
+        }
+        try {
+            UnicastRemoteObject.unexportObject(this, true);
+        } catch (NoSuchObjectException e) {
+            System.out.println("Error during client shutdown!");
+        }
     }
 
     private void printMessage(Message message) {
@@ -115,16 +122,6 @@ public class ChatClient extends ConsoleApp implements CallbackInterface {
                     server.sendMessage(id, content.substring(whitespace + 1), content.substring(0, whitespace));
                 } catch (RemoteException re) {
                     throw new CommandParsingError("Couldn't send message, remote exception occurred: " + re.getMessage());
-                }
-                break;
-            }
-            case "exit": {
-                try {
-                    disconnect();
-                } catch (RemoteException re) {
-                    throw new CommandParsingError("Couldn't disconnect properly, remote exception occurred: " + re.getMessage());
-                } catch (NotBoundException e) {
-                    throw new CommandParsingError("Couldn't disconnect properly, wasn't connected!");
                 }
                 break;
             }

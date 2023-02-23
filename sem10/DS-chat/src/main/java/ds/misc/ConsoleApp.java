@@ -113,6 +113,8 @@ public abstract class ConsoleApp {
         }
     }
 
+    protected abstract void executeExitCommand();
+
     private boolean executeCommandInternal(String command, String content) throws CommandParsingError {
         if (!commands.containsKey(command)) throw new CommandParsingError("Command '" + command + "' not found!");
 
@@ -121,6 +123,7 @@ public abstract class ConsoleApp {
         if (!commandDescription.left && content != null && !content.isBlank()) throw new CommandParsingError("Command '" + command + "' doesn't need input!");
 
         if (command.equals("help")) printCommandHelp();
+        else if (command.equals("exit")) executeExitCommand();
         else executeCommand(command, content);
         return command.equals("exit");
     }

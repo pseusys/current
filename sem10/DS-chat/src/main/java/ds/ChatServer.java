@@ -103,10 +103,19 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
         }
     }
 
-    private void shutdown() throws NotBoundException, RemoteException {
-        registry.unbind(SERVER_NAME);
-        UnicastRemoteObject.unexportObject(this, true);
-        System.out.println("Server shut down!");
+    @Override
+    protected void executeExitCommand() {
+        try {
+            flushTimer.shutdown();
+            flushHistory(storagePath);
+            registry.unbind(SERVER_NAME);
+            UnicastRemoteObject.unexportObject(this, true);
+            System.out.println("Server shut down!");
+        } catch (AccessException | NotBoundException | NoSuchObjectException e) {
+            System.err.println("Server couldn't disconnect from registry properly!");
+        } catch (RemoteException e) {
+            System.err.println("Error during server shutdown!");
+        }
     }
 
 
@@ -164,18 +173,6 @@ public class ChatServer extends ConsoleApp implements ChatInterface {
     @Override
     protected void executeCommand(String command, String content) throws CommandParsingError {
         switch (command) {
-            case "exit": {
-                try {
-                    flushTimer.shutdown();
-                    flushHistory(storagePath);
-                    shutdown();
-                } catch (RemoteException re) {
-                    throw new CommandParsingError("Couldn't shutdown properly, remote exception occurred: " + re.getMessage());
-                } catch (NotBoundException e) {
-                    throw new CommandParsingError("Couldn't shutdown properly, wasn't connected!");
-                }
-                break;
-            }
             case "save": {
                 flushHistory(content);
                 break;
