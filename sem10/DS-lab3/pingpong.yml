@@ -1,0 +1,89 @@
+first:
+  one_shot: False
+  variables:
+    id: NODE_ID
+    started: False
+  in_channels:
+    - in
+    - req
+  out_channels:
+    - out
+  rules:
+    start:
+      channel: req
+      if: 'message.text == "START" and not self.started'
+      send:
+        channel: out
+        message:
+          text: PING
+      set:
+        started: True
+    receive_ping:
+      channel: req
+      if: 'message.text == "START" and not self.started'
+      send:
+        channel: out
+        message:
+          text: PING
+      set:
+        started: True
+    receive_pong:
+      channel: req
+      if: 'message.text == "START" and not self.started'
+      send:
+        channel: out
+        message:
+          text: PING
+      set:
+        started: True
+
+
+second:
+  one_shot: False
+  variables:
+    id: NODE_ID
+    started: False
+  in_channels:
+    - in
+    - req
+  out_channels:
+    - out
+  rules:
+    start:
+      channel: req
+      if: 'message.text == "START" and not self.started'
+      send:
+        channel: out
+        message:
+          text: PING
+      set:
+        started: True
+    receive_ping:
+      channel: req
+      if: 'message.text == "START" and not self.started'
+      send:
+        channel: out
+        message:
+          text: PING
+      set:
+        started: True
+    receive_pong:
+      channel: req
+      if: 'message.text == "START" and not self.started'
+      send:
+        channel: out
+        message:
+          text: PING
+      set:
+        started: True
+
+
+firestarter:
+  one_shot: True
+  out_channels:
+    - req
+  init:
+    send:
+      channel: req
+      message:
+        text: START
