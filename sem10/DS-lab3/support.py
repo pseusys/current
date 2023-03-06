@@ -5,6 +5,10 @@ from utils import error
 Node = ForwardRef("Node", is_class=True)
 
 
+class Object(object):
+    pass
+
+
 def get_raw_or_variable(state: Node, message: Dict, value: Any) -> Any:
     if not isinstance(value, str):
         return value

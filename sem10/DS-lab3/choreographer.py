@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from asyncio import run, gather, create_task, Future
+from asyncio import run, gather, create_task
 from os.path import isfile
 from typing import List
 
@@ -11,8 +11,7 @@ from utils import error
 
 async def run_nodes(nodes: List[Node]):
     await gather(*[create_task(node.launch()) for node in nodes])
-    await gather(*[create_task(node.start()) for node in nodes if not node.one_shot])
-    await Future()
+    await gather(*[create_task(node.start()) for node in nodes])
 
 
 if __name__ == '__main__':
@@ -27,5 +26,10 @@ if __name__ == '__main__':
     with open(args["config"], "r") as conf:
         config = safe_load(conf)
 
-    graph = [Node(name, data) for name, data in config.items()]
+    if "templates" not in config:
+        error(f"File `{args['config']}` can not be opened!")
+    if "matrix" not in config:
+        error(f"File `{args['config']}` can not be opened!")
+
+    graph = [Node(name, data) for name, data in config["nodes"].items()]
     run(run_nodes(graph))

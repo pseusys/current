@@ -1,3 +1,5 @@
+from asyncio import Future
+from json import loads
 from typing import Dict
 from uuid import uuid4
 
@@ -12,10 +14,13 @@ class Node:
     def __init__(self, name: str, raw: Dict):
         self.name = name
         self.id = uuid4()
+
         self.connection = None
+        self.channel = None
+
         self.one_shot = raw["one_shot"] if "one_shot" in raw else False
-        self.in_channels = {channel: None for channel in raw["in_channels"]} if "in_channels" in raw else dict()
-        self.out_channels = {channel: None for channel in raw["out_channels"]} if "out_channels" in raw else dict()
+        self.in_channels = raw["in_channels"] if "in_channels" in raw else list()
+        self.out_channels = raw["out_channels"] if "out_channels" in raw else list()
 
         self.variables = raw["variables"] if "variables" in raw else dict()
         self._populate_special_variables()
@@ -33,32 +38,34 @@ class Node:
     def _populate_special_variables(self):
         self.variables["NODE_ID"] = self.id
 
-    def consume(self, message: AbstractIncomingMessage):
-        print(message.channel)
-        print(message.body)
-        """
+    async def consume(self, message: AbstractIncomingMessage):
+        data = loads(message.body.decode("utf-8"))
         accepted = None
         for rule in self.rules:
-            application = rule.apply(self, channel, message)
+            application = await rule(self, message.routing_key, data)
             if application:
                 if accepted is None:
                     accepted = application
                 else:
                     error(f"Two rules (`{accepted}` and `{application}`) applied for one message ({message})!")
-        """
 
     async def launch(self):
         self.connection = await connect("amqp://guest:guest@localhost/")
-        async with self.connection:
-            channel = await self.connection.channel()
-            for ch in self.in_channels.keys():
-                self.in_channels[ch] = await channel.declare_queue(ch)
-            for ch in self.out_channels.keys():
-                self.out_channels[ch] = await channel.declare_queue(ch)
+        self.channel = await self.connection.channel()
+        for i in range(len(self.in_channels)):
+            self.in_channels[i] = await self.channel.declare_queue(self.in_channels[i])
+        for i in range(len(self.out_channels)):
+            self.out_channels[i] = await self.channel.declare_queue(self.out_channels[i])
 
     async def start(self):
-        async with self.connection:
-            for ch in self.in_channels.values():
-                await ch.consume(self.consume, no_ack=True)
-            for start in self.init:
-                start()
+        for start in self.init:
+            print(f"passing for message {self.name}...")
+            await start(self, dict())
+        if self.one_shot:
+            await self.connection.close()
+            return
+
+        for ch in self.in_channels:
+            print(f"waiting for message {self.name}...")
+            await ch.consume(self.consume, no_ack=True)
+        await Future()
