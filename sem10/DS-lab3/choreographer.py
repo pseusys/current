@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
-from asyncio import run, gather, create_task
+from asyncio import run, gather, Future
 from os.path import isfile
-from typing import List
+from typing import List, Dict
 
 from yaml import safe_load
 
@@ -10,8 +10,25 @@ from utils import error
 
 
 async def run_nodes(nodes: List[Node]):
-    await gather(*[create_task(node.launch()) for node in nodes])
-    await gather(*[create_task(node.start()) for node in nodes])
+    print("launching nodes...")
+    await gather(*[node.launch() for index, node in enumerate(nodes)])
+    print("running nodes...")
+    await gather(*[coro for node in nodes for coro in await node.start()])
+    await Future()
+
+
+def create_node(name: str, identifier: int, data: Dict, templates: Dict) -> Node:
+    if "template" not in data.keys():
+        error(f"Node `{name}` has no template and thus can't be built!")
+    if data["template"] not in templates.keys():
+        error(f"Template `{data['template']}` for node `{name}` not found!")
+
+    template = templates[data["template"]]
+    channels = template.get("in_channels", list()) + template.get("out_channels", list())
+    if len(channels) > 0 and ("channels" not in data or set(data["channels"].keys()) != set(channels)):
+        error(f"Not all channels mapped for node `{name}`!")
+
+    return Node(name, identifier, template, data.get("channels", dict()))
 
 
 if __name__ == '__main__':
@@ -31,5 +48,5 @@ if __name__ == '__main__':
     if "matrix" not in config:
         error(f"File `{args['config']}` can not be opened!")
 
-    graph = [Node(name, data) for name, data in config["nodes"].items()]
+    graph = [create_node(name, index + 1, data, config["templates"]) for index, (name, data) in enumerate(config["matrix"].items())]
     run(run_nodes(graph))

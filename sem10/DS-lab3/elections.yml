@@ -3,7 +3,7 @@ templates:
   node:
     one_shot: False
     variables:
-      id: 0
+      id: NODE_ID
       started: False
     in_channels:
       - input
@@ -18,27 +18,24 @@ templates:
           channel: output
           message:
             text: PING
-            id: self.id
         set:
           started: True
       receive_ping:
         channel: input
-        if: 'message.text == "PING" and self.id < message.id'
+        if: 'message.text == "PING"'
         send:
           channel: output
           message:
             text: PONG
-            id: self.id
         set:
           started: True
       receive_pong:
         channel: input
-        if: 'message.text == "PONG" and self.id > message.id'
+        if: 'message.text == "PONG"'
         send:
           channel: output
           message:
             text: PING
-            id: self.id
 
   firestarter:
     one_shot: True
@@ -49,7 +46,6 @@ templates:
         channel: torch
         message:
           text: START
-          id: -1
 
 
 
