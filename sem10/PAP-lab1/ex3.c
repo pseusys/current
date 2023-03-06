@@ -132,9 +132,9 @@ void mult_mat_vector (matrix M, vector b, vector c, const size_t size)
     {
         r = 0.0 ;
         for (j = 0 ; j < size ; j = j + 1)
-	{
+	    {
             r += M [i * size + j] * b [j] ;
-	}
+	    }
         c [i] = r ;
     }
     return ;
@@ -142,51 +142,108 @@ void mult_mat_vector (matrix M, vector b, vector c, const size_t size)
 
 void mult_mat_vector_tri_inf (matrix M, vector b, vector c, const size_t size)
 {
-    /*
-      this function is sequential (no OpenMP directive)
-      Computes the Multiplication between the vector b and the Triangular Lower Matrix
-    */ 
+    register unsigned int i ;
+    register unsigned int j ;
+    register double r ;
+
+    for ( i = 0 ; i < size ; i = i + 1)
+    {
+        r = 0.0 ;
+        for (j = 0 ; j <= i ; j = j + 1)
+	    {
+            r += M [i * size + j] * b [j] ;
+	    }
+        c [i] = r ;
+    }
     return ;
 }
 
 void mult_mat_vector_tri_inf1 (matrix M, vector b, vector c, const size_t size)
-{
-    /*
-      this function is parallel (with OpenMP directive, static scheduling)
-      Computes the Multiplication between the vector b and the Triangular Lower Matrix
-    */
+{ 
+    register unsigned int i ;
+    register unsigned int j ;
+    register double r ;
 
+    #pragma omp parallel shared(M, b, c, size) private(i, j, r) 
+    {
+        #pragma omp for schedule(static)
+        for ( i = 0 ; i < size ; i = i + 1)
+        {
+            r = 0.0 ;
+            for (j = 0 ; j <= i ; j = j + 1)
+            {
+                r += M [i * size + j] * b [j] ;
+            }
+            c [i] = r ;
+        }
+    }
     return ;
 
 }
 
 void mult_mat_vector_tri_inf2 (matrix M, vector b, vector c, const size_t size)
 {
-    /*
-      this function is parallel (with OpenMP directive, dynamic scheduling)
-      Computes the Multiplication between the vector b and the Triangular Lower Matrix
-    */
-    
+    register unsigned int i ;
+    register unsigned int j ;
+    register double r ;
+
+   #pragma omp parallel shared(M, b, c, size) private(i, j, r)
+    {
+        #pragma omp for schedule(dynamic)
+        for ( i = 0 ; i < size ; i = i + 1)
+        {
+            r = 0.0 ;
+            for (j = 0 ; j <= i ; j = j + 1)
+            {
+                r += M [i * size + j] * b [j] ;
+            }
+            c [i] = r ;
+        }
+    }
     return ;
 }
 
 void mult_mat_vector_tri_inf3 (matrix M, vector b, vector c, const size_t size)
 {
-    /*
-      this function is parallel (with OpenMP directive, guided scheduling)
-      Computes the Multiplication between the vector b and the Triangular Lower Matrix
-    */
-    
+    register unsigned int i ;
+    register unsigned int j ;
+    register double r ;
+
+    #pragma omp parallel shared(M, b, c, size) private(i, j, r)
+    {
+        #pragma omp for schedule(guided)
+        for ( i = 0 ; i < size ; i = i + 1)
+        {
+            r = 0.0 ;
+            for (j = 0 ; j <= i ; j = j + 1)
+            {
+                r += M [i * size + j] * b [j] ;
+            }
+            c [i] = r ;
+        }
+    }
     return ;
 }
 
 void mult_mat_vector_tri_inf4 (matrix M, vector b, vector c, const size_t size)
 {
-    /*
-      this function is parallel (with OpenMP directive, runtime scheduling)
-      Computes the Multiplication between the vector b and the Triangular Lower Matrix
-    */
-  
+    register unsigned int i ;
+    register unsigned int j ;
+    register double r ;
+
+    #pragma omp parallel shared(M, b, c, size) private(i, j, r)
+    {
+        #pragma omp for schedule(runtime)
+        for ( i = 0 ; i < size ; i = i + 1)
+        {
+            r = 0.0 ;
+            for (j = 0 ; j <= i ; j = j + 1)
+            {
+                r += M [i * size + j] * b [j] ;
+            }
+        c [i] = r ;
+        }
+    }
     return ;
     
 }
@@ -246,6 +303,11 @@ int main (int argc, char *argv[])
   
     printf ("Full matrix multiplication vector \t\t  %Ld cycles\n", av-residu) ;
 
+    /* rdtsc: read the cycle counter */
+    start = _rdtsc () ;
+    end = _rdtsc () ;
+    residu = end - start ;
+
     free_vector(v1);
     free_vector(v2);
     free_matrix(M);
@@ -267,6 +329,11 @@ int main (int argc, char *argv[])
     av = average (experiments) ;
   
     printf ("Triangular Matrix multiplication vector\t\t  %Ld cycles\n", av-residu) ;
+
+    /* rdtsc: read the cycle counter */
+    start = _rdtsc () ;
+    end = _rdtsc () ;
+    residu = end - start ;
 
     free_vector(v1);
     free_vector(v2);
@@ -290,6 +357,11 @@ int main (int argc, char *argv[])
   
     printf ("Parallel Loop Static Scheduling \t\t  %Ld cycles\n", av-residu) ;
 
+    /* rdtsc: read the cycle counter */
+    start = _rdtsc () ;
+    end = _rdtsc () ;
+    residu = end - start ;
+
     free_vector(v1);
     free_vector(v2);
     free_matrix(M);
@@ -312,6 +384,11 @@ int main (int argc, char *argv[])
   
     printf ("Parallel Loop Dynamic Scheduling \t\t  %Ld cycles\n", av-residu) ;
 
+    /* rdtsc: read the cycle counter */
+    start = _rdtsc () ;
+    end = _rdtsc () ;
+    residu = end - start ;
+
     free_vector(v1);
     free_vector(v2);
     free_matrix(M);
@@ -333,6 +410,11 @@ int main (int argc, char *argv[])
     av = average (experiments) ;
   
     printf ("Parallel Loop Guided Scheduling \t\t  %Ld cycles\n", av-residu) ;
+
+    /* rdtsc: read the cycle counter */
+    start = _rdtsc () ;
+    end = _rdtsc () ;
+    residu = end - start ;
 
     free_vector(v1);
     free_vector(v2);
