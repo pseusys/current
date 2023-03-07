@@ -19,6 +19,10 @@ ex2: build build/ex2.run
 	build/ex2.run 256
 .PHONY: ex2
 
+ex3: build build/ex3.run
+	build/ex3.run 256
+.PHONY: ex3
+
 
 clean:
 	rm -rf build
