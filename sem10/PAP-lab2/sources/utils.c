@@ -51,7 +51,7 @@ void print_array (uint64_t *T, uint64_t size)
 
     for (i = 0 ; i < size ; i++)
     {
-        printf ("%d ", T[i]) ;
+        printf ("%ld ", T[i]) ;
     }
     printf ("\n") ;
 }
