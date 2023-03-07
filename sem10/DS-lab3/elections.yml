@@ -4,68 +4,79 @@ templates:
     one_shot: False
     variables:
       id: NODE_ID
-      started: False
+      leader: -1
     in_channels:
       - input
-      - starter
     out_channels:
       - output
     rules:
-      start:
-        channel: starter
-        if: 'message.text == "START" and not self.started'
-        send:
-          channel: output
-          message:
-            text: PING
-        set:
-          started: True
-      receive_ping:
+      send_candidate:
         channel: input
-        if: 'message.text == "PING"'
+        if: 'message.text == "ELECTION" and message.id < self.id'
         send:
           channel: output
           message:
-            text: PONG
+            text: ELECTION
+            id: message.id
         set:
-          started: True
-      receive_pong:
+          leader: message.id
+      send_myself:
         channel: input
-        if: 'message.text == "PONG"'
+        if: 'message.text == "ELECTION" and message.id > self.id'
         send:
           channel: output
           message:
-            text: PING
-
-  firestarter:
-    one_shot: True
-    out_channels:
-      - torch
+            text: ELECTION
+            id: self.id
+        set:
+          leader: self.id
+      cheer_leader:
+        channel: input
+        if: 'message.text == "ELECTION" and message.id == self.id'
+        set:
+          leader: self.id
     init:
       send:
-        channel: torch
+        channel: output
         message:
-          text: START
-
+          text: ELECTION
+          id: self.id
 
 
 matrix:
 
-  pinger:
+  ring_node_1:
     template: node
     channels:
-      input: first
-      output: second
-      starter: outer
+      input: ring_edge_6
+      output: ring_edge_1
 
-  ponger:
+  ring_node_2:
     template: node
     channels:
-      input: second
-      output: first
-      starter: outer
+      input: ring_edge_1
+      output: ring_edge_2
 
-  launcher:
-    template: firestarter
+  ring_node_3:
+    template: node
     channels:
-      torch: outer
+      input: ring_edge_2
+      output: ring_edge_3
+
+  ring_node_4:
+    template: node
+    channels:
+      input: ring_edge_3
+      output: ring_edge_4
+
+  ring_node_5:
+    template: node
+    channels:
+      input: ring_edge_4
+      output: ring_edge_5
+
+  ring_node_6:
+    template: node
+    channels:
+      input: ring_edge_5
+      output: ring_edge_6

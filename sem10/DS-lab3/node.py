@@ -15,12 +15,13 @@ class Node:
         self.connection = None
         self.channel = None
 
-        self.in_channels = {ch: port_mapping[ch] for ch in template.get("in_channels", list())}
-        self.out_channels = {ch: port_mapping[ch] for ch in template.get("out_channels", list())}
+        self.in_channels = {ch: port_mapping[ch] for ch in list(template.get("in_channels", list()))}
+        self.out_channels = {ch: port_mapping[ch] for ch in list(template.get("out_channels", list()))}
 
         self.one_shot = template.get("one_shot", False)
-        self.variables = template.get("variables", dict())
+        self.variables = dict(template.get("variables", dict()))
         self._populate_special_variables()
+        print(self.variables)
 
         if "rules" in template:
             self.rules = [self._make_rule(name, rule) for name, rule in template["rules"].items()]
@@ -52,7 +53,7 @@ class Node:
                 msg[var] = self._get_raw_or_variable(rec, val)
             target_queue = self.out_channels[on].name
             mess = dumps(msg).encode("utf-8")
-            print(self.name, "sending message", mess)
+            print(self.name, self.id, self.variables["id"], "sending message", mess)
             await self.channel.default_exchange.publish(Message(mess), routing_key=target_queue)
 
         return send
@@ -175,7 +176,7 @@ class Node:
             self.out_channels[q_name] = await self.channel.declare_queue(self.out_channels[q_name], auto_delete=True)
 
     async def start(self) -> List[Awaitable]:
-        print("starting", self.name, "as", self.one_shot)
+        print("starting", self.name, "as", self.one_shot, "at", self.variables["id"])
         for start in self.init:
             print(f"passing for message {self.name}...")
             await start(dict())
