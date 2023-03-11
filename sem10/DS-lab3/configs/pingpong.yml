@@ -1,0 +1,77 @@
+templates:
+
+  node:
+    variables:
+      id: NODE_ID
+      started: False
+    in_pipes:
+      - input
+      - starter
+    out_pipes:
+      - output
+    rules:
+      start:
+        pipe: starter
+        if: 'message.text == "START" and not self.started'
+        actions:
+          send:
+            pipe: output
+            message:
+              text: PING
+              id: self.id
+          set:
+            started: True
+      receive_ping:
+        pipe: input
+        if: 'message.text == "PING" and self.id < message.id'
+        actions:
+          send:
+            pipe: output
+            message:
+              text: PONG
+              id: self.id
+          set:
+            started: True
+      receive_pong:
+        pipe: input
+        if: 'message.text == "PONG" and self.id > message.id'
+        actions:
+          send:
+            pipe: output
+            message:
+              text: PING
+              id: self.id
+
+  firestarter:
+    one_shot: True
+    out_pipes:
+      - torch
+    init:
+      send:
+        pipe: torch
+        message:
+          text: START
+          id: -1
+
+
+
+matrix:
+
+  pinger:
+    template: node
+    pipes:
+      input: first
+      output: second
+      starter: outer
+
+  ponger:
+    template: node
+    pipes:
+      input: second
+      output: first
+      starter: outer
+
+  launcher:
+    template: firestarter
+    pipes:
+      torch: outer

@@ -1,0 +1,84 @@
+templates:
+
+  node:
+    variables:
+      id: NODE_ID
+      leader: -1
+    in_pipes:
+      - input
+    out_pipes:
+      - output
+    rules:
+      send_candidate:
+        pipe: input
+        if: 'message.text == "ELECTION" and message.id < self.id'
+        actions:
+          send:
+            pipe: output
+            message:
+              text: ELECTION
+              id: message.id
+          set:
+            leader: message.id
+      send_myself:
+        pipe: input
+        if: 'message.text == "ELECTION" and message.id > self.id'
+        actions:
+          send:
+            pipe: output
+            message:
+              text: ELECTION
+              id: self.id
+          set:
+            leader: self.id
+      cheer_leader:
+        pipe: input
+        if: 'message.text == "ELECTION" and message.id == self.id'
+        actions:
+          set:
+            leader: self.id
+    init:
+      send:
+        pipe: output
+        message:
+          text: ELECTION
+          id: self.id
+
+
+matrix:
+
+  ring_node_1:
+    template: node
+    pipes:
+      input: ring_edge_6
+      output: ring_edge_1
+
+  ring_node_2:
+    template: node
+    pipes:
+      input: ring_edge_1
+      output: ring_edge_2
+
+  ring_node_3:
+    template: node
+    pipes:
+      input: ring_edge_2
+      output: ring_edge_3
+
+  ring_node_4:
+    template: node
+    pipes:
+      input: ring_edge_3
+      output: ring_edge_4
+
+  ring_node_5:
+    template: node
+    pipes:
+      input: ring_edge_4
+      output: ring_edge_5
+
+  ring_node_6:
+    template: node
+    pipes:
+      input: ring_edge_5
+      output: ring_edge_6

@@ -32,3 +32,6 @@ sem5/WEB-earthquake/public/
 *.gz
 *.pdf
 
+# 3D graphics objects and textures
+*.obj
+*.mtl
