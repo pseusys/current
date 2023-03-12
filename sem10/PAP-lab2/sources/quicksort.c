@@ -5,83 +5,55 @@
 #include <time.h>
 
 #include <x86intrin.h>
-#include <stdbool.h>
 
 #include "sorting.h"
 
+
 /* 
-   odd-even sort -- sequential, parallel -- 
+   Merge two sorted chunks of array T!
+   The two chunks are of size size
+   First chunck starts at T[0], second chunck starts at T[size]
 */
-
-
-void sequential_oddeven_sort (uint64_t *T, const uint64_t size) {
-    uint64_t sorted;
-    do {
-        sorted = 0;
-        for (size_t j = 0; j < size - 1; j += 2) {
-            if (T[j] > T[j+1]) {
-                uint64_t tmp = T[j];
-                T[j] = T[j+1];
-                T[j+1] = tmp;
-                sorted = 1;
-            }
-        }
-        for (size_t j = 1; j < size - 1; j += 2) {
-            if (T[j] > T[j+1]) {
-                uint64_t tmp = T[j];
-                T[j] = T[j+1];
-                T[j+1] = tmp;
-                sorted = 1;
-            }
-        }
-    } while (sorted == 1);
+int64_t partition(uint64_t *T, int64_t low, int64_t high) {
+	uint64_t pivot = T[high];
+	int64_t i = (low - 1);
+    int64_t j;
+	for (j = low; j <= high - 1; j++) {
+		if (T[j] <= pivot) {
+			i++;
+            uint64_t temp = T[j];
+            T[j] = T[i];
+            T[i] = temp;
+		}
+	}
+    uint64_t temp = T[i + 1];
+    T[i + 1] = T[high];
+    T[high] = temp;
+	return (i + 1);
 }
 
 
-void semi_parallel_oddeven_sort (uint64_t *T, const uint64_t size) {
-    uint64_t step = 2;
-    uint64_t sorted;
-    do {
-        sorted = 0;
-        #pragma omp parallel for schedule(static)
-        for (uint64_t i = 0; i < step; i++) {
-            for (size_t j = i; j < size - 1; j += step) {
-                if (T[j] > T[j+1]) {
-                    uint64_t tmp = T[j];
-                    T[j] = T[j+1];
-                    T[j+1] = tmp;
-                    sorted = 1;
-                }
-            }
-        }
-    } while (sorted == 1);
+void serial_quicksort(uint64_t *T, int64_t low, int64_t high) {
+	if (low < high) {
+		// pi = Partition index
+		int64_t pi = partition(T, low, high);
+		serial_quicksort(T, low, pi - 1);
+		serial_quicksort(T, pi + 1, high);           
+	}
 }
 
-
-void parallel_oddeven_sort (uint64_t *T, const uint64_t size, const uint64_t chunk) {
-    int sorted;
-    int chunk_size = size / chunk;
-    // TODO: study pragma omp in order to find the best solution for scheduling (or smth else)
-    do {
-        sorted = 0;
-        #pragma omp parallel for schedule(static)
-        for (size_t i = 0; i < chunk; i++) {
-            semi_parallel_oddeven_sort(T + chunk_size * i, chunk_size);
-        }
-
-        #pragma omp parallel for schedule(static)
-        for (size_t i = 1; i < chunk; i++) {
-            uint64_t lower = chunk_size * i - 1;
-            uint64_t upper = lower == size - 1 ? 0 : chunk_size * i;
-
-            if (T[lower] > T[upper]) {
-                uint64_t tmp = T[upper];
-                T[upper] = T[lower];
-                T[lower] = tmp;
-                sorted = 1;
-            }
-        }
-    } while (sorted == 1);
+void parallel_quicksort(uint64_t *T, int64_t low, int64_t high) {
+    #pragma omp parallel
+    #pragma omp single
+	if (low < high) {
+		// pi = Partition index
+		int64_t pi = partition(T, low, high);
+        #pragma omp task
+		parallel_quicksort(T, low, pi - 1);
+        #pragma omp task
+		parallel_quicksort(T, pi + 1, high);
+        #pragma omp taskwait           
+	}
 }
 
 
@@ -97,7 +69,7 @@ int main (int argc, char **argv)
        be sorted. The array will have size 2^N */
     if (argc != 2)
     {
-        fprintf (stderr, "odd-even.run N \n") ;
+        fprintf (stderr, "quicksort.run N \n") ;
         exit (-1) ;
     }
 
@@ -118,18 +90,17 @@ int main (int argc, char **argv)
         init_array_sequence (X, N);
 #endif
         
-      
-        clock_gettime(CLOCK_MONOTONIC, &begin);
+        clock_gettime(CLOCK_MONOTONIC, &begin);      
         
-        sequential_oddeven_sort (X, N) ;
-     
+        serial_quicksort (X, 0, N - 1) ;
+
         clock_gettime(CLOCK_MONOTONIC, &end);
         
         seconds = end.tv_sec - begin.tv_sec;
         nanosec = end.tv_nsec - begin.tv_nsec;
         
         experiments [exp] = seconds + nanosec*1e-9;
-
+        
         /* verifying that X is properly sorted */
 #ifdef RINIT
         if (! is_sorted (X, N))
@@ -148,7 +119,7 @@ int main (int argc, char **argv)
 #endif
     }
 
-    printf ("\n odd-even serial \t\t\t %.3lf seconds\n\n", average_time()) ;    
+    printf ("\n quicksort serial \t\t\t %.3lf seconds\n\n", average_time()) ;    
 
   
     for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
@@ -158,18 +129,17 @@ int main (int argc, char **argv)
 #else
         init_array_sequence (X, N);
 #endif
-        
-        clock_gettime(CLOCK_MONOTONIC, &begin);
 
-        parallel_oddeven_sort (X, N, 8) ;
+        clock_gettime(CLOCK_MONOTONIC, &begin);
+        
+        parallel_quicksort (X, 0, N - 1) ;
 
         clock_gettime(CLOCK_MONOTONIC, &end);
         
         seconds = end.tv_sec - begin.tv_sec;
         nanosec = end.tv_nsec - begin.tv_nsec;
         
-        experiments [exp] = seconds + nanosec*1e-9;
-
+        experiments [exp] = seconds + nanosec*1e-9;        
 
         /* verifying that X is properly sorted */
 #ifdef RINIT
@@ -190,9 +160,10 @@ int main (int argc, char **argv)
                 
         
     }
+    
+    printf ("\n quicksort parallel \t\t\t %.3lf seconds\n\n", average_time()) ;
 
-    printf ("\n odd-even parallel \t\t\t %.3lf seconds\n\n", average_time()) ;    
-  
+
     /* print_array (X, N) ; */
 
     /* before terminating, we run one extra test of the algorithm */
@@ -207,8 +178,8 @@ int main (int argc, char **argv)
 
     memcpy(Z, Y, N * sizeof(uint64_t));
 
-    sequential_oddeven_sort (Y, N) ;
-    parallel_oddeven_sort (Z, N, 8) ;
+    serial_quicksort (Y, 0, N - 1) ;
+    parallel_quicksort (Z, 0, N - 1) ;
 
     if (! are_vector_equals (Y, Z, N)) {
         fprintf(stderr, "ERROR: sorting with the sequential and the parallel algorithm does not give the same result\n") ;

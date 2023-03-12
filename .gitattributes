@@ -1,10 +1,13 @@
 **.docx diff=word
+**.docx linguist-generated
 **.doc diff=word
+**.doc linguist-generated
+
+**.png binary
+**.png linguist-generated
+**.jpg binary
+**.jpg linguist-generated
 
 **.ipynb filter=nbstripout
 **.ipynb diff=ipynb
-
-**.png binary
-**.jpg binary
-
 **.ipynb linguist-generated

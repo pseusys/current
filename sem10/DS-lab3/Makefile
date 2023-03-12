@@ -3,7 +3,8 @@
 .DEFAULT_GOAL := help
 
 SHELL = /bin/bash
-LOGS = log-`date +"%Y-%m-%d-%H-%M-%S"`.log
+LOGS = logs/log-`date +"%Y-%m-%d-%H-%M-%S"`.log
+VERB = INFO
 PATH := venv/bin:$(PATH)
 
 
@@ -21,11 +22,10 @@ venv:
 run: venv
 	@ # Run selected configuration
 	test -n "$(CONF)" || { echo "Please, specify CONF configuration file!"; exit 1; }
-	python3 choreographer.py -l $(LOGS) $(CONF)
+	python3 sources/choreographer.py -l $(LOGS) -v $(VERB) $(CONF)
 .PHONY: run
 
 clean:
 	@ # Clean generated files and locally stored libraries
 	rm -rf venv >2 /dev/null
-	rm -rf __pycache__ >2 /dev/null
 .PHONY: clean

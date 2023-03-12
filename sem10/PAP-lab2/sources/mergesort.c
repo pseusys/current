@@ -14,48 +14,32 @@
    The two chunks are of size size
    First chunck starts at T[0], second chunck starts at T[size]
 */
-void merge (uint64_t *T, const uint64_t size)
-{
+void merge(uint64_t *T, const uint64_t size) {
   uint64_t *X = (uint64_t *) malloc (2 * size * sizeof(uint64_t)) ;
   
-  uint64_t i = 0 ;
-  uint64_t j = size ;
-  uint64_t k = 0 ;
-  
-  while ((i < size) && (j < 2*size))
-    {
-      if (T[i] < T [j])
-	{
-	  X [k] = T [i] ;
-	  i = i + 1 ;
-	}
-      else
-	{
-	  X [k] = T [j] ;
-	  j = j + 1 ;
-	}
-      k = k + 1 ;
-    }
+  uint64_t i = 0;
+  uint64_t j = size;
+  uint64_t k = 0;
 
-  if (i < size)
-    {
-      for (; i < size; i++, k++)
-	{
-	  X [k] = T [i] ;
-	}
+  while ((i < size) && (j < 2*size)) {
+    if (T[i] < T[j]) {
+      X[k] = T[i];
+      i = i + 1;
+    } else {
+      X[k] = T[j];
+      j = j + 1;
     }
-  else
-    {
-      for (; j < 2*size; j++, k++)
-	{
-	  X [k] = T [j] ;
-	}
-    }
+    k = k + 1;
+  }
+
+  if (i < size) {
+    memcpy(X + k, T + i, (size - i) * sizeof(uint64_t));
+  } else {
+    memcpy(X + k, T + j, (2 * size - j) * sizeof(uint64_t));
+  }
   
-  memcpy (T, X, 2*size*sizeof(uint64_t)) ;
-  free (X) ;
-  
-  return ;
+  memcpy(T, X, 2*size*sizeof(uint64_t));
+  free(X);
 }
 
 
@@ -66,18 +50,39 @@ void merge (uint64_t *T, const uint64_t size)
    merge sort -- sequential, parallel -- 
 */
 
-void sequential_merge_sort (uint64_t *T, const uint64_t size)
-{
-    /* TODO: sequential implementation of merge sort */ 
-    
-    return ;
+void sequential_merge_sort (uint64_t *T, const uint64_t size) {
+  if (size != 1) {
+    uint64_t half_size = size / 2;
+    sequential_merge_sort(T, half_size);
+    sequential_merge_sort(T + half_size, half_size);
+    merge(T, half_size);
+  }
 }
 
-void parallel_merge_sort (uint64_t *T, const uint64_t size)
-{
-    /* TODO: parallel implementation of merge sort */
+void parallel_merge_sort (uint64_t *T, const uint64_t size) {
+  #pragma omp parallel
+  #pragma omp single
+  if (size != 1) {
+    uint64_t half_size = size / 2;
+    #pragma omp task
+    sequential_merge_sort(T, half_size);
+    #pragma omp task
+    sequential_merge_sort(T + half_size, half_size);
+    #pragma omp taskwait
+    merge(T, half_size);
+  }
+}
 
-    return;
+void parallel_optimized_merge_sort (uint64_t *T, const uint64_t size) {
+  uint64_t sorted = 1;
+  #pragma omp parallel for schedule(static)
+  for (uint64_t i = 1; i < size; i++) {
+    if (T[i] < T[i-1]) sorted = 0;
+  }
+  if (sorted == 1) return;
+
+  // TODO: study pragma omp in order to find solution to minimize task number
+  parallel_merge_sort(T, size);
 }
 
 
@@ -187,6 +192,49 @@ int main (int argc, char **argv)
     
     printf ("\n mergesort parallel \t\t\t %.3lf seconds\n\n", average_time()) ;    
   
+
+    for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
+    {
+#ifdef RINIT
+        init_array_random (X, N);
+#else
+        init_array_sequence (X, N);
+#endif
+
+        clock_gettime(CLOCK_MONOTONIC, &begin);
+        
+        parallel_optimized_merge_sort (X, N) ;
+
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        
+        seconds = end.tv_sec - begin.tv_sec;
+        nanosec = end.tv_nsec - begin.tv_nsec;
+        
+        experiments [exp] = seconds + nanosec*1e-9;        
+
+        /* verifying that X is properly sorted */
+#ifdef RINIT
+        if (! is_sorted (X, N))
+        {
+            print_array (X, N) ;
+            fprintf(stderr, "ERROR: the parallel sorting of the array failed\n") ;
+            exit (-1) ;
+	}
+#else
+        if (! is_sorted_sequence (X, N))
+        {
+            print_array (X, N) ;
+            fprintf(stderr, "ERROR: the parallel sorting of the array failed\n") ;
+            exit (-1) ;
+	}
+#endif
+                
+        
+    }
+    
+    printf ("\n optimized mergesort parallel \t\t %.3lf seconds\n\n", average_time()) ;  
+
+
     /* print_array (X, N) ; */
 
     /* before terminating, we run one extra test of the algorithm */

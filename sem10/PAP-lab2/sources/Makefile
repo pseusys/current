@@ -4,6 +4,7 @@ LDFLAGS = -fopenmp
 
 EXEC = 	bubble.run	\
 	mergesort.run	\
+	quicksort.run	\
 	odd-even.run
 
 HEADER_FILES = $(wildcard *.h)
