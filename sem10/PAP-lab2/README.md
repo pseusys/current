@@ -4,7 +4,7 @@
 
 1. bubble:
    ```shell
-   make bubble TIMES=15
+   make bubble TIMES=15 CHUNK=2
    ```
 2. mergesort:
    ```shell

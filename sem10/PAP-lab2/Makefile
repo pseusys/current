@@ -30,7 +30,7 @@ clean:
 
 
 bubble: renew-bubble build/bubble.run
-	build/bubble.run $(TIMES)
+	build/bubble.run $(TIMES) $(CHUNK)
 
 mergesort: renew-mergesort build/mergesort.run
 	build/mergesort.run $(TIMES)
