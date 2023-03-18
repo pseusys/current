@@ -30,7 +30,7 @@ void sequential_bubble_sort (uint64_t *T, const uint64_t size) {
 void parallel_bubble_sort (uint64_t *T, const uint64_t size, const uint64_t chunk) {
     int sorted;
     int chunk_size = size / chunk;
-    // TODO: study pragma omp in order to find the best solution for scheduling (or smth else)
+
     do {
         sorted = 0;
         size_t i =0;

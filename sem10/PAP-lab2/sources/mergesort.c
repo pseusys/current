@@ -50,7 +50,7 @@ void merge(uint64_t *T, const uint64_t size) {
    merge sort -- sequential, parallel -- 
 */
 
-void sequential_merge_sort (uint64_t *T, const uint64_t size) {
+void sequential_merge_sort (uint64_t *T, const uint64_t size ) {
   if (size != 1) {
     uint64_t half_size = size / 2;
     sequential_merge_sort(T, half_size);
@@ -59,8 +59,8 @@ void sequential_merge_sort (uint64_t *T, const uint64_t size) {
   }
 }
 
-void parallel_merge_sort (uint64_t *T, const uint64_t size) {
-  #pragma omp parallel
+void parallel_merge_sort (uint64_t *T, const uint64_t size, uint64_t threads) {
+  #pragma omp parallel num_threads(threads)
   #pragma omp single
   if (size != 1) {
     uint64_t half_size = size / 2;
@@ -73,16 +73,14 @@ void parallel_merge_sort (uint64_t *T, const uint64_t size) {
   }
 }
 
-void parallel_optimized_merge_sort (uint64_t *T, const uint64_t size) {
+void parallel_optimized_merge_sort (uint64_t *T, const uint64_t size, uint64_t threads) {
   uint64_t sorted = 1;
-  #pragma omp parallel for schedule(static)
+  #pragma omp parallel for num_threads(threads) schedule(static)
   for (uint64_t i = 1; i < size; i++) {
     if (T[i] < T[i-1]) sorted = 0;
   }
   if (sorted == 1) return;
-
-  // TODO: study pragma omp in order to find solution to minimize task number
-  parallel_merge_sort(T, size);
+  parallel_merge_sort(T, size, threads);
 }
 
 
@@ -96,13 +94,14 @@ int main (int argc, char **argv)
 
     /* the program takes one parameter N which is the size of the array to
        be sorted. The array will have size 2^N */
-    if (argc != 2)
+    if (argc != 3)
     {
         fprintf (stderr, "merge.run N \n") ;
         exit (-1) ;
     }
 
     uint64_t N = 1 << (atoi(argv[1])) ;
+    uint64_t CH = *argv[2] ;
     /* the array to be sorted */
     uint64_t *X = (uint64_t *) malloc (N * sizeof(uint64_t)) ;
 
@@ -161,7 +160,7 @@ int main (int argc, char **argv)
 
         clock_gettime(CLOCK_MONOTONIC, &begin);
         
-        parallel_merge_sort (X, N) ;
+        parallel_merge_sort (X, N, CH) ;
 
         clock_gettime(CLOCK_MONOTONIC, &end);
         
@@ -203,7 +202,7 @@ int main (int argc, char **argv)
 
         clock_gettime(CLOCK_MONOTONIC, &begin);
         
-        parallel_optimized_merge_sort (X, N) ;
+        parallel_optimized_merge_sort (X, N, CH) ;
 
         clock_gettime(CLOCK_MONOTONIC, &end);
         
@@ -250,7 +249,7 @@ int main (int argc, char **argv)
     memcpy(Z, Y, N * sizeof(uint64_t));
 
     sequential_merge_sort (Y, N) ;
-    parallel_merge_sort (Z, N) ;
+    parallel_merge_sort (Z, N, CH) ;
 
     if (! are_vector_equals (Y, Z, N)) {
         fprintf(stderr, "ERROR: sorting with the sequential and the parallel algorithm does not give the same result\n") ;
