@@ -2,11 +2,6 @@ CC = gcc
 CFLAGS = -O2 -fopenmp
 LDFLAGS = -fopenmp
 
-EXEC = 	build/bubble.run	\
-	build/mergesort.run	    \
-	build/quicksort.run	    \
-	build/odd-even.run
-
 HEADER_FILES = $(wildcard sources/*.h)
 
 RAND_INIT = 0
@@ -25,10 +20,8 @@ build/%.o: sources/%.c $(HEADER_FILES)
 build/%.run: build/%.o build/utils.o
 	@$(CC) $(LDFLAGS) -o $@ $^
 
-prepare:
-	@mkdir -p build
-
-rm-%: build/%.run
+renew-%:
+	@mkdir -p ./build
 	@rm -f build/%.run 
 
 clean:
@@ -36,19 +29,19 @@ clean:
 
 
 
-bubble: rm-bubble prepare build/bubble.run
+bubble: renew-bubble build/bubble.run
 	build/bubble.run $(TIMES)
 
-mergesort: rm-mergesort prepare build/mergesort.run
+mergesort: renew-mergesort build/mergesort.run
 	build/mergesort.run $(TIMES)
 
-odd-even: rm-odd-even prepare build/odd-even.run
+odd-even: renew-odd-even build/odd-even.run
 	build/odd-even.run $(TIMES)
 
-quicksort: rm-quicksort prepare build/quicksort.run
+quicksort: renew-quicksort build/quicksort.run
 	build/quicksort.run $(TIMES)
 
-all: bubble mergesort odd-even quicksort
+all: bubble mergesort odd-even quicksort renew-%
 
 
 
