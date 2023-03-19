@@ -19,14 +19,6 @@
    make quicksort TIMES=15
    ```
 
-
-## TODOs
-
-1. `bubble`: study pragma omp in order to find the best solution for scheduling (or smth else)
-3. `even-odd`: analyze parallelization perspectives, compare with `bubble`
-4. `quicksort`: improve parallel performance, find omp means for that
-5. write a report
-
 ### Report
 Alexander Sergeev and Pia Döpper
 
