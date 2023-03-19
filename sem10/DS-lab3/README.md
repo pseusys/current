@@ -1,4 +1,4 @@
-# Distributed system lab: RabbitMQ
++# Distributed system lab: RabbitMQ
 The algorithm provided here is close enough to be an implementation of the task #6.
 Its ultimate goal is to make an algorithm described using notation similar to what we had on lecture executable.
 The algorithm is implemented with Python3, using `aio-pika` RabbitMQ support package.
@@ -6,9 +6,9 @@ The algorithm is implemented with Python3, using `aio-pika` RabbitMQ support pac
 **NB!** The provided notation is VERY limited, in particular, it supports only message-driven systems with a few event types, but it can be extended.
 
 ## Configuration
-The algorithm takes as an input a configuration file ind instantiate the distributed system it describes.
+The algorithm takes as an input a configuration file and instantiate the distributed system it describes.
 The configuration file format is YAML (chosen for its readability).  
-The files are obliged th have the following structure:
+The files are obliged the have the following structure:
 
 ```yaml
 templates:
