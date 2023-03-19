@@ -30,18 +30,20 @@ void sequential_bubble_sort (uint64_t *T, const uint64_t size) {
 void parallel_bubble_sort (uint64_t *T, const uint64_t size, const uint64_t chunk) {
     int sorted;
     int chunk_size = size / chunk;
-    // TODO: study pragma omp in order to find the best solution for scheduling (or smth else)
+
     do {
         sorted = 0;
-        #pragma omp parallel for schedule(static)
+        size_t i =0;
+        #pragma omp parallel for num_threads(chunk) private(i) schedule(static)
         for (size_t i = 0; i < chunk; i++) {
             sequential_bubble_sort(T + chunk_size * i, chunk_size);
         }
-
-        #pragma omp parallel for schedule(static)
-        for (size_t i = 1; i < chunk; i++) {
+        uint64_t lower;
+        uint64_t upper;
+        #pragma omp parallel for num_threads(chunk) private(i, lower, upper) schedule(static)
+        for (size_t i = 1; i <= chunk; i++) {
             uint64_t lower = chunk_size * i - 1;
-            uint64_t upper = lower == size - 1 ? 0 : chunk_size * i;
+            uint64_t upper = (lower == size - 1) ? 0 : chunk_size * i;
 
             if (T[lower] > T[upper]) {
                 uint64_t tmp = T[upper];
@@ -64,14 +66,15 @@ int main (int argc, char **argv)
 
     /* the program takes one parameter N which is the size of the array to
        be sorted. The array will have size 2^N */
-    if (argc != 2)
+    if (argc != 3)
     {
         fprintf (stderr, "bubble.run N \n") ;
         exit (-1) ;
     }
 
     uint64_t arg = atoi(argv[1]);
-    uint64_t N = 1 << arg ;
+    uint64_t N = *argv[1] ;
+    uint64_t CH = *argv[2] ;
     /* the array to be sorted */
     uint64_t *X = (uint64_t *) malloc (N * sizeof(uint64_t)) ;
 
@@ -130,7 +133,7 @@ int main (int argc, char **argv)
         
         clock_gettime(CLOCK_MONOTONIC, &begin);
 
-        parallel_bubble_sort (X, N, 8) ;
+        parallel_bubble_sort (X, N, CH) ;
 
         clock_gettime(CLOCK_MONOTONIC, &end);
         
@@ -177,7 +180,7 @@ int main (int argc, char **argv)
     memcpy(Z, Y, N * sizeof(uint64_t));
 
     sequential_bubble_sort (Y, N) ;
-    parallel_bubble_sort (Z, N, 8) ;
+    parallel_bubble_sort (Z, N, CH) ;
 
     if (! are_vector_equals (Y, Z, N)) {
         fprintf(stderr, "ERROR: sorting with the sequential and the parallel algorithm does not give the same result\n") ;

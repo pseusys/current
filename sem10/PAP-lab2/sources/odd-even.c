@@ -61,15 +61,14 @@ void semi_parallel_oddeven_sort (uint64_t *T, const uint64_t size) {
 void parallel_oddeven_sort (uint64_t *T, const uint64_t size, const uint64_t chunk) {
     int sorted;
     int chunk_size = size / chunk;
-    // TODO: study pragma omp in order to find the best solution for scheduling (or smth else)
     do {
         sorted = 0;
-        #pragma omp parallel for schedule(static)
+        #pragma omp parallel for num_threads(chunk) schedule(static)
         for (size_t i = 0; i < chunk; i++) {
             semi_parallel_oddeven_sort(T + chunk_size * i, chunk_size);
         }
 
-        #pragma omp parallel for schedule(static)
+        #pragma omp parallel for num_threads(chunk) schedule(static)
         for (size_t i = 1; i < chunk; i++) {
             uint64_t lower = chunk_size * i - 1;
             uint64_t upper = lower == size - 1 ? 0 : chunk_size * i;
@@ -95,7 +94,7 @@ int main (int argc, char **argv)
 
     /* the program takes one parameter N which is the size of the array to
        be sorted. The array will have size 2^N */
-    if (argc != 2)
+    if (argc != 3)
     {
         fprintf (stderr, "odd-even.run N \n") ;
         exit (-1) ;
@@ -103,6 +102,7 @@ int main (int argc, char **argv)
 
     uint64_t N = 1 << (atoi(argv[1])) ;
     /* the array to be sorted */
+    uint64_t CH = *argv[2] ;
     uint64_t *X = (uint64_t *) malloc (N * sizeof(uint64_t)) ;
 
     printf("--> Sorting an array of size %lu\n",N);
@@ -161,7 +161,7 @@ int main (int argc, char **argv)
         
         clock_gettime(CLOCK_MONOTONIC, &begin);
 
-        parallel_oddeven_sort (X, N, 8) ;
+        parallel_oddeven_sort (X, N, CH) ;
 
         clock_gettime(CLOCK_MONOTONIC, &end);
         
@@ -208,7 +208,7 @@ int main (int argc, char **argv)
     memcpy(Z, Y, N * sizeof(uint64_t));
 
     sequential_oddeven_sort (Y, N) ;
-    parallel_oddeven_sort (Z, N, 8) ;
+    parallel_oddeven_sort (Z, N, CH) ;
 
     if (! are_vector_equals (Y, Z, N)) {
         fprintf(stderr, "ERROR: sorting with the sequential and the parallel algorithm does not give the same result\n") ;

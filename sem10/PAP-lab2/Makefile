@@ -30,16 +30,16 @@ clean:
 
 
 bubble: renew-bubble build/bubble.run
-	build/bubble.run $(TIMES)
+	build/bubble.run $(TIMES) $(THREADS)
 
 mergesort: renew-mergesort build/mergesort.run
-	build/mergesort.run $(TIMES)
+	build/mergesort.run $(TIMES) $(THREADS)
 
 odd-even: renew-odd-even build/odd-even.run
-	build/odd-even.run $(TIMES)
+	build/odd-even.run $(TIMES) $(THREADS)
 
 quicksort: renew-quicksort build/quicksort.run
-	build/quicksort.run $(TIMES)
+	build/quicksort.run $(TIMES) $(THREADS)
 
 all: bubble mergesort odd-even quicksort renew-%
 

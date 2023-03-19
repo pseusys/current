@@ -42,16 +42,16 @@ void serial_quicksort(uint64_t *T, int64_t low, int64_t high) {
 	}
 }
 
-void parallel_quicksort(uint64_t *T, int64_t low, int64_t high) {
-    #pragma omp parallel
+void parallel_quicksort(uint64_t *T, int64_t low, int64_t high, int64_t threads) {
+    #pragma omp parallel num_threads(threads)
     #pragma omp single
 	if (low < high) {
 		// pi = Partition index
 		int64_t pi = partition(T, low, high);
         #pragma omp task
-		parallel_quicksort(T, low, pi - 1);
+		parallel_quicksort(T, low, pi - 1, threads);
         #pragma omp task
-		parallel_quicksort(T, pi + 1, high);
+		parallel_quicksort(T, pi + 1, high, threads);
         #pragma omp taskwait           
 	}
 }
@@ -67,13 +67,14 @@ int main (int argc, char **argv)
 
     /* the program takes one parameter N which is the size of the array to
        be sorted. The array will have size 2^N */
-    if (argc != 2)
+    if (argc != 3)
     {
         fprintf (stderr, "quicksort.run N \n") ;
         exit (-1) ;
     }
 
     uint64_t N = 1 << (atoi(argv[1])) ;
+    uint64_t CH = *argv[2] ;
     /* the array to be sorted */
     uint64_t *X = (uint64_t *) malloc (N * sizeof(uint64_t)) ;
 
@@ -132,7 +133,7 @@ int main (int argc, char **argv)
 
         clock_gettime(CLOCK_MONOTONIC, &begin);
         
-        parallel_quicksort (X, 0, N - 1) ;
+        parallel_quicksort (X, 0, N - 1, CH) ;
 
         clock_gettime(CLOCK_MONOTONIC, &end);
         
@@ -179,7 +180,7 @@ int main (int argc, char **argv)
     memcpy(Z, Y, N * sizeof(uint64_t));
 
     serial_quicksort (Y, 0, N - 1) ;
-    parallel_quicksort (Z, 0, N - 1) ;
+    parallel_quicksort (Z, 0, N - 1, CH) ;
 
     if (! are_vector_equals (Y, Z, N)) {
         fprintf(stderr, "ERROR: sorting with the sequential and the parallel algorithm does not give the same result\n") ;
