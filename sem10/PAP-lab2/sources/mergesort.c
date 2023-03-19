@@ -101,7 +101,7 @@ int main (int argc, char **argv)
     }
 
     uint64_t N = 1 << (atoi(argv[1])) ;
-    uint64_t CH = *argv[2] ;
+    uint64_t CH = atoi(argv[2]);
     /* the array to be sorted */
     uint64_t *X = (uint64_t *) malloc (N * sizeof(uint64_t)) ;
 
