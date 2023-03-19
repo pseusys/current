@@ -1,4 +1,4 @@
-+# Distributed system lab: RabbitMQ
+# Distributed system lab: RabbitMQ
 The algorithm provided here is close enough to be an implementation of the task #6.
 Its ultimate goal is to make an algorithm described using notation similar to what we had on lecture executable.
 The algorithm is implemented with Python3, using `aio-pika` RabbitMQ support package.
@@ -177,6 +177,12 @@ Task configurations are stored in YAML files:
 - `diffusion.yml`: Implements diffusion algorithm on a node tree.
 
 ## Build and run system
+Before system run please make sure the RabbitMQ is running on your device.
+If it's not, you can run it with:
+```shell
+make rabbit
+```
+
 System can be run with the following command:
 ```shell
 make run CONF=CONF_FILE

@@ -27,5 +27,9 @@ run: venv
 
 clean:
 	@ # Clean generated files and locally stored libraries
-	rm -rf venv >2 /dev/null
+	rm -rf venv 2> /dev/null
 .PHONY: clean
+
+rabbit:
+	docker run -it --rm --name Rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.11-management
+.PHONY: rabbit
