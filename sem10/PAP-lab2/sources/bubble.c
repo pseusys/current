@@ -41,9 +41,9 @@ void parallel_bubble_sort (uint64_t *T, const uint64_t size, const uint64_t chun
         uint64_t lower;
         uint64_t upper;
         #pragma omp parallel for num_threads(chunk) private(i, lower, upper) schedule(static)
-        for (size_t i = 1; i <= chunk; i++) {
+        for (size_t i = 1; i < chunk; i++) {
             uint64_t lower = chunk_size * i - 1;
-            uint64_t upper = (lower == size - 1) ? 0 : chunk_size * i;
+            uint64_t upper = chunk_size * i;
 
             if (T[lower] > T[upper]) {
                 uint64_t tmp = T[upper];
@@ -73,7 +73,7 @@ int main (int argc, char **argv)
     }
 
     uint64_t arg = atoi(argv[1]);
-    uint64_t N =  atoi(argv[1]);
+    uint64_t N =  1 << atoi(argv[1]);
     uint64_t CH = atoi(argv[2]);
     /* the array to be sorted */
     uint64_t *X = (uint64_t *) malloc (N * sizeof(uint64_t)) ;

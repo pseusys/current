@@ -5,7 +5,8 @@ LDFLAGS = -fopenmp
 HEADER_FILES = $(wildcard sources/*.h)
 
 RAND_INIT = 0
-TIMES = 15
+THREADS = 8
+TIMES = 12
 
 ifeq ($(RAND_INIT), 1)
 $(Initialization of the vector with random values)

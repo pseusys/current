@@ -71,7 +71,7 @@ void parallel_oddeven_sort (uint64_t *T, const uint64_t size, const uint64_t chu
         #pragma omp parallel for num_threads(chunk) schedule(static)
         for (size_t i = 1; i < chunk; i++) {
             uint64_t lower = chunk_size * i - 1;
-            uint64_t upper = lower == size - 1 ? 0 : chunk_size * i;
+            uint64_t upper = chunk_size * i;
 
             if (T[lower] > T[upper]) {
                 uint64_t tmp = T[upper];
