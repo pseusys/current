@@ -14,6 +14,9 @@ int is_sorted_sequence (uint64_t *T, uint64_t size);
 int is_sorted (uint64_t *T, uint64_t size);
 int are_vector_equals (uint64_t *T1, uint64_t *T2, uint64_t size);
 
+/* merge function */
+void merge(uint64_t *T, const uint64_t size);
+
 
 /* returns the average time in seconds using the values stored in
  * experiments vector */

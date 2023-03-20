@@ -83,6 +83,25 @@ void parallel_oddeven_sort (uint64_t *T, const uint64_t size, const uint64_t chu
     } while (sorted == 1);
 }
 
+void optimized_oddeven_sort (uint64_t *T, const uint64_t size, const uint64_t chunk) {
+    int chunk_size = size / chunk;
+
+    size_t i =0;
+    #pragma omp parallel for num_threads(chunk) private(i) schedule(static)
+    for (i = 0; i < chunk; i++) {
+        semi_parallel_oddeven_sort(T + chunk_size * i, chunk_size);
+    }
+    for (i = chunk_size; i < size; i *= 2) {
+        size_t increase = size / i / 2;
+        size_t p = 0;
+        #pragma omp parallel for num_threads(increase) private(p) schedule(static)
+        for (p = 0; p < size; p += i * 2) {
+            merge(T + p, i);
+        }
+    }
+}
+
+
 
 int main (int argc, char **argv)
 {
@@ -150,6 +169,50 @@ int main (int argc, char **argv)
 
     printf ("\n odd-even serial \t\t\t %.3lf seconds\n\n", average_time()) ;    
 
+
+
+        for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
+    {
+#ifdef RINIT
+        init_array_random (X, N);
+#else
+        init_array_sequence (X, N);
+#endif
+        
+        clock_gettime(CLOCK_MONOTONIC, &begin);
+
+        optimized_oddeven_sort (X, N, CH) ;
+
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        
+        seconds = end.tv_sec - begin.tv_sec;
+        nanosec = end.tv_nsec - begin.tv_nsec;
+        
+        experiments [exp] = seconds + nanosec*1e-9;
+
+
+        /* verifying that X is properly sorted */
+#ifdef RINIT
+        if (! is_sorted (X, N))
+        {
+            print_array (X, N) ;
+            fprintf(stderr, "ERROR: the optimized sorting of the array failed\n") ;
+            exit (-1) ;
+	}
+#else
+        if (! is_sorted_sequence (X, N))
+        {
+            print_array (X, N) ;
+            fprintf(stderr, "ERROR: the optimized sorting of the array failed\n") ;
+            exit (-1) ;
+	}
+#endif
+                
+        
+    }
+
+    printf ("\n odd-even optimized \t\t\t %.3lf seconds\n\n", average_time()) ;       
+
   
     for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
     {
@@ -191,7 +254,9 @@ int main (int argc, char **argv)
         
     }
 
-    printf ("\n odd-even parallel \t\t\t %.3lf seconds\n\n", average_time()) ;    
+    printf ("\n odd-even parallel \t\t\t %.3lf seconds\n\n", average_time()) ;
+
+
   
     /* print_array (X, N) ; */
 
@@ -205,13 +270,15 @@ int main (int argc, char **argv)
     init_array_sequence (Y, N);
 #endif
 
+    memcpy(Z, X, N * sizeof(uint64_t));
     memcpy(Z, Y, N * sizeof(uint64_t));
 
-    sequential_oddeven_sort (Y, N) ;
-    parallel_oddeven_sort (Z, N, CH) ;
+    sequential_oddeven_sort (X, N) ;
+    parallel_oddeven_sort (Y, N, CH) ;
+    optimized_oddeven_sort (Z, N, CH) ;
 
-    if (! are_vector_equals (Y, Z, N)) {
-        fprintf(stderr, "ERROR: sorting with the sequential and the parallel algorithm does not give the same result\n") ;
+    if (! are_vector_equals (X, Y, N) || ! are_vector_equals (X, Z, N)) {
+        fprintf(stderr, "ERROR: sorting with the sequential, parallel and optimized algorithm does not give the same result\n") ;
         exit (-1) ;
     }
 
