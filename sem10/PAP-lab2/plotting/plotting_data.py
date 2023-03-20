@@ -16,7 +16,7 @@ if options.input is None:
     sys.exit()
 
 
-data = pd.read_csv(options.input, delimiter=';')
+data = pd.read_csv(options.input, delimiter=',')
 
 print(data.columns[0])
 
@@ -26,7 +26,8 @@ ax = data.plot(x=data.columns[0], marker='o', xticks=data.iloc[:,0])
 # Set the bottom value to 0 for the Y axes
 ax.set_ylim(bottom=0)
 
-ax.set_xlabel('Problem size', fontsize='x-large')
+ax.set_title('Parallel quicksort for array size 2^14')
+ax.set_xlabel('number of threads ', fontsize='x-large')
 ax.set_ylabel('Execution Time', fontsize='x-large')
 
 # setting font sizes
@@ -41,10 +42,10 @@ plt.tight_layout(pad=0.5)
 # filename for the output
 if options.output is None:
     prefix, ext = os.path.splitext(options.input)
-    outname = prefix + '.pdf'
+    outname = prefix + '.jpg'
 else:
     outname = options.output
 
-plt.savefig(outname, format='pdf', dpi=1200)
+plt.savefig(outname, format='jpg', dpi=1200)
 
 plt.show()
