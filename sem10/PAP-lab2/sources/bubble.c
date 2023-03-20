@@ -140,48 +140,6 @@ int main (int argc, char **argv)
 
     printf ("\n bubble serial \t\t\t %.3lf seconds\n\n", average_time()) ;    
 
-  
-    for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
-    {
-#ifdef RINIT
-        init_array_random (X, N);
-#else
-        init_array_sequence (X, N);
-#endif
-        
-        clock_gettime(CLOCK_MONOTONIC, &begin);
-
-        parallel_bubble_sort (X, N, CH) ;
-
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        
-        seconds = end.tv_sec - begin.tv_sec;
-        nanosec = end.tv_nsec - begin.tv_nsec;
-        
-        experiments [exp] = seconds + nanosec*1e-9;
-
-        /* verifying that X is properly sorted */
-#ifdef RINIT
-        if (! is_sorted (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the parallel sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#else
-        if (! is_sorted_sequence (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the parallel sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#endif
-                
-        
-    }
-    
-    printf ("\n bubble parallel \t\t %.3lf seconds\n\n", average_time()) ;    
-
 
     for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
     {
@@ -222,7 +180,49 @@ int main (int argc, char **argv)
         
     }
     
-    printf ("\n bubble optimized \t\t %.3lf seconds\n\n", average_time()) ;    
+    printf ("\n bubble optimized \t\t %.3lf seconds\n\n", average_time()) ;       
+
+  
+    for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
+    {
+#ifdef RINIT
+        init_array_random (X, N);
+#else
+        init_array_sequence (X, N);
+#endif
+        
+        clock_gettime(CLOCK_MONOTONIC, &begin);
+
+        parallel_bubble_sort (X, N, CH) ;
+
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        
+        seconds = end.tv_sec - begin.tv_sec;
+        nanosec = end.tv_nsec - begin.tv_nsec;
+        
+        experiments [exp] = seconds + nanosec*1e-9;
+
+        /* verifying that X is properly sorted */
+#ifdef RINIT
+        if (! is_sorted (X, N))
+        {
+            print_array (X, N) ;
+            fprintf(stderr, "ERROR: the parallel sorting of the array failed\n") ;
+            exit (-1) ;
+	}
+#else
+        if (! is_sorted_sequence (X, N))
+        {
+            print_array (X, N) ;
+            fprintf(stderr, "ERROR: the parallel sorting of the array failed\n") ;
+            exit (-1) ;
+	}
+#endif
+                
+        
+    }
+    
+    printf ("\n bubble parallel \t\t %.3lf seconds\n\n", average_time()) ; 
 
     
     /* print_array (X, N) ; */
