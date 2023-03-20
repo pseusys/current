@@ -55,6 +55,24 @@ void parallel_bubble_sort (uint64_t *T, const uint64_t size, const uint64_t chun
     } while (sorted == 1);
 }
 
+void optimized_bubble_sort (uint64_t *T, const uint64_t size, const uint64_t chunk) {
+    int chunk_size = size / chunk;
+
+    size_t i =0;
+    #pragma omp parallel for num_threads(chunk) private(i) schedule(static)
+    for (i = 0; i < chunk; i++) {
+        sequential_bubble_sort(T + chunk_size * i, chunk_size);
+    }
+    for (i = chunk_size; i < size; i *= 2) {
+        size_t increase = size / i / 2;
+        size_t p = 0;
+        #pragma omp parallel for num_threads(increase) private(p) schedule(static)
+        for (p = 0; p < size; p += i * 2) {
+            merge(T + p, i);
+        }
+    }
+}
+
 
 int main (int argc, char **argv)
 {
@@ -163,6 +181,48 @@ int main (int argc, char **argv)
     }
     
     printf ("\n bubble parallel \t\t %.3lf seconds\n\n", average_time()) ;    
+
+
+    for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
+    {
+#ifdef RINIT
+        init_array_random (X, N);
+#else
+        init_array_sequence (X, N);
+#endif
+        
+        clock_gettime(CLOCK_MONOTONIC, &begin);
+
+        optimized_bubble_sort (X, N, CH) ;
+
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        
+        seconds = end.tv_sec - begin.tv_sec;
+        nanosec = end.tv_nsec - begin.tv_nsec;
+        
+        experiments [exp] = seconds + nanosec*1e-9;
+
+        /* verifying that X is properly sorted */
+#ifdef RINIT
+        if (! is_sorted (X, N))
+        {
+            print_array (X, N) ;
+            fprintf(stderr, "ERROR: the optimized sorting of the array failed\n") ;
+            exit (-1) ;
+	}
+#else
+        if (! is_sorted_sequence (X, N))
+        {
+            print_array (X, N) ;
+            fprintf(stderr, "ERROR: the optimized sorting of the array failed\n") ;
+            exit (-1) ;
+	}
+#endif
+                
+        
+    }
+    
+    printf ("\n bubble optimized \t\t %.3lf seconds\n\n", average_time()) ;    
 
     
     /* print_array (X, N) ; */
