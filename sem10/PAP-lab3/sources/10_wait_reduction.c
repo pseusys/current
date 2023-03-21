@@ -4,12 +4,12 @@
 
 int main(int argc, char** argv) {
     int rank, size, tag = 0;
+    int root = 0;
 
     MPI_Init(&argc,&argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    int root = 0;
     if (rank == root) {
         MPI_Request requests[size - 1];
         int results[size - 1];

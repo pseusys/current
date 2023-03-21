@@ -4,17 +4,19 @@
 PROC=`nproc --all`
 PROG=1_hello_world
 
+ARGS=16
+
 
 
 build/%.run: sources/%.c sources/utils.c sources/utils.h
 	@ # Compile and run MPI source file.
 	mkdir -p build
 	rm -f $@ 2> /dev/null
-	mpicc -o $@ $^
+	mpicc -o $@ $^ -lm
 
 run: build/$(PROG).run
 	@ # Compile and run MPI program.
-	mpirun -n $(PROC) --oversubscribe $^
+	mpirun -n $(PROC) --oversubscribe $^ $(ARGS)
 .PHONY: run
 
 
@@ -73,3 +75,8 @@ barrier:
 	@ # Compile and run program that implements synchronization with barrier.
 	make run PROC=4 PROG=11_barrier
 .PHONY: barrier
+
+pi_calc:
+	@ # Compile and run program that implements calculation of PI number using ARGS intervals.
+	make run PROG=12_pi_calc
+.PHONY: pi_calc

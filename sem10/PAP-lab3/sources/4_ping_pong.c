@@ -9,12 +9,12 @@ int comp (const void* elem1, const void* elem2) {
 
 int main(int argc, char** argv) {
     int rank, size, tag = 0;
+    int array_size = 10;
 
     MPI_Init(&argc,&argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    int array_size = 10;
     double* array = (double*) malloc(array_size * sizeof(double));
     if (rank == 0) {
         int recipient = 1;

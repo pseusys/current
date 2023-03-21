@@ -13,6 +13,9 @@ int main(int argc, char** argv) {
     int delay = rank + 1;
     printf("Process %d is going to sleep for %d seconds...\n", rank + 1, delay);
     sleep(delay);
+    printf("Process %d has awoke!\n", rank + 1);
+    MPI_Barrier(MPI_COMM_WORLD);
+    printf("Process %d has passed the barrier!\n", rank + 1);
 
     MPI_Finalize();
     return 0;

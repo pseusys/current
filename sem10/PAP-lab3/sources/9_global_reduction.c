@@ -10,7 +10,6 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     int result;
-
     printf("Process %d has id: %d\n", rank + 1, rank);
     MPI_Allreduce(&rank, &result, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     printf("Process %d received sum of the other process ids: %d\n", rank + 1, result);
