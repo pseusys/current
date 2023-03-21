@@ -9,40 +9,68 @@
 #include "sorting.h"
 
 /* 
-   merge sort -- sequential, parallel -- 
+   bubble sort -- sequential, parallel -- 
 */
 
-void sequential_merge_sort (uint64_t *T, const uint64_t size ) {
-  if (size != 1) {
-    uint64_t half_size = size / 2;
-    sequential_merge_sort(T, half_size);
-    sequential_merge_sort(T + half_size, half_size);
-    merge(T, half_size);
-  }
+void sequential_bubble_sort (uint64_t *T, const uint64_t size) {
+    uint64_t sorted;
+    do {
+        sorted = 0;
+        for (size_t i = 0; i < size - 1; i++) {
+            if (T[i] > T[i+1]) {
+                uint64_t tmp = T[i];
+                T[i] = T[i+1];
+                T[i+1] = tmp;
+                sorted = 1;
+            }
+        }
+    } while (sorted == 1);
 }
 
-void parallel_merge_sort (uint64_t *T, const uint64_t size, uint64_t threads) {
-  #pragma omp parallel num_threads(threads)
-  #pragma omp single
-  if (size != 1) {
-    uint64_t half_size = size / 2;
-    #pragma omp task
-    parallel_merge_sort(T, half_size, threads);
-    #pragma omp task
-    parallel_merge_sort(T + half_size, half_size, threads);
-    #pragma omp taskwait
-    merge(T, half_size);
-  }
+void parallel_bubble_sort (uint64_t *T, const uint64_t size, const uint64_t chunk) {
+    int sorted;
+    int chunk_size = size / chunk;
+
+    do {
+        sorted = 0;
+        size_t i =0;
+        #pragma omp parallel for num_threads(chunk) private(i) schedule(static)
+        for (size_t i = 0; i < chunk; i++) {
+            sequential_bubble_sort(T + chunk_size * i, chunk_size);
+        }
+        uint64_t lower;
+        uint64_t upper;
+        #pragma omp parallel for num_threads(chunk) private(i, lower, upper) schedule(static)
+        for (size_t i = 1; i < chunk; i++) {
+            uint64_t lower = chunk_size * i - 1;
+            uint64_t upper = chunk_size * i;
+
+            if (T[lower] > T[upper]) {
+                uint64_t tmp = T[upper];
+                T[upper] = T[lower];
+                T[lower] = tmp;
+                sorted = 1;
+            }
+        }
+    } while (sorted == 1);
 }
 
-void parallel_optimized_merge_sort (uint64_t *T, const uint64_t size, uint64_t threads) {
-  uint64_t sorted = 1;
-  #pragma omp parallel for num_threads(threads) schedule(static)
-  for (uint64_t i = 1; i < size; i++) {
-    if (T[i] < T[i-1]) sorted = 0;
-  }
-  if (sorted == 1) return;
-  parallel_merge_sort(T, size, threads);
+void optimized_bubble_sort (uint64_t *T, const uint64_t size, const uint64_t chunk) {
+    int chunk_size = size / chunk;
+
+    size_t i =0;
+    #pragma omp parallel for num_threads(chunk) private(i) schedule(static)
+    for (i = 0; i < chunk; i++) {
+        sequential_bubble_sort(T + chunk_size * i, chunk_size);
+    }
+    for (i = chunk_size; i < size; i *= 2) {
+        size_t increase = size / i / 2;
+        size_t p = 0;
+        #pragma omp parallel for num_threads(increase) private(p) schedule(static)
+        for (p = 0; p < size; p += i * 2) {
+            merge(T + p, i);
+        }
+    }
 }
 
 
@@ -58,11 +86,12 @@ int main (int argc, char **argv)
        be sorted. The array will have size 2^N */
     if (argc != 3)
     {
-        fprintf (stderr, "merge.run N \n") ;
+        fprintf (stderr, "bubble.run N \n") ;
         exit (-1) ;
     }
 
-    uint64_t N = 1 << (atoi(argv[1])) ;
+    uint64_t arg = atoi(argv[1]);
+    uint64_t N =  1 << atoi(argv[1]);
     uint64_t CH = atoi(argv[2]);
     /* the array to be sorted */
     uint64_t *X = (uint64_t *) malloc (N * sizeof(uint64_t)) ;
@@ -79,10 +108,10 @@ int main (int argc, char **argv)
 #else
         init_array_sequence (X, N);
 #endif
+      
+        clock_gettime(CLOCK_MONOTONIC, &begin);
         
-        clock_gettime(CLOCK_MONOTONIC, &begin);      
-        
-        sequential_merge_sort (X, N) ;
+        sequential_bubble_sort (X, N) ;
 
         clock_gettime(CLOCK_MONOTONIC, &end);
         
@@ -90,7 +119,7 @@ int main (int argc, char **argv)
         nanosec = end.tv_nsec - begin.tv_nsec;
         
         experiments [exp] = seconds + nanosec*1e-9;
-        
+
         /* verifying that X is properly sorted */
 #ifdef RINIT
         if (! is_sorted (X, N))
@@ -109,7 +138,49 @@ int main (int argc, char **argv)
 #endif
     }
 
-    printf ("\n mergesort serial \t\t\t %.3lf seconds\n\n", average_time()) ;    
+    printf ("\n bubble serial \t\t\t %.3lf seconds\n\n", average_time()) ;    
+
+
+    for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
+    {
+#ifdef RINIT
+        init_array_random (X, N);
+#else
+        init_array_sequence (X, N);
+#endif
+        
+        clock_gettime(CLOCK_MONOTONIC, &begin);
+
+        optimized_bubble_sort (X, N, CH) ;
+
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        
+        seconds = end.tv_sec - begin.tv_sec;
+        nanosec = end.tv_nsec - begin.tv_nsec;
+        
+        experiments [exp] = seconds + nanosec*1e-9;
+
+        /* verifying that X is properly sorted */
+#ifdef RINIT
+        if (! is_sorted (X, N))
+        {
+            print_array (X, N) ;
+            fprintf(stderr, "ERROR: the optimized sorting of the array failed\n") ;
+            exit (-1) ;
+	}
+#else
+        if (! is_sorted_sequence (X, N))
+        {
+            print_array (X, N) ;
+            fprintf(stderr, "ERROR: the optimized sorting of the array failed\n") ;
+            exit (-1) ;
+	}
+#endif
+                
+        
+    }
+    
+    printf ("\n bubble optimized \t\t %.3lf seconds\n\n", average_time()) ;       
 
   
     for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
@@ -119,17 +190,17 @@ int main (int argc, char **argv)
 #else
         init_array_sequence (X, N);
 #endif
-
-        clock_gettime(CLOCK_MONOTONIC, &begin);
         
-        parallel_merge_sort (X, N, CH) ;
+        clock_gettime(CLOCK_MONOTONIC, &begin);
+
+        parallel_bubble_sort (X, N, CH) ;
 
         clock_gettime(CLOCK_MONOTONIC, &end);
         
         seconds = end.tv_sec - begin.tv_sec;
         nanosec = end.tv_nsec - begin.tv_nsec;
         
-        experiments [exp] = seconds + nanosec*1e-9;        
+        experiments [exp] = seconds + nanosec*1e-9;
 
         /* verifying that X is properly sorted */
 #ifdef RINIT
@@ -151,51 +222,9 @@ int main (int argc, char **argv)
         
     }
     
-    printf ("\n mergesort parallel \t\t\t %.3lf seconds\n\n", average_time()) ;    
-  
+    printf ("\n bubble parallel \t\t %.3lf seconds\n\n", average_time()) ; 
 
-    for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
-    {
-#ifdef RINIT
-        init_array_random (X, N);
-#else
-        init_array_sequence (X, N);
-#endif
-
-        clock_gettime(CLOCK_MONOTONIC, &begin);
-        
-        parallel_optimized_merge_sort (X, N, CH) ;
-
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        
-        seconds = end.tv_sec - begin.tv_sec;
-        nanosec = end.tv_nsec - begin.tv_nsec;
-        
-        experiments [exp] = seconds + nanosec*1e-9;        
-
-        /* verifying that X is properly sorted */
-#ifdef RINIT
-        if (! is_sorted (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the parallel sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#else
-        if (! is_sorted_sequence (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the parallel sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#endif
-                
-        
-    }
     
-    printf ("\n optimized mergesort parallel \t\t %.3lf seconds\n\n", average_time()) ;  
-
-
     /* print_array (X, N) ; */
 
     /* before terminating, we run one extra test of the algorithm */
@@ -210,8 +239,8 @@ int main (int argc, char **argv)
 
     memcpy(Z, Y, N * sizeof(uint64_t));
 
-    sequential_merge_sort (Y, N) ;
-    parallel_merge_sort (Z, N, CH) ;
+    sequential_bubble_sort (Y, N) ;
+    parallel_bubble_sort (Z, N, CH) ;
 
     if (! are_vector_equals (Y, Z, N)) {
         fprintf(stderr, "ERROR: sorting with the sequential and the parallel algorithm does not give the same result\n") ;
