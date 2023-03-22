@@ -54,13 +54,18 @@ int main (int argc, char **argv) {
 
     uint64_t sorters_number = 3;
     const char* names[] = {"mergesort sequential", "mergesort optimized", "mergesort parallel"};
-    void (*algorithms[4]) (uint64_t*, const uint64_t, const uint64_t) = {&sequential_merge_sort, &optimized_merge_sort, &parallel_merge_sort};
+    void (*algorithms[3]) (uint64_t*, const uint64_t, const uint64_t) = {&sequential_merge_sort, &optimized_merge_sort, &parallel_merge_sort};
 
-    printf("--> Sorting an array of size %lu with mergesort algorithm\n", array_length);
-    if (RINIT) printf("--> The array is initialized randomly\n");
-    else printf("--> The array is initialized sequentially\n");
+    if (VERB) {
+        printf("--> Sorting an array of size %lu with mergesort algorithm\n", array_length);
+        if (RINIT) printf("--> The array is initialized randomly\n");
+        else printf("--> The array is initialized sequentially\n");
+    } else printf("%s;%s;%s;\n", names[0], names[1], names[2]);
 
-    for (uint64_t i = 0; i < sorters_number; i++) run_test(array, array_length, threads_number, names[i], algorithms[i]);
-    test_algorithms(array, array_length, threads_number, sorters_number, names, algorithms);
+    if (algorithm_number == -1) {
+        for (uint64_t i = 0; i < sorters_number; i++) run_test(array, array_length, threads_number, names[i], algorithms[i]);
+        if (!VERB) printf("\n");
+        test_algorithms(array, array_length, threads_number, sorters_number, names, algorithms);
+    } else else run_test(array, array_length, threads_number, names[algorithm_number], algorithms[algorithm_number]);
     free(array);
 }

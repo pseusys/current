@@ -82,13 +82,18 @@ int main (int argc, char **argv) {
 
     uint64_t sorters_number = 3;
     const char* names[] = {"bubble sequential", "bubble optimized", "bubble parallel"};
-    void (*algorithms[4]) (uint64_t*, const uint64_t, const uint64_t) = {&sequential_bubble_sort, &optimized_bubble_sort, &parallel_bubble_sort};
+    void (*algorithms[3]) (uint64_t*, const uint64_t, const uint64_t) = {&sequential_bubble_sort, &optimized_bubble_sort, &parallel_bubble_sort};
 
-    printf("--> Sorting an array of size %lu with bubblesort algorithm\n", array_length);
-    if (RINIT) printf("--> The array is initialized randomly\n");
-    else printf("--> The array is initialized sequentially\n");
+    if (VERB) {
+        printf("--> Sorting an array of size %lu with bubblesort algorithm\n", array_length);
+        if (RINIT) printf("--> The array is initialized randomly\n");
+        else printf("--> The array is initialized sequentially\n");
+    } else printf("%s;%s;%s;\n", names[0], names[1], names[2]);
 
-    for (uint64_t i = 0; i < sorters_number; i++) run_test(array, array_length, threads_number, names[i], algorithms[i]);
-    test_algorithms(array, array_length, threads_number, sorters_number, names, algorithms);
+    if (algorithm_number == -1) {
+        for (uint64_t i = 0; i < sorters_number; i++) run_test(array, array_length, threads_number, names[i], algorithms[i]);
+        if (!VERB) printf("\n");
+        test_algorithms(array, array_length, threads_number, sorters_number, names, algorithms);
+    } else run_test(array, array_length, threads_number, names[algorithm_number], algorithms[algorithm_number]);
     free(array);
 }

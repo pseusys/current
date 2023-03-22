@@ -51,8 +51,13 @@ void run_test(uint64_t* array, uint64_t array_length, uint64_t threads_number, c
         }
         test_sorted(array, array_length, "sequential");
     }
-    if (quick_break) printf("\n %s \t\t\t more than a second\n\n", name);
-    else printf("\n %s \t\t\t %.3lf seconds\n\n", name, average_time(experiments, NBEXPERIMENTS));
+    if (VERB) {
+        if (quick_break) printf("\n %s \t\t\t more than a second\n\n", name);
+        else printf("\n %s \t\t\t %.3lf seconds\n\n", name, average_time(experiments, NBEXPERIMENTS));
+    } else {
+        if (quick_break) printf("None;");
+        else printf("%.3lf;", average_time(experiments, NBEXPERIMENTS));
+    }
 }
 
 void test_algorithms(uint64_t* array, uint64_t array_length, uint64_t threads_number, uint64_t algorithms_number, const char** names, void (**sorters) (uint64_t*, const uint64_t, const uint64_t)) {
