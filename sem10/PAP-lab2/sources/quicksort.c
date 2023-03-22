@@ -6,7 +6,7 @@
 
 #include <x86intrin.h>
 
-#include "sorting.h"
+#include "utils.h"
 
 
 /* 
@@ -42,6 +42,10 @@ void serial_quicksort(uint64_t *T, int64_t low, int64_t high) {
 	}
 }
 
+void serial_quicksort_wrapper(uint64_t *T, const uint64_t size, const uint64_t _) {
+    serial_quicksort(T, 0, size - 1);
+}
+
 void parallel_quicksort(uint64_t *T, int64_t low, int64_t high, uint64_t threads) {
     #pragma omp parallel num_threads(threads)
     #pragma omp single
@@ -56,140 +60,26 @@ void parallel_quicksort(uint64_t *T, int64_t low, int64_t high, uint64_t threads
 	}
 }
 
-
-int main (int argc, char **argv)
-{
-    struct timespec begin, end;
-    double seconds;
-    double nanosec;
-
-    unsigned int exp ;
-
-    /* the program takes one parameter N which is the size of the array to
-       be sorted. The array will have size 2^N */
-    if (argc != 3)
-    {
-        fprintf (stderr, "quicksort.run N \n") ;
-        exit (-1) ;
-    }
-
-    uint64_t N = 1 << (atoi(argv[1])) ;
-    uint64_t CH = atoi(argv[2]);
-    /* the array to be sorted */
-    uint64_t *X = (uint64_t *) malloc (N * sizeof(uint64_t)) ;
-
-    printf("--> Sorting an array of size %lu\n",N);
-#ifdef RINIT
-    printf("--> The array is initialized randomly\n");
-#endif
-    
-
-    for (exp = 0 ; exp < NBEXPERIMENTS; exp++){
-#ifdef RINIT
-        init_array_random (X, N);
-#else
-        init_array_sequence (X, N);
-#endif
-        
-        clock_gettime(CLOCK_MONOTONIC, &begin);      
-        
-        serial_quicksort (X, 0, N - 1) ;
-
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        
-        seconds = end.tv_sec - begin.tv_sec;
-        nanosec = end.tv_nsec - begin.tv_nsec;
-        
-        experiments [exp] = seconds + nanosec*1e-9;
-        
-        /* verifying that X is properly sorted */
-#ifdef RINIT
-        if (! is_sorted (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the sequential sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#else
-        if (! is_sorted_sequence (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the sequential sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#endif
-    }
-
-    printf ("\n quicksort serial \t\t\t %.3lf seconds\n\n", average_time()) ;    
-
-  
-    for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
-    {
-#ifdef RINIT
-        init_array_random (X, N);
-#else
-        init_array_sequence (X, N);
-#endif
-
-        clock_gettime(CLOCK_MONOTONIC, &begin);
-        
-        parallel_quicksort (X, 0, N - 1, CH) ;
-
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        
-        seconds = end.tv_sec - begin.tv_sec;
-        nanosec = end.tv_nsec - begin.tv_nsec;
-        
-        experiments [exp] = seconds + nanosec*1e-9;        
-
-        /* verifying that X is properly sorted */
-#ifdef RINIT
-        if (! is_sorted (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the parallel sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#else
-        if (! is_sorted_sequence (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the parallel sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#endif
-                
-        
-    }
-    
-    printf ("\n quicksort parallel \t\t\t %.3lf seconds\n\n", average_time()) ;
+void parallel_quicksort_wrapper(uint64_t *T, const uint64_t size, const uint64_t threads) {
+    parallel_quicksort(T, 0, size - 1, threads);
+}
 
 
-    /* print_array (X, N) ; */
+int main (int argc, char **argv) {
+    int random;
+    uint64_t array_length, threads_number;
+    init_args(argc, argv, &random, &array_length, &threads_number);
+    uint64_t* array = (uint64_t*) malloc(array_length * sizeof(uint64_t));
 
-    /* before terminating, we run one extra test of the algorithm */
-    uint64_t *Y = (uint64_t *) malloc (N * sizeof(uint64_t)) ;
-    uint64_t *Z = (uint64_t *) malloc (N * sizeof(uint64_t)) ;
+    uint64_t sorters_number = 2;
+    const char* names[] = {"quicksort sequential", "quicksort parallel"};
+    void (*algorithms[4]) (uint64_t*, const uint64_t, const uint64_t) = {&serial_quicksort_wrapper, &parallel_quicksort_wrapper};
 
-#ifdef RINIT
-    init_array_random (Y, N);
-#else
-    init_array_sequence (Y, N);
-#endif
+    printf("--> Sorting an array of size %lu with quicksort algorithm\n", array_length);
+    if (random) printf("--> The array is initialized randomly\n");
+    else printf("--> The array is initialized sequentially\n");
 
-    memcpy(Z, Y, N * sizeof(uint64_t));
-
-    serial_quicksort (Y, 0, N - 1) ;
-    parallel_quicksort (Z, 0, N - 1, CH) ;
-
-    if (! are_vector_equals (Y, Z, N)) {
-        fprintf(stderr, "ERROR: sorting with the sequential and the parallel algorithm does not give the same result\n") ;
-        exit (-1) ;
-    }
-
-
-    free(X);
-    free(Y);
-    free(Z);
-    
+    for (uint64_t i = 0; i < sorters_number; i++) run_test(array, array_length, threads_number, random, names[i], algorithms[i]);
+    test_algorithms(array, array_length, threads_number, random, sorters_number, names, algorithms);
+    free(array);
 }
