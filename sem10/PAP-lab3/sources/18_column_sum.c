@@ -38,8 +38,8 @@ int main(int argc, char** argv) {
         MPI_Comm_rank(col_communicator, &col_rank);
 
         int result;
-        MPI_Allreduce(&row_rank, &result, 1, MPI_INT, MPI_SUM, col_communicator);
-        printf("Process [%d, %d] (row rank %d) received sum of its' column processes row ranks: %d\n", coords[0], coords[1], row_rank, result);
+        MPI_Allreduce(&grid_rank, &result, 1, MPI_INT, MPI_SUM, col_communicator);
+        printf("Process [%d, %d] (grid rank %d) received sum of its' column processes ranks: %d\n", coords[0], coords[1], grid_rank, result);
 
         free(coords);
     }
