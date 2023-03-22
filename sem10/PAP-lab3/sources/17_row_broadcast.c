@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
         int broad;
         for (int i = 0; i < dimensions[0]; i++) {
             broad = col_rank;
-            MPI_Bcast(&broad, 1, MPI_INT, row_rank, row_communicator);
+            MPI_Bcast(&broad, 1, MPI_INT, col_rank, row_communicator);
             printf("Process [%d, %d] received broadcast from process with column rank %d\n", coords[0], coords[1], broad);
         }
 
