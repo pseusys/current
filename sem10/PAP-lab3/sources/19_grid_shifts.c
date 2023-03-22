@@ -40,11 +40,11 @@ int main(int argc, char** argv) {
         MPI_Comm row_communicator, col_communicator;
         int row_rank, col_rank;
 
-        int row_split[] = {1, 0};
+        int row_split[] = {0, 1};
         MPI_Cart_sub(grid_communicator, row_split, &row_communicator);
         MPI_Comm_rank(row_communicator, &row_rank);
 
-        int col_split[] = {0, 1};
+        int col_split[] = {1, 0};
         MPI_Cart_sub(grid_communicator, col_split, &col_communicator);
         MPI_Comm_rank(col_communicator, &col_rank);
 
