@@ -29,7 +29,7 @@ void test_sorted(uint64_t* array, uint64_t array_length, const char* round) {
 	}
 }
 
-void run_test(uint64_t* array, uint64_t array_length, uint64_t threads_number, const char* name, void (*sorter) (uint64_t*, const uint64_t, const uint64_t)) {
+void run_test(uint64_t* array, uint64_t array_length, uint64_t threads_number, const char* name, sorter_function sorter) {
     int quick_break = 0;
     struct timespec begin, end;
     double experiments[NBEXPERIMENTS];
@@ -60,7 +60,7 @@ void run_test(uint64_t* array, uint64_t array_length, uint64_t threads_number, c
     }
 }
 
-void test_algorithms(uint64_t* array, uint64_t array_length, uint64_t threads_number, uint64_t algorithms_number, const char** names, void (**sorters) (uint64_t*, const uint64_t, const uint64_t)) {
+void test_algorithms(uint64_t* array, uint64_t array_length, uint64_t threads_number, uint64_t algorithms_number, const char** names, sorter_function* sorters) {
     if (RINIT) init_array_random(array, array_length);
     else init_array_sequence(array, array_length);
 
