@@ -26,6 +26,7 @@ void test_sorted(uint64_t* array, uint64_t array_length, const char* round, int 
 }
 
 void run_test(uint64_t* array, uint64_t array_length, uint64_t threads_number, int random, const char* name, void (*sorter) (uint64_t*, const uint64_t, const uint64_t)) {
+    int quick_break = 0;
     struct timespec begin, end;
     for (uint64_t exp = 0; exp < NBEXPERIMENTS; exp++) {
         if (random) init_array_random(array, array_length);
@@ -39,9 +40,14 @@ void run_test(uint64_t* array, uint64_t array_length, uint64_t threads_number, i
         double nanosec = end.tv_nsec - begin.tv_nsec;
         experiments[exp] = seconds + nanosec*1e-9;
 
+        if (seconds > 1.0) {
+            quick_break = 1;
+            break;
+        }
         test_sorted(array, array_length, "sequential", random);
     }
-    printf ("\n %s \t\t\t %.3lf seconds\n\n", name, average_time());    
+    if (quick_break) printf("\n %s \t\t\t more than a second\n\n", name);
+    else printf("\n %s \t\t\t %.3lf seconds\n\n", name, average_time());
 }
 
 void test_algorithms(uint64_t* array, uint64_t array_length, uint64_t threads_number, int random, uint64_t algorithms_number, const char** names, void (**sorters) (uint64_t*, const uint64_t, const uint64_t)) {
