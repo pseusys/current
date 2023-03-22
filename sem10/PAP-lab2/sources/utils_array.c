@@ -16,7 +16,7 @@ void init_array_random(uint64_t* T, uint64_t size) {
 
 void print_array(uint64_t* T, uint64_t size) {
     for (uint64_t i = 0; i < size; i++) printf ("%ld ", T[i]);
-    printf ("\n") ;
+    printf("\n");
 }
 
 /* test if the array is sorted assuming that the elements to be sorted
@@ -29,7 +29,7 @@ int is_sorted_sequence(uint64_t* T, uint64_t size) {
 /* test if the array is sorted */
 int is_sorted(uint64_t* T, uint64_t size) {
     for (uint64_t i = 1 ; i < size; i++) if (T[i-1] > T [i]) return 0;
-    return 1 ;
+    return 1;
 }
 
 /* test if T1 and T2 are equal */

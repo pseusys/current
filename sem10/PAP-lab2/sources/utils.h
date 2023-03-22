@@ -4,7 +4,18 @@
 #include <stdint.h>
 
 #define NBEXPERIMENTS 10
-extern double experiments[NBEXPERIMENTS];
+
+#ifndef RINIT
+    #define RINIT 0
+#else
+    #define RINIT 1
+#endif
+
+#ifndef VERB
+    #define VERB 0
+#else
+    #define VERB 1
+#endif
 
 /* utility functions */
 void init_array_sequence(uint64_t *T, uint64_t size);
@@ -18,10 +29,10 @@ int are_vector_equals(uint64_t *T1, uint64_t *T2, uint64_t size);
 void merge(uint64_t *T, const uint64_t size);
 
 /* returns the average time in seconds using the values stored in experiments vector */
-double average_time();
+double average_time(double* experiments, uint64_t experiments_length);
 
-void init_args(int argc, char **argv, int* random, uint64_t* array_length, uint64_t* threads_number);
-void run_test(uint64_t* array, uint64_t array_length, uint64_t threads_number, int random, const char* name, void (*sorter) (uint64_t*, const uint64_t, const uint64_t));
-void test_algorithms(uint64_t* array, uint64_t array_length, uint64_t threads_number, int random, uint64_t algorithms_number, const char** names, void (**sorters) (uint64_t*, const uint64_t, const uint64_t));
+void init_args(int argc, char **argv, int* algo_number, uint64_t* array_length, uint64_t* threads_number);
+void run_test(uint64_t* array, uint64_t array_length, uint64_t threads_number, const char* name, void (*sorter) (uint64_t*, const uint64_t, const uint64_t));
+void test_algorithms(uint64_t* array, uint64_t array_length, uint64_t threads_number, uint64_t algorithms_number, const char** names, void (**sorters) (uint64_t*, const uint64_t, const uint64_t));
 
 #endif // SORTING_H

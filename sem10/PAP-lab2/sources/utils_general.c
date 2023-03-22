@@ -5,12 +5,10 @@
 
 #include "utils.h"
 
-double experiments[NBEXPERIMENTS];
-
-double average_time() {
+double average_time(double* experiments, uint64_t experiments_length) {
     double s = 0;
-    for (uint64_t i = 0; i < NBEXPERIMENTS; i++) s = s + experiments[i];
-    return s / NBEXPERIMENTS;
+    for (uint64_t i = 0; i < experiments_length; i++) s = s + experiments[i];
+    return s / experiments_length;
 }
 
 /* 

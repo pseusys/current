@@ -47,9 +47,9 @@ void optimized_merge_sort (uint64_t *T, const uint64_t size, uint64_t threads) {
 
 
 int main (int argc, char **argv) {
-    int random;
+    int algorithm_number;
     uint64_t array_length, threads_number;
-    init_args(argc, argv, &random, &array_length, &threads_number);
+    init_args(argc, argv, &algorithm_number, &array_length, &threads_number);
     uint64_t* array = (uint64_t*) malloc(array_length * sizeof(uint64_t));
 
     uint64_t sorters_number = 3;
@@ -57,10 +57,10 @@ int main (int argc, char **argv) {
     void (*algorithms[4]) (uint64_t*, const uint64_t, const uint64_t) = {&sequential_merge_sort, &optimized_merge_sort, &parallel_merge_sort};
 
     printf("--> Sorting an array of size %lu with mergesort algorithm\n", array_length);
-    if (random) printf("--> The array is initialized randomly\n");
+    if (RINIT) printf("--> The array is initialized randomly\n");
     else printf("--> The array is initialized sequentially\n");
 
-    for (uint64_t i = 0; i < sorters_number; i++) run_test(array, array_length, threads_number, random, names[i], algorithms[i]);
-    test_algorithms(array, array_length, threads_number, random, sorters_number, names, algorithms);
+    for (uint64_t i = 0; i < sorters_number; i++) run_test(array, array_length, threads_number, names[i], algorithms[i]);
+    test_algorithms(array, array_length, threads_number, sorters_number, names, algorithms);
     free(array);
 }
