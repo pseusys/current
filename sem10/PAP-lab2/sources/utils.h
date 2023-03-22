@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define NBEXPERIMENTS 10
+#define MAXTASKSPERTHREAD 3
 
 #ifndef RINIT
     #define RINIT 0
@@ -29,6 +30,8 @@ int are_vector_equals(uint64_t *T1, uint64_t *T2, uint64_t size);
 
 /* merge function */
 void merge(uint64_t *T, const uint64_t size);
+
+uint64_t calculate_max_binary_recursion_level(uint64_t max_tasks);
 
 /* returns the average time in seconds using the values stored in experiments vector */
 double average_time(double* experiments, uint64_t experiments_length);

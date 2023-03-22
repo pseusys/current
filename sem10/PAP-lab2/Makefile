@@ -41,7 +41,7 @@ mergesort:
 	@
 	rm -f buld/mergesort.run 2> /dev/null
 	make --no-print-directory build/mergesort.run
-	buld/mergesort.run $(TIMES) $(THREADS) $(ALGORITHM)
+	build/mergesort.run $(TIMES) $(THREADS) $(ALGORITHM)
 .PHONY: mergesort
 
 odd-even:

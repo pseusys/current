@@ -122,6 +122,6 @@ int main (int argc, char **argv) {
         for (uint64_t i = 0; i < sorters_number; i++) run_test(array, array_length, threads_number, names[i], algorithms[i]);
         if (!VERB) printf("\n");
         test_algorithms(array, array_length, threads_number, sorters_number, names, algorithms);
-    } else else run_test(array, array_length, threads_number, names[algorithm_number], algorithms[algorithm_number]);
+    } else run_test(array, array_length, threads_number, names[algorithm_number], algorithms[algorithm_number]);
     free(array);
 }

@@ -42,3 +42,4 @@ The even-odd algorithm is more suitable for parallization than the bubblesort al
 We have implemented the Ouicksort parallel version. The parallel version is always slower than the sequential one and we have no clou why we do not found any improvement. We followed the hint in dividing the array into chunks, sort them and then merge them together. Like the mergesort algorithm we have used the openmp task syntax to ensure the different subtasks in the algortihm.
 
 
+TODO: conduct experiments to find the best `MAXTASKSPERTHREAD` parameter value (in `sources/utils.py`).

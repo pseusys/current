@@ -11,6 +11,16 @@ double average_time(double* experiments, uint64_t experiments_length) {
     return s / experiments_length;
 }
 
+uint64_t calculate_max_binary_recursion_power(uint64_t max_tasks, uint64_t current_power, uint64_t current_value) {
+    uint64_t new_current = current_value + current_power * 2;
+    if (new_current < max_tasks) return calculate_max_binary_recursion_power(max_tasks, current_power + 1, new_current);
+    else return current_value;
+}
+
+uint64_t calculate_max_binary_recursion_level(uint64_t max_tasks) {
+    return calculate_max_binary_recursion_power(max_tasks, 1, 1);
+}
+
 /* 
    Merge two sorted chunks of array T!
    The two chunks are of size size
