@@ -1,49 +1,43 @@
-CC = gcc
-CFLAGS = -O2 -fopenmp
-LDFLAGS = -fopenmp
+.ONESHELL:
+.DEFAULT_GOAL := run
 
-HEADER_FILES = $(wildcard sources/*.h)
-
-RAND_INIT = 0
-THREADS = 8
+THREADS = `nproc --all`
 TIMES = 12
+RAND_INIT = 1
 
-ifeq ($(RAND_INIT), 1)
-$(Initialization of the vector with random values)
-CONFIG_FLAGS += -DRINIT
-endif
+UTILS = $(wildcard sources/utils_*.c)
 
 
 
-build/%.o: sources/%.c $(HEADER_FILES)
-	@$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
-
-build/%.run: build/%.o build/utils.o
-	@$(CC) $(LDFLAGS) -o $@ $^
-
-renew-%:
-	@mkdir -p ./build
-	@rm -f build/%.run 
+build/%.run: sources/%.c $(UTILS) sources/utils.h
+	@ # Compile and run source file.
+	mkdir -p build
+	rm -f $@ 2> /dev/null
+	gcc -O2 -fopenmp -o $@ $^
+.PHONY: build/%.run
 
 clean:
 	@rm -rf build
+.PHONY: clean
 
 
 
-bubble: renew-bubble build/bubble.run
-	build/bubble.run $(TIMES) $(THREADS)
+bubble: build/bubble.run
+	@
+	$< $(RAND_INIT) $(TIMES) $(THREADS)
+.PHONY: bubble
 
-mergesort: renew-mergesort build/mergesort.run
-	build/mergesort.run $(TIMES) $(THREADS)
+mergesort: build/mergesort.run
+	@
+	$< $(RAND_INIT) $(TIMES) $(THREADS)
+.PHONY: mergesort
 
-odd-even: renew-odd-even build/odd-even.run
-	build/odd-even.run $(TIMES) $(THREADS)
+odd-even: build/odd-even.run
+	@
+	$< $(RAND_INIT) $(TIMES) $(THREADS)
+.PHONY: odd-even
 
-quicksort: renew-quicksort build/quicksort.run
-	build/quicksort.run $(TIMES) $(THREADS)
-
-all: bubble mergesort odd-even quicksort renew-%
-
-
-
-.PHONY: prepare rm-% clean bubble mergesort even-odd quicksort all
+quicksort: build/quicksort.run
+	@
+	$< $(RAND_INIT) $(TIMES) $(THREADS)
+.PHONY: quicksort

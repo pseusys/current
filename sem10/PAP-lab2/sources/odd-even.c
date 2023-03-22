@@ -5,16 +5,15 @@
 #include <time.h>
 
 #include <x86intrin.h>
-#include <stdbool.h>
 
-#include "sorting.h"
+#include "utils.h"
 
 /* 
-   odd-even sort -- sequential, parallel -- 
+   odd-even sort -- sequential, semi-parallel, optimized, parallel -- 
 */
 
 
-void sequential_oddeven_sort (uint64_t *T, const uint64_t size) {
+void sequential_oddeven_sort (uint64_t *T, const uint64_t size, const uint64_t _) {
     uint64_t sorted;
     do {
         sorted = 0;
@@ -38,7 +37,7 @@ void sequential_oddeven_sort (uint64_t *T, const uint64_t size) {
 }
 
 
-void semi_parallel_oddeven_sort (uint64_t *T, const uint64_t size) {
+void semi_parallel_oddeven_sort (uint64_t *T, const uint64_t size, const uint64_t _) {
     uint64_t step = 2;
     uint64_t sorted;
     do {
@@ -65,7 +64,7 @@ void parallel_oddeven_sort (uint64_t *T, const uint64_t size, const uint64_t chu
         sorted = 0;
         #pragma omp parallel for num_threads(chunk) schedule(static)
         for (size_t i = 0; i < chunk; i++) {
-            semi_parallel_oddeven_sort(T + chunk_size * i, chunk_size);
+            semi_parallel_oddeven_sort(T + chunk_size * i, chunk_size, chunk);
         }
 
         #pragma omp parallel for num_threads(chunk) schedule(static)
@@ -89,7 +88,7 @@ void optimized_oddeven_sort (uint64_t *T, const uint64_t size, const uint64_t ch
     size_t i =0;
     #pragma omp parallel for num_threads(chunk) private(i) schedule(static)
     for (i = 0; i < chunk; i++) {
-        semi_parallel_oddeven_sort(T + chunk_size * i, chunk_size);
+        semi_parallel_oddeven_sort(T + chunk_size * i, chunk_size, chunk);
     }
     for (i = chunk_size; i < size; i *= 2) {
         size_t increase = size / i / 2;
@@ -103,188 +102,21 @@ void optimized_oddeven_sort (uint64_t *T, const uint64_t size, const uint64_t ch
 
 
 
-int main (int argc, char **argv)
-{
-    struct timespec begin, end;
-    double seconds;
-    double nanosec;
+int main (int argc, char **argv) {
+    int random;
+    uint64_t array_length, threads_number;
+    init_args(argc, argv, &random, &array_length, &threads_number);
+    uint64_t* array = (uint64_t*) malloc(array_length * sizeof(uint64_t));
 
-    unsigned int exp ;
+    uint64_t sorters_number = 4;
+    const char* names[] = {"odd-even sequential", "odd-even optimized", "odd-even semi-parallel", "odd-even parallel"};
+    void (*algorithms[4]) (uint64_t*, const uint64_t, const uint64_t) = {&sequential_oddeven_sort, &optimized_oddeven_sort, &semi_parallel_oddeven_sort, &parallel_oddeven_sort};
 
-    /* the program takes one parameter N which is the size of the array to
-       be sorted. The array will have size 2^N */
-    if (argc != 3)
-    {
-        fprintf (stderr, "odd-even.run N \n") ;
-        exit (-1) ;
-    }
+    printf("--> Sorting an array of size %lu with odd-even algorithm\n", array_length);
+    if (random) printf("--> The array is initialized randomly\n");
+    else printf("--> The array is initialized sequentially\n");
 
-    uint64_t N = 1 << (atoi(argv[1])) ;
-    /* the array to be sorted */
-    uint64_t CH = atoi(argv[2]);
-    uint64_t *X = (uint64_t *) malloc (N * sizeof(uint64_t)) ;
-
-    printf("--> Sorting an array of size %lu\n",N);
-#ifdef RINIT
-    printf("--> The array is initialized randomly\n");
-#endif
-    
-
-    for (exp = 0 ; exp < NBEXPERIMENTS; exp++){
-#ifdef RINIT
-        init_array_random (X, N);
-#else
-        init_array_sequence (X, N);
-#endif
-        
-      
-        clock_gettime(CLOCK_MONOTONIC, &begin);
-        
-        sequential_oddeven_sort (X, N) ;
-     
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        
-        seconds = end.tv_sec - begin.tv_sec;
-        nanosec = end.tv_nsec - begin.tv_nsec;
-        
-        experiments [exp] = seconds + nanosec*1e-9;
-
-        /* verifying that X is properly sorted */
-#ifdef RINIT
-        if (! is_sorted (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the sequential sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#else
-        if (! is_sorted_sequence (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the sequential sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#endif
-    }
-
-    printf ("\n odd-even serial \t\t\t %.3lf seconds\n\n", average_time()) ;    
-
-
-
-        for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
-    {
-#ifdef RINIT
-        init_array_random (X, N);
-#else
-        init_array_sequence (X, N);
-#endif
-        
-        clock_gettime(CLOCK_MONOTONIC, &begin);
-
-        optimized_oddeven_sort (X, N, CH) ;
-
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        
-        seconds = end.tv_sec - begin.tv_sec;
-        nanosec = end.tv_nsec - begin.tv_nsec;
-        
-        experiments [exp] = seconds + nanosec*1e-9;
-
-
-        /* verifying that X is properly sorted */
-#ifdef RINIT
-        if (! is_sorted (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the optimized sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#else
-        if (! is_sorted_sequence (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the optimized sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#endif
-                
-        
-    }
-
-    printf ("\n odd-even optimized \t\t\t %.3lf seconds\n\n", average_time()) ;       
-
-  
-    for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
-    {
-#ifdef RINIT
-        init_array_random (X, N);
-#else
-        init_array_sequence (X, N);
-#endif
-        
-        clock_gettime(CLOCK_MONOTONIC, &begin);
-
-        parallel_oddeven_sort (X, N, CH) ;
-
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        
-        seconds = end.tv_sec - begin.tv_sec;
-        nanosec = end.tv_nsec - begin.tv_nsec;
-        
-        experiments [exp] = seconds + nanosec*1e-9;
-
-
-        /* verifying that X is properly sorted */
-#ifdef RINIT
-        if (! is_sorted (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the parallel sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#else
-        if (! is_sorted_sequence (X, N))
-        {
-            print_array (X, N) ;
-            fprintf(stderr, "ERROR: the parallel sorting of the array failed\n") ;
-            exit (-1) ;
-	}
-#endif
-                
-        
-    }
-
-    printf ("\n odd-even parallel \t\t\t %.3lf seconds\n\n", average_time()) ;
-
-
-  
-    /* print_array (X, N) ; */
-
-    /* before terminating, we run one extra test of the algorithm */
-    uint64_t *Y = (uint64_t *) malloc (N * sizeof(uint64_t)) ;
-    uint64_t *Z = (uint64_t *) malloc (N * sizeof(uint64_t)) ;
-
-#ifdef RINIT
-    init_array_random (Y, N);
-#else
-    init_array_sequence (Y, N);
-#endif
-
-    memcpy(Z, X, N * sizeof(uint64_t));
-    memcpy(Z, Y, N * sizeof(uint64_t));
-
-    sequential_oddeven_sort (X, N) ;
-    parallel_oddeven_sort (Y, N, CH) ;
-    optimized_oddeven_sort (Z, N, CH) ;
-
-    if (! are_vector_equals (X, Y, N) || ! are_vector_equals (X, Z, N)) {
-        fprintf(stderr, "ERROR: sorting with the sequential, parallel and optimized algorithm does not give the same result\n") ;
-        exit (-1) ;
-    }
-
-
-    free(X);
-    free(Y);
-    free(Z);
-    
+    for (uint64_t i = 0; i < sorters_number; i++) run_test(array, array_length, threads_number, random, names[i], algorithms[i]);
+    test_algorithms(array, array_length, threads_number, random, sorters_number, names, algorithms);
+    free(array);
 }
