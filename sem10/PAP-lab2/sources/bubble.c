@@ -81,14 +81,14 @@ int main (int argc, char **argv) {
     uint64_t* array = (uint64_t*) malloc(array_length * sizeof(uint64_t));
 
     uint64_t sorters_number = 3;
-    const char* names[] = {"bubble sequential", "bubble optimized", "bubble parallel"};
-    void (*algorithms[3]) (uint64_t*, const uint64_t, const uint64_t) = {&sequential_bubble_sort, &optimized_bubble_sort, &parallel_bubble_sort};
+    const char* names[] = {"bubble optimized", "bubble sequential", "bubble parallel"};
+    void (*algorithms[3]) (uint64_t*, const uint64_t, const uint64_t) = {&optimized_bubble_sort, &sequential_bubble_sort, &parallel_bubble_sort};
 
     if (VERB) {
         printf("--> Sorting an array of size %lu with bubblesort algorithm\n", array_length);
         if (RINIT) printf("--> The array is initialized randomly\n");
         else printf("--> The array is initialized sequentially\n");
-    } else printf("%s;%s;%s;\n", names[0], names[1], names[2]);
+    }
 
     if (algorithm_number == -1) {
         for (uint64_t i = 0; i < sorters_number; i++) run_test(array, array_length, threads_number, names[i], algorithms[i]);

@@ -55,7 +55,7 @@ void optimized_merge_sort(uint64_t *T, const uint64_t size, uint64_t threads, in
 }
 
 void optimized_merge_sort_wrapper(uint64_t *T, const uint64_t size, const uint64_t threads) {
-    int64_t max_task_number = calculate_max_binary_recursion_level(threads * MAXTASKSPERTHREAD);
+    int64_t max_task_number = calculate_max_binary_recursion_level(threads * MTPTH);
     optimized_merge_sort(T, size, threads, max_task_number);
 }
 
@@ -67,14 +67,14 @@ int main (int argc, char **argv) {
     uint64_t* array = (uint64_t*) malloc(array_length * sizeof(uint64_t));
 
     uint64_t sorters_number = 3;
-    const char* names[] = {"mergesort sequential", "mergesort parallel", "mergesort optimized"};
-    void (*algorithms[3]) (uint64_t*, const uint64_t, const uint64_t) = {&sequential_merge_sort, &parallel_merge_sort, &optimized_merge_sort_wrapper};
+    const char* names[] = {"mergesort optimized", "mergesort sequential", "mergesort parallel"};
+    void (*algorithms[3]) (uint64_t*, const uint64_t, const uint64_t) = {&optimized_merge_sort_wrapper, &sequential_merge_sort, &parallel_merge_sort};
 
     if (VERB) {
         printf("--> Sorting an array of size %lu with mergesort algorithm\n", array_length);
         if (RINIT) printf("--> The array is initialized randomly\n");
         else printf("--> The array is initialized sequentially\n");
-    } else printf("%s;%s;%s;\n", names[0], names[1], names[2]);
+    }
 
     if (algorithm_number == -1) {
         for (uint64_t i = 0; i < sorters_number; i++) run_test(array, array_length, threads_number, names[i], algorithms[i]);

@@ -3,19 +3,20 @@
 
 #include <stdint.h>
 
-#define NBEXPERIMENTS 10
-#define MAXTASKSPERTHREAD 3
-
+#ifndef NBEXP
+    #define NBEXP 10
+#endif
+#ifndef MTPTH
+    #define MTPTH 3
+#endif
 #ifndef RINIT
     #define RINIT 0
-#else
-    #define RINIT 1
 #endif
-
 #ifndef VERB
     #define VERB 0
-#else
-    #define VERB 1
+#endif
+#ifndef QFAIL
+    #define QFAIL 0
 #endif
 
 typedef void (*sorter_function) (uint64_t*, const uint64_t, const uint64_t);

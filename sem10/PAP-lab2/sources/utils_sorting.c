@@ -32,8 +32,8 @@ void test_sorted(uint64_t* array, uint64_t array_length, const char* round) {
 void run_test(uint64_t* array, uint64_t array_length, uint64_t threads_number, const char* name, sorter_function sorter) {
     int quick_break = 0;
     struct timespec begin, end;
-    double experiments[NBEXPERIMENTS];
-    for (uint64_t exp = 0; exp < NBEXPERIMENTS; exp++) {
+    double experiments[NBEXP];
+    for (uint64_t exp = 0; exp < NBEXP; exp++) {
         if (RINIT) init_array_random(array, array_length);
         else init_array_sequence(array, array_length);
       
@@ -52,11 +52,17 @@ void run_test(uint64_t* array, uint64_t array_length, uint64_t threads_number, c
         test_sorted(array, array_length, "sequential");
     }
     if (VERB) {
-        if (quick_break) printf("\n %s \t\t\t more than a second\n\n", name);
-        else printf("\n %s \t\t\t %.3lf seconds\n\n", name, average_time(experiments, NBEXPERIMENTS));
+        if (quick_break) {
+            if (QFAIL) exit(-1);
+            else printf("\n %s \t\t\t more than a second\n\n", name);
+        }
+        else printf("\n %s \t\t\t %.3lf seconds\n\n", name, average_time(experiments, NBEXP));
     } else {
-        if (quick_break) printf("None;");
-        else printf("%.3lf;", average_time(experiments, NBEXPERIMENTS));
+        if (quick_break) {
+            if (QFAIL) exit(-1);
+            else printf("None;");
+        }
+        else printf("%.3lf;", average_time(experiments, NBEXP));
     }
 }
 

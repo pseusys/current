@@ -64,7 +64,7 @@ void parallel_quicksort(uint64_t *T, int64_t low, int64_t high, uint64_t threads
 }
 
 void parallel_quicksort_wrapper(uint64_t *T, const uint64_t size, const uint64_t threads) {
-    int64_t max_task_number = calculate_max_binary_recursion_level(threads * MAXTASKSPERTHREAD);
+    int64_t max_task_number = calculate_max_binary_recursion_level(threads * MTPTH);
     parallel_quicksort(T, 0, size - 1, threads, max_task_number);
 }
 
@@ -76,14 +76,14 @@ int main (int argc, char **argv) {
     uint64_t* array = (uint64_t*) malloc(array_length * sizeof(uint64_t));
 
     uint64_t sorters_number = 2;
-    const char* names[] = {"quicksort sequential", "quicksort parallel"};
-    void (*algorithms[3]) (uint64_t*, const uint64_t, const uint64_t) = {&serial_quicksort_wrapper, &parallel_quicksort_wrapper};
+    const char* names[] = {"quicksort parallel", "quicksort sequential"};
+    void (*algorithms[3]) (uint64_t*, const uint64_t, const uint64_t) = {&parallel_quicksort_wrapper, &serial_quicksort_wrapper};
 
     if (VERB) {
         printf("--> Sorting an array of size %lu with quicksort algorithm\n", array_length);
         if (RINIT) printf("--> The array is initialized randomly\n");
         else printf("--> The array is initialized sequentially\n");
-    } else printf("%s;%s;\n", names[0], names[1]);
+    }
 
     if (algorithm_number == -1) {
         for (uint64_t i = 0; i < sorters_number; i++) run_test(array, array_length, threads_number, names[i], algorithms[i]);

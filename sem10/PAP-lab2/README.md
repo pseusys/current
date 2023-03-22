@@ -4,20 +4,21 @@
 
 1. bubble:
    ```shell
-   make bubble TIMES=8 THREADS=4
+   make autorun ALGO=bubble
    ```
 2. mergesort:
    ```shell
-   make mergesort TIMES=15 THREADS=4
+   make autorun ALGO=mergesort
    ```
 3. odd-even
    ```shell
-   make odd-even TIMES=8 THREADS=4
+   make autorun ALGO=odd-even
    ```
 4. quicksort
    ```shell
-   make quicksort TIMES=15 THREADS=4
+   make autorun ALGO=quicksort
    ```
+WRANING!! It is recommended to clear `build` directory (e.g. with `sudo make clean`) before each run!
 
 ## Report
 Alexander Sergeev and Pia Döpper
@@ -42,4 +43,4 @@ The even-odd algorithm is more suitable for parallization than the bubblesort al
 We have implemented the Ouicksort parallel version. The parallel version is always slower than the sequential one and we have no clou why we do not found any improvement. We followed the hint in dividing the array into chunks, sort them and then merge them together. Like the mergesort algorithm we have used the openmp task syntax to ensure the different subtasks in the algortihm.
 
 
-TODO: conduct experiments to find the best `MAXTASKSPERTHREAD` parameter value (in `sources/utils.py`).
+TODO: conduct experiments to find the best `MAXTASKSPERTHREAD` parameter value.

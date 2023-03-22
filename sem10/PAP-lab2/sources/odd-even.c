@@ -108,15 +108,15 @@ int main (int argc, char **argv) {
     init_args(argc, argv, &algorithm_number, &array_length, &threads_number);
     uint64_t* array = (uint64_t*) malloc(array_length * sizeof(uint64_t));
 
-    uint64_t sorters_number = 4;
-    const char* names[] = {"odd-even sequential", "odd-even optimized", "odd-even semi-parallel", "odd-even parallel"};
-    void (*algorithms[4]) (uint64_t*, const uint64_t, const uint64_t) = {&sequential_oddeven_sort, &optimized_oddeven_sort, &semi_parallel_oddeven_sort, &parallel_oddeven_sort};
+    uint64_t sorters_number = 3;
+    const char* names[] = {"odd-even optimized", "odd-even sequential", "odd-even parallel"};
+    void (*algorithms[3]) (uint64_t*, const uint64_t, const uint64_t) = {&optimized_oddeven_sort, &sequential_oddeven_sort, &parallel_oddeven_sort};
 
     if (VERB) {
         printf("--> Sorting an array of size %lu with odd-even algorithm\n", array_length);
         if (RINIT) printf("--> The array is initialized randomly\n");
         else printf("--> The array is initialized sequentially\n");
-    } else printf("%s;%s;%s;\n", names[0], names[1], names[2]);
+    }
 
     if (algorithm_number == -1) {
         for (uint64_t i = 0; i < sorters_number; i++) run_test(array, array_length, threads_number, names[i], algorithms[i]);
