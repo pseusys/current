@@ -21,7 +21,7 @@ if options.input is None:
     sys.exit()
 
 
-data = pd.read_csv(options.input, delimiter=',')
+data = pd.read_csv(options.input, delimiter=';')
 
 print(data.columns[0])
 
