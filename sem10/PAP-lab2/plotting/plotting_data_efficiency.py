@@ -24,9 +24,11 @@ if options.input is None:
 data = pd.read_csv(options.input, delimiter=';')
 
 print(data.columns[0])
+data = pd.read_csv(options.input, delimiter=';')
+
 
 # Uses the first column for the x axes
-ax = data.plot(x=data.columns[0], marker='o', xticks=data.iloc[:,0])
+ax = data.plot(x=data.columns[0],y= data.columns[0] , marker='o', xticks=data.iloc[:,0])
 
 # Set the bottom value to 0 for the Y axes
 ax.set_ylim(bottom=0)

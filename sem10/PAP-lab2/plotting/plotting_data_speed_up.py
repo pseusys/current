@@ -25,6 +25,10 @@ data = pd.read_csv(options.input, delimiter=';')
 
 print(data.columns[0])
 
+data.iloc[:,1] = data.iloc[:,2]/data.iloc[:,1]
+data.iloc[:,3] = data.iloc[:,3]/data.iloc[:,1]
+data = data.drop([data.index[1]])
+data= data.drop(data.columns[2], axis=1)
 # Uses the first column for the x axes
 ax = data.plot(x=data.columns[0], marker='o', xticks=data.iloc[:,0])
 
@@ -37,12 +41,12 @@ else:
     ax.set_title(options.title, fontsize='x-large')
 
 if options.xlabel is None:
-    ax.set_xlabel('Problem size', fontsize='x-large')
+    ax.set_xlabel('Number of threads', fontsize='x-large')
 else:
     ax.set_xlabel(options.xlabel, fontsize='x-large')
 
 if options.ylabel is None: 
-    ax.set_ylabel('Execution time in sec', fontsize='x-large')
+    ax.set_ylabel('Speedup', fontsize='x-large')
 else:
     ax.set_ylabel(options.ylabel, fontsize='x-large')
 if options.logscale=='x': 
