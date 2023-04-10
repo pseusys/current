@@ -1,0 +1,13 @@
+# IDE configuration dirs:
+.vscode
+.idea
+
+# build artifacts:
+objs
+check_comm
+display
+lbm
+output.*
+
+# Task description PDF:
+*.pdf
