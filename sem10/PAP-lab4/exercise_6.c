@@ -46,33 +46,6 @@ static int get_neighbor_rank(lbm_comm_t* comm, int x, int y) {
 /****************************************************/
 void lbm_comm_ghost_exchange_ex6(lbm_comm_t * comm, lbm_mesh_t * mesh)
 {
-	//
-	// TODO: Implement the 2D communication with :
-	//         - non-blocking MPI functions
-	//         - use MPI type for non contiguous side 
-	//
-	// To be used:
-	//    - DIRECTIONS: the number of doubles composing a cell
-	//    - double[9] lbm_mesh_get_cell(mesh, x, y): function to get the address of a particular cell.
-	//    - comm->width : The with of the local sub-domain (containing the ghost cells)
-	//    - comm->height : The height of the local sub-domain (containing the ghost cells)
-	//
-	// TIP: create a function to get the target rank from x,y task coordinate.
-	// TIP: You can use MPI_PROC_NULL on borders.
-	// TIP: send the corner values 2 times, with the up/down/left/write communication
-	//      and with the diagonal communication in a second time, this avoid
-	//      special cases for border tasks.
-	// TIP: The previous trick require to make two batch of non-blocking communications.
-
-	//example to access cell
-	//double * cell = lbm_mesh_get_cell(mesh, local_x, local_y);
-	//double * cell = lbm_mesh_get_cell(mesh, comm->width - 1, 0);
-
-	//TODO:
-	//   - implement left/write communications
-	//   - implement top/bottom communication (non contiguous)
-	//   - implement diagonal communications
-
 	int tag = 0;
 
 	// LEFT <-> RIGHT
