@@ -31,7 +31,8 @@ void lbm_comm_init_ex5(lbm_comm_t * comm, int total_width, int total_height)
 	//we use the same implementation than ex5 execpt for type creation
 	lbm_comm_init_ex4(comm, total_width, total_height);
 
-	//TODO: create MPI type for non contiguous side in comm->type.
+	MPI_Type_vector(comm->width, DIRECTIONS, comm->height * DIRECTIONS, MPI_DOUBLE, &comm->type);
+	MPI_Type_commit(&comm->type);
 }
 
 /****************************************************/
@@ -40,35 +41,62 @@ void lbm_comm_release_ex5(lbm_comm_t * comm)
 	//we use the same implementation than ex5 except for type destroy
 	lbm_comm_release_ex4(comm);
 
-	//TODO: release MPI type created in init.
+	MPI_Type_free(&comm->type);
+}
+
+static int get_neighbor_rank(lbm_comm_t* comm, int x, int y) {
+	int current = comm->rank_x * comm->nb_y + comm->rank_y;
+	return current + x * comm->nb_y + y;
 }
 
 /****************************************************/
 void lbm_comm_ghost_exchange_ex5(lbm_comm_t * comm, lbm_mesh_t * mesh)
 {
-	//
-	// TODO: Implement the 2D communication with :
-	//         - blocking MPI functions
-	//         - use MPI type for non contiguous side 
-	//
-	// To be used:
-	//    - DIRECTIONS: the number of doubles composing a cell
-	//    - double[9] lbm_mesh_get_cell(mesh, x, y): function to get the address of a particular cell.
-	//    - comm->width : The with of the local sub-domain (containing the ghost cells)
-	//    - comm->height : The height of the local sub-domain (containing the ghost cells)
-	//
-	// TIP: create a function to get the target rank from x,y task coordinate.
-	// TIP: You can use MPI_PROC_NULL on borders.
-	// TIP: send the corner values 2 times, with the up/down/left/write communication
-	//      and with the diagonal communication in a second time, this avoid
-	//      special cases for border tasks.
+	int tag = 0;
 
-	//example to access cell
-	//double * cell = lbm_mesh_get_cell(mesh, local_x, local_y);
-	//double * cell = lbm_mesh_get_cell(mesh, comm->width - 1, 0);
+	// LEFT <-> RIGHT
 
-	//TODO:
-	//   - implement left/write communications
-	//   - implement top/bottom communication (non contiguous)
-	//   - implement diagonal communications
+	double* send_left = lbm_mesh_get_cell(mesh, 1, 0);
+	double* recv_left = lbm_mesh_get_cell(mesh, comm->width - 1, 0);
+	double* send_right = lbm_mesh_get_cell(mesh, comm->width - 2, 0);
+	double* recv_right = lbm_mesh_get_cell(mesh, 0, 0);
+
+	if (comm->rank_x != 0) MPI_Recv(recv_right, comm->height * DIRECTIONS, MPI_DOUBLE, get_neighbor_rank(comm, -1, 0), tag, comm->communicator, MPI_STATUS_IGNORE);
+	if (comm->rank_x != comm->nb_x - 1) {
+		MPI_Send(send_right, comm->height * DIRECTIONS, MPI_DOUBLE, get_neighbor_rank(comm, 1, 0), tag, comm->communicator);
+		MPI_Recv(recv_left, comm->height * DIRECTIONS, MPI_DOUBLE, get_neighbor_rank(comm, 1, 0), tag, comm->communicator, MPI_STATUS_IGNORE);
+	}
+	if (comm->rank_x != 0) MPI_Send(send_left, comm->height * DIRECTIONS, MPI_DOUBLE, get_neighbor_rank(comm, -1, 0), tag, comm->communicator);
+
+	// TOP <-> BOTTOM
+
+	double* send_up = lbm_mesh_get_cell(mesh, 0, 1);
+	double* recv_up = lbm_mesh_get_cell(mesh, 0, comm->height - 1);
+	double* send_down = lbm_mesh_get_cell(mesh, 0, comm->height - 2);
+	double* recv_down = lbm_mesh_get_cell(mesh, 0, 0);
+
+	if (comm->rank_y != 0) MPI_Recv(recv_down, 1, comm->type, get_neighbor_rank(comm, 0, -1), tag, comm->communicator, MPI_STATUS_IGNORE);
+	if (comm->rank_y != comm->nb_y - 1) {
+		MPI_Send(send_down, 1, comm->type, get_neighbor_rank(comm, 0, 1), tag, comm->communicator);
+		MPI_Recv(recv_up, 1, comm->type, get_neighbor_rank(comm, 0, 1), tag, comm->communicator, MPI_STATUS_IGNORE);
+	}
+	if (comm->rank_y != 0) MPI_Send(send_up, 1, comm->type, get_neighbor_rank(comm, 0, -1), tag, comm->communicator);
+
+	// DIAGONALS (TOP LEFT) <-> DIAGONALS (BOTTOM RIGHT)
+
+	if (comm->rank_x != 0 && comm->rank_y != 0) MPI_Recv(lbm_mesh_get_cell(mesh, 0, 0), DIRECTIONS, MPI_DOUBLE, get_neighbor_rank(comm, -1, -1), tag, comm->communicator, MPI_STATUS_IGNORE);
+	if (comm->rank_x != comm->nb_x - 1 && comm->rank_y != comm->nb_y - 1) {
+		MPI_Send(lbm_mesh_get_cell(mesh, comm->width - 2, comm->height - 2), DIRECTIONS, MPI_DOUBLE, get_neighbor_rank(comm, 1, 1), tag, comm->communicator);
+		MPI_Recv(lbm_mesh_get_cell(mesh, comm->width - 1, comm->height - 1), DIRECTIONS, MPI_DOUBLE, get_neighbor_rank(comm, 1, 1), tag, comm->communicator, MPI_STATUS_IGNORE);
+	}
+	if (comm->rank_x != 0 && comm->rank_y != 0) MPI_Send(lbm_mesh_get_cell(mesh, 1, 1), DIRECTIONS, MPI_DOUBLE, get_neighbor_rank(comm, -1, -1), tag, comm->communicator);
+
+	// DIAGONALS (BOTTOM LEFT) <-> DIAGONALS (TOP RIGHT)
+
+	if (comm->rank_x != 0 && comm->rank_y != comm->nb_y - 1) MPI_Recv(lbm_mesh_get_cell(mesh, 0, comm->height - 1), DIRECTIONS, MPI_DOUBLE, get_neighbor_rank(comm, -1, 1), tag, comm->communicator, MPI_STATUS_IGNORE);
+	if (comm->rank_x != comm->nb_x - 1 && comm->rank_y != 0) {
+		MPI_Send(lbm_mesh_get_cell(mesh, comm->width - 2, 1), DIRECTIONS, MPI_DOUBLE, get_neighbor_rank(comm, 1, -1), tag, comm->communicator);
+		MPI_Recv(lbm_mesh_get_cell(mesh, comm->width - 1, 0), DIRECTIONS, MPI_DOUBLE, get_neighbor_rank(comm, 1, -1), tag, comm->communicator, MPI_STATUS_IGNORE);
+	}
+	if (comm->rank_x != 0 && comm->rank_y != comm->nb_y - 1) MPI_Send(lbm_mesh_get_cell(mesh, 1, comm->height - 2), DIRECTIONS, MPI_DOUBLE, get_neighbor_rank(comm, -1, 1), tag, comm->communicator);
 }

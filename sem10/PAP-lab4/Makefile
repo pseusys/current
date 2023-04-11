@@ -178,3 +178,17 @@ task_4:
 	mpirun -np 4 --oversubscribe ./lbm -e 4
 	./gen_animate_gif.sh
 .PHONY: task_4
+
+task_5:
+	make clean
+	make
+	mpirun -np 4 --oversubscribe ./lbm -e 5
+	./gen_animate_gif.sh
+.PHONY: task_5
+
+task_6:
+	make clean
+	make
+	mpirun -np 4 --oversubscribe ./lbm -e 6
+	./gen_animate_gif.sh
+.PHONY: task_6
