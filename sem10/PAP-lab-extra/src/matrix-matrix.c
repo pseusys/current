@@ -1,6 +1,6 @@
 #include <mpi.h>
 
-#include "src/utils.h"
+#include "../libs/utils.h"
 
 
 void matrixMatrix(int width, int height, double *A, double *B, double *C, int rank, int size) {
@@ -12,6 +12,7 @@ void matrixMatrix(int width, int height, double *A, double *B, double *C, int ra
     MPI_Scatter(B, opsize, MPI_DOUBLE, B + opsize * rank, opsize, MPI_DOUBLE, root, MPI_COMM_WORLD);
 
     MPI_Request requests[2];
+    // NOTICE: for convenience, "next" process is the one with the rank - 1, vice versa the "previous".
     int next = rank == 0 ? size - 1 : rank - 1;
     int previous = rank == size - 1 ? 0 : rank + 1;
     for (int p = 0; p < size; p++) {

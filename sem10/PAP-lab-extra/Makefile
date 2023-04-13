@@ -7,9 +7,9 @@ CFLAGS =
 LDFLAGS =
 CONFIG_FLAGS =
 
-HEADER_FILES = $(wildcard src/*.h)
+HEADER_FILES = $(wildcard libs/*.h)
 
-EXTRA_SRC = $(wildcard src/*.c)
+EXTRA_SRC = $(wildcard libs/*.c)
 
 RAND_INIT=1
 
@@ -24,6 +24,7 @@ MATRIX_SIZE=$(THREADS)
 EXPERIMENTS=5
 
 SILENT=0
+CLEAN=
 
 
 ifeq ($(EVAL_PERF), 0)
@@ -56,24 +57,31 @@ CONFIG_FLAGS += -DPERF_EVAL -DEXPERIMENTS=$(EXPERIMENTS)
 endif
 
 
-%.run: %.c $(EXTRA_SRC) $(HEADER_FILES)
+build/%.run: src/%.c $(EXTRA_SRC) $(HEADER_FILES)
+	@
+	mkdir -p $(@D)
 	$(CC) -o $@ $^ $(CONFIG_FLAGS)
 
 clean:
-	rm -f *.run
+	@
+	test -n "$(CLEAN)" && {
+		rm -f ./build/$(CLEAN).run
+	} || {
+		rm -rf ./build
+	}
 .PHONY: clean
 
 
 sequential:
 	@
-	make --silent SILENT=1 clean
-	make --silent SILENT=1 $@.run
-	mpirun -np $(THREADS) --oversubscribe ./$@.run $(MATRIX_SIZE)
+	make --silent SILENT=1 CLEAN=build/$@ clean
+	make --silent SILENT=1 build/$@.run
+	mpirun -np $(THREADS) --oversubscribe ./build/$@.run $(MATRIX_SIZE)
 .PHONY: sequential
 
 matrix-matrix:
 	@
-	make --silent SILENT=1 clean
-	make --silent SILENT=1 $@.run
-	mpirun -np $(THREADS) --oversubscribe ./$@.run $(MATRIX_SIZE)
+	make --silent SILENT=1 CLEAN=build/$@ clean
+	make --silent SILENT=1 build/$@.run
+	mpirun -np $(THREADS) --oversubscribe ./build/$@.run $(MATRIX_SIZE)
 .PHONY: sequential
