@@ -25,6 +25,7 @@ EXPERIMENTS=5
 
 SILENT=0
 CLEAN=
+EXEC=
 
 
 ifeq ($(EVAL_PERF), 0)
@@ -71,17 +72,26 @@ clean:
 	}
 .PHONY: clean
 
+build_and_run:
+	@
+	test -n "$(EXEC)" || { echo "Executable not defined (env var 'EXEC')!"; exit 1; }
+	make --silent SILENT=1 CLEAN=$(EXEC) clean
+	make --silent SILENT=1 build/$(EXEC).run
+	mpirun -np $(THREADS) --oversubscribe ./build/$(EXEC).run $(MATRIX_SIZE)
+.PHONY: build_and_run
+
 
 sequential:
 	@
-	make --silent SILENT=1 CLEAN=build/$@ clean
-	make --silent SILENT=1 build/$@.run
-	mpirun -np $(THREADS) --oversubscribe ./build/$@.run $(MATRIX_SIZE)
+	make --silent SILENT=1 EXEC=$@ build_and_run
+.PHONY: sequential
+
+matrix-vector:
+	@
+	make --silent SILENT=1 EXEC=$@ build_and_run
 .PHONY: sequential
 
 matrix-matrix:
 	@
-	make --silent SILENT=1 CLEAN=build/$@ clean
-	make --silent SILENT=1 build/$@.run
-	mpirun -np $(THREADS) --oversubscribe ./build/$@.run $(MATRIX_SIZE)
+	make --silent SILENT=1 EXEC=$@ build_and_run
 .PHONY: sequential

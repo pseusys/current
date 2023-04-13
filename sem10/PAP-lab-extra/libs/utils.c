@@ -62,14 +62,6 @@ double* createMatrixCopy(int width, int height, double *A) {
 
 
 
-/* multiplication of square matrices of size dimension: C = A x B */
-void matrixMultiplicationReference(int width, int height, double *A, double *B, double *C) {
-    for (int i = 0; i < height; i++)
-        for (int j = 0; j < width; j++)
-            for (int k = 0; k < width; k++)
-                C[i * width + j] += A[i * width + k] * B[k * height + j];
-}
-
 /* return 1 if V1 and V2 are equal */
 int checkMatricesEquality(int width, int height, double *V1, double *V2) {
     for (int i = 0; i < height; i++)

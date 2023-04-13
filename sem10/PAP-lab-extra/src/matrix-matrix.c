@@ -1,6 +1,6 @@
 #include <mpi.h>
 
-#include "../libs/utils.h"
+#include "../libs/general.h"
 
 
 void matrixMatrix(int width, int height, double *A, double *B, double *C, int rank, int size) {
@@ -21,13 +21,10 @@ void matrixMatrix(int width, int height, double *A, double *B, double *C, int ra
         MPI_Isend(&B[opsize * current], opsize, MPI_DOUBLE, next, tag, MPI_COMM_WORLD, &requests[0]);
         MPI_Irecv(&B[opsize * recieving], opsize, MPI_DOUBLE, previous, tag, MPI_COMM_WORLD, &requests[1]);
 
-        for (int i = 0; i < share; i++) {
-            for (int j = 0; j < width; j++) {
-                for (int k = current * share; k < (current + 1) * share; k++) {
+        for (int i = 0; i < share; i++)
+            for (int j = 0; j < width; j++)
+                for (int k = current * share; k < (current + 1) * share; k++)
                     C[i * width + j] += A[i * width + k] * B[k * height + j];
-                }
-            }
-        }
         
         MPI_Waitall(2, requests, MPI_STATUSES_IGNORE);
     }
@@ -36,5 +33,6 @@ void matrixMatrix(int width, int height, double *A, double *B, double *C, int ra
 }
 
 int main(int argc, char* argv[]) {
-    return eval(argc, argv, "virtual ring matrix-matrix", matrixMatrix);
+    eval_config config = {.eval = matrixMatrix};
+    return eval(argc, argv, "virtual ring matrix-matrix", &config);
 }

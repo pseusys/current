@@ -5,10 +5,6 @@
 #define EXPERIMENTS 5
 #endif
 
-typedef void (*evaluator) (int, int, double*, double*, double*, int, int);
-
-int eval(int argc, char* argv[], char* eval_name, evaluator evaluator);
-
 extern double experiments [];
 
 extern int perf_eval;
