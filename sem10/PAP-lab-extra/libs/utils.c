@@ -42,7 +42,6 @@ double* allocMatrix(int width, int height) {
 /* initializes the content of matrix A */
 void initMatrix(int width, int height, double *A) {
     int mean = (width + height) / 2;
-    if (rinit) srand(time(NULL)); // TODO: CHANGE
     for (int i = 0; i < height; i++)
         for (int j = 0; j < width; j++)
             A[i * width + j] = rinit ? rand() % mean : 2;
@@ -58,6 +57,11 @@ double* createMatrixCopy(int width, int height, double *A) {
     double* mat = (double*) malloc(sizeof(double) * width * height);
     memcpy(mat, A, sizeof(double) * width * height);
     return mat;
+}
+
+/* copy matrix A to B */
+double* copyMatrix(int width, int height, double *A, double *B) {
+    memcpy(B, A, sizeof(double) * width * height);
 }
 
 

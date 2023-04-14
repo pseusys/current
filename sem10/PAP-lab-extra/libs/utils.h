@@ -17,6 +17,7 @@ void initMatrix(int width, int height, double *A);
 void initMatrixZero(int width, int height, double *A);
 
 double* createMatrixCopy(int width, int height, double *A);
+double* copyMatrix(int width, int height, double *A, double *B);
 
 void matrixMultiplicationReference(int width, int height, double *A, double *B, double *C);
 

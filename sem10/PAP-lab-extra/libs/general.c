@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
 
 #include "general.h"
 #include "utils.h"
@@ -26,20 +25,19 @@ int eval(int argc, char* argv[], char* eval_name, eval_config* config) {
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &w_size);
 
+    MPI_Datatype extra_type;
     unsigned int mat_size = config->rams(argc, argv, w_size);
-    unsigned int share = mat_size / w_size;
-
-    if (config->start) config->start(mat_size, mat_size);
+    if (config->start) config->start(mat_size, w_size, &extra_type);
 
     if (my_rank == 0) printf("Test with a matrix of size %u x %u\n", mat_size, mat_size);
-    config->am(my_rank, mat_size, share, &A, &B, &C);
+    config->am(my_rank, mat_size, w_size, &A, &B, &C);
 
     if (perf_eval) {
         for (int exp = 0; exp < EXPERIMENTS; exp++) {
             double start;
-            config->im(my_rank, mat_size, share, A, B, C);
+            config->im(my_rank, mat_size, w_size, A, B, C);
             if (my_rank == 0) start = MPI_Wtime();
-            config->eval(mat_size, mat_size, A, B, C, my_rank, w_size);
+            config->eval(mat_size, mat_size, A, B, C, my_rank, w_size, &extra_type);
             if (my_rank == 0) experiments[exp] = MPI_Wtime() - start;
         }
 
@@ -50,14 +48,14 @@ int eval(int argc, char* argv[], char* eval_name, eval_config* config) {
     }
 
     if (check_correctness) {
-        config->im(my_rank, mat_size, share, A, B, C);
+        config->im(my_rank, mat_size, w_size, A, B, C);
         if (my_rank == 0) {
             A_check = createMatrixCopy(mat_size, mat_size, A);
             B_check = createMatrixCopy(mat_size, mat_size, B);
             C_check = createMatrixCopy(mat_size, mat_size, C);
         }
 
-        config->eval(mat_size, mat_size, A, B, C, my_rank, w_size);
+        config->eval(mat_size, mat_size, A, B, C, my_rank, w_size, &extra_type);
         if (my_rank == 0) {
             matrix_multiplication_default(mat_size, mat_size, A_check, B_check, C_check);
             if (checkMatricesEquality(mat_size, mat_size, C, C_check)) printf("\tCORRECT matrix multiplication result!\n");
@@ -71,7 +69,7 @@ int eval(int argc, char* argv[], char* eval_name, eval_config* config) {
         }
     }
 
-    if (config->end) config->end(mat_size, mat_size);
+    if (config->end) config->end(&extra_type);
 
     free(A);
     free(B);

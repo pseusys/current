@@ -28,7 +28,8 @@ int read_and_assert_matrix_size_default(int argc, char* argv[], int processes) {
     return mat_size;
 }
 
-void allocate_matrixes_default(int my_rank, int mat_size, int share, double **A, double **B, double **C) {
+void allocate_matrixes_default(int my_rank, int mat_size, int processes, double **A, double **B, double **C) {
+    int share = mat_size / processes;
     if (my_rank == 0) {
         *A = allocMatrix(mat_size, mat_size);
         *B = allocMatrix(mat_size, mat_size);
@@ -40,12 +41,12 @@ void allocate_matrixes_default(int my_rank, int mat_size, int share, double **A,
     }
 }
 
-void initialize_matrixes_default(int my_rank, int mat_size, int share, double *A, double *B, double *C) {
+void initialize_matrixes_default(int my_rank, int mat_size, int processes, double *A, double *B, double *C) {
     if (my_rank == 0) {
         initMatrix(mat_size, mat_size, A);
         initMatrix(mat_size, mat_size, B);
         initMatrixZero(mat_size, mat_size, C);
-    } else initMatrixZero(mat_size, share, C);
+    } else initMatrixZero(mat_size, mat_size / processes, C);
 }
 
 void print_matrixes_error_default(int mat_size, double *A, double *B, double *C, double *C_check) {
