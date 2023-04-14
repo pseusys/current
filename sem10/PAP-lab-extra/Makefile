@@ -3,8 +3,6 @@
 
 
 CC = mpicc
-CFLAGS = 
-LDFLAGS =
 CONFIG_FLAGS =
 
 HEADER_FILES = $(wildcard libs/*.h)
@@ -61,7 +59,7 @@ endif
 build/%.run: src/%.c $(EXTRA_SRC) $(HEADER_FILES)
 	@
 	mkdir -p $(@D)
-	$(CC) -o $@ $^ $(CONFIG_FLAGS)
+	$(CC) -o $@ $^ -lm $(CONFIG_FLAGS)
 
 clean:
 	@
@@ -89,9 +87,14 @@ sequential:
 matrix-vector:
 	@
 	make --silent SILENT=1 EXEC=$@ build_and_run
-.PHONY: sequential
+.PHONY: matrix-vector
 
 matrix-matrix:
 	@
 	make --silent SILENT=1 EXEC=$@ build_and_run
-.PHONY: sequential
+.PHONY: matrix-matrix
+
+fox:
+	@
+	make --silent SILENT=1 EXEC=$@ build_and_run
+.PHONY: fox

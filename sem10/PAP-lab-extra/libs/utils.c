@@ -42,6 +42,7 @@ double* allocMatrix(int width, int height) {
 /* initializes the content of matrix A */
 void initMatrix(int width, int height, double *A) {
     int mean = (width + height) / 2;
+    srand(123);
     for (int i = 0; i < height; i++)
         for (int j = 0; j < width; j++)
             A[i * width + j] = rinit ? rand() % mean : 2;
