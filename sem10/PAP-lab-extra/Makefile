@@ -98,3 +98,8 @@ fox:
 	@
 	make --silent SILENT=1 EXEC=$@ build_and_run
 .PHONY: fox
+
+canon:
+	@
+	make --silent SILENT=1 EXEC=$@ build_and_run
+.PHONY: canon
