@@ -5,6 +5,8 @@
 #define EXPERIMENTS 5
 #endif
 
+#define MAX_TYPE_COUNT 16
+
 extern double experiments [];
 
 extern int perf_eval;

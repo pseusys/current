@@ -8,9 +8,9 @@
 #include "../libs/utils.h"
 
 
-void fox(int width, int height, double *A, double *B, double *C, int rank, int processes, MPI_Datatype* extra_type) {
+void canon(int width, int height, double *A, double *B, double *C, int rank, int processes, MPI_Datatype* extra_type) {
     if (width != height) {
-        printf("This fox algorithm realization implies block width (%d) to be equal block height (%d)!\n", width, height);
+        printf("This canon algorithm realization implies block width (%d) to be equal block height (%d)!\n", width, height);
         MPI_Finalize();
         exit(-1);
     }
@@ -22,7 +22,39 @@ void fox(int width, int height, double *A, double *B, double *C, int rank, int p
     int opsize = share * share;
     double* buffer = malloc(height * sizeof(double));
     for (int i = 0; i < height; i++) buffer[i] = 0;
-    
+
+    // PRESKEW:
+
+    double* A_preserve, *B_preserve, * A_copy, * B_copy;
+    if (rank == 0) {
+        A_preserve = createMatrixCopy(width, height, A);
+        B_preserve = createMatrixCopy(width, height, B);
+        A_copy = createMatrixCopy(width, height, A);
+        B_copy = createMatrixCopy(width, height, B);
+
+        printf("Matrix A:\n");
+        printMatrix(width, height, A_copy);
+        printf("Matrix B:\n");
+        printMatrix(width, height, B_copy);
+
+        for (int i = 0; i < height; i++) {
+            double diagonal = A_copy[i * width + i];
+            for (int j = i; j > 0; j--) A_copy[i * width + j] = A_copy[i * width + j - 1];
+            A_copy[i * width] = diagonal;
+        }
+
+        for (int i = 0; i < width; i++) {
+            double diagonal = B_copy[i * height + i];
+            for (int j = i; j > 0; j--) B_copy[i * height + j] = B_copy[i * height + j - 1];
+            B_copy[i * height] = diagonal;
+        }
+
+        printf("Matrix A:\n");
+        printMatrix(width, height, A_copy);
+        printf("Matrix B:\n");
+        printMatrix(width, height, B_copy);
+        printf("\n\n\n");
+    }
 
     // SCATTER:
 
@@ -31,20 +63,8 @@ void fox(int width, int height, double *A, double *B, double *C, int rank, int p
     int displs[processes];
     for (int i = 0; i < processes; i++) displs[i] = i / dimension * width + i % dimension;
 
-    double* A_preserve, *B_preserve, * A_copy, * B_copy;
-    if (rank == 0) {
-        A_preserve = createMatrixCopy(width, height, A);
-        B_preserve = createMatrixCopy(width, height, B);
-        A_copy = createMatrixCopy(width, height, A);
-        B_copy = createMatrixCopy(width, height, B);
-    }
-
-    // PRESKEW:
-
-    // TODO: skew
-
-    MPI_Scatterv(A_copy, counts, displs, *extra_type, A, opsize, MPI_DOUBLE, root, MPI_COMM_WORLD);
-    MPI_Scatterv(B_copy, counts, displs, *extra_type, B, opsize, MPI_DOUBLE, root, MPI_COMM_WORLD);
+    MPI_Scatterv(A_copy, counts, displs, extra_type[0], A, opsize, MPI_DOUBLE, root, MPI_COMM_WORLD);
+    MPI_Scatterv(B_copy, counts, displs, extra_type[0], B, opsize, MPI_DOUBLE, root, MPI_COMM_WORLD);
     if (rank == 0) {
         free(A_copy);
         free(B_copy);
@@ -55,7 +75,7 @@ void fox(int width, int height, double *A, double *B, double *C, int rank, int p
     MPI_Comm row_comm;
     MPI_Comm_split(MPI_COMM_WORLD, rank / dimension, rank, &row_comm);
 
-    MPI_Request requests[2];
+    MPI_Request requests[4];
     for (int i = 0; i <= width; i++) {
         if (rank == 0) {
             printf("Round %d:\n", i);
@@ -71,9 +91,8 @@ void fox(int width, int height, double *A, double *B, double *C, int rank, int p
         int next = rank - dimension >= 0 ? rank - dimension : processes - dimension + rank % dimension;
         int right = (rank + 1) % processes;
         int left = (rank - 1) >= 0 ? rank - 1 : processes - 1;
-        MPI_Isend(&B[(share - 1) * share], share, MPI_DOUBLE, next, tag, MPI_COMM_WORLD, &requests[0]);
-        // TODO: one more type
-        MPI_Isend(&B[(share - 1) * share], share, MPI_DOUBLE, next, tag, MPI_COMM_WORLD, &requests[0]);
+        MPI_Isend(&A[share - 1], 1, extra_type[1], right, tag, MPI_COMM_WORLD, &requests[0]);
+        MPI_Isend(&B[(share - 1) * share], share, MPI_DOUBLE, next, tag, MPI_COMM_WORLD, &requests[1]);
 
         for (int j = 0; j < opsize; j++) {
             int row = (rank / dimension) * share + j / share;
@@ -102,12 +121,16 @@ void fox(int width, int height, double *A, double *B, double *C, int rank, int p
             C[j] += buffer[row] * B[j];
         }
 
-        MPI_Wait(&requests[0], MPI_STATUSES_IGNORE);
+        MPI_Waitall(2, &requests[0], MPI_STATUSES_IGNORE);
+        for (int j = share - 2; j >= 0; j--)
+            for (int k = 0; k < share; k++)
+                A[k * share + j + 1] = A[k * share + j];
         for (int j = share - 1; j > 0; j--)
             for (int k = 0; k < share; k++)
                 B[j * share + k] = B[(j - 1) * share + k];
-        MPI_Irecv(B, share, MPI_DOUBLE, previous, tag, MPI_COMM_WORLD, &requests[1]);
-        MPI_Wait(&requests[1], MPI_STATUSES_IGNORE);
+        MPI_Irecv(A, 1, extra_type[1], left, tag, MPI_COMM_WORLD, &requests[2]);
+        MPI_Irecv(B, share, MPI_DOUBLE, previous, tag, MPI_COMM_WORLD, &requests[3]);
+        MPI_Waitall(2, &requests[2], MPI_STATUSES_IGNORE);
 
         if (rank == 0) {
             printf("\n\n\n");
@@ -116,7 +139,7 @@ void fox(int width, int height, double *A, double *B, double *C, int rank, int p
 
     // GATHER:
 
-    MPI_Gatherv(C, opsize, MPI_DOUBLE, C, counts, displs, *extra_type, root, MPI_COMM_WORLD);
+    MPI_Gatherv(C, opsize, MPI_DOUBLE, C, counts, displs, extra_type[0], root, MPI_COMM_WORLD);
     free(buffer);
 
     if (rank == 0) {
@@ -172,18 +195,21 @@ void initialize_matrixes_impl(int my_rank, int mat_size, int processes, double *
 
 void on_start_impl(int mat_size, int processes, MPI_Datatype* extra_type) {
     int share = mat_size / (int) sqrt(processes);
-    MPI_Type_vector(share, share, mat_size, MPI_DOUBLE, extra_type);
-    MPI_Type_create_resized(*extra_type, 0, share * sizeof(double), extra_type);
-	MPI_Type_commit(extra_type);
+    MPI_Type_vector(share, share, mat_size, MPI_DOUBLE, &extra_type[0]);
+    MPI_Type_create_resized(extra_type[0], 0, share * sizeof(double), &extra_type[0]);
+	MPI_Type_commit(&extra_type[0]);
+    MPI_Type_vector(share, 1, share, MPI_DOUBLE, &extra_type[1]);
+    MPI_Type_commit(&extra_type[1]);
 }
 
 void on_end_impl(MPI_Datatype* extra_type) {
-    MPI_Type_free(extra_type);
+    MPI_Type_free(&extra_type[0]);
+    MPI_Type_free(&extra_type[1]);
 }
 
 int main(int argc, char* argv[]) {
     eval_config config = {
-        .eval = fox,
+        .eval = canon,
         .rams = read_and_assert_matrix_size_impl,
         .am = allocate_matrixes_impl,
         .im = initialize_matrixes_impl,

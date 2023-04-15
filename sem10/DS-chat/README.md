@@ -5,8 +5,6 @@
 1. Gradle 7.6  
    Can be installed with [this installation guide](https://gradle.org/install/#with-the-gradle-wrapper).  
    The command will be `./gradlew wrapper --gradle-version=7.6 --distribution-type=bin`.  
-   Can be installed with [this installation guide](https://gradle.org/install/#with-the-gradle-wrapper).  
-   The command will be `./gradlew wrapper --gradle-version=7.6 --distribution-type=bin`.  
    Installation can be verified with `./gradlew --version`.
 2. JDK 11+  
    Can be installed with [this installation guide](https://openjdk.org/install/).  
