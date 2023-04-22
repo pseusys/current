@@ -149,6 +149,7 @@ task_0:
 	make
 	mpirun -np 1 ./lbm -e 0
 	./gen_animate_gif.sh
+	./display --gnuplot output.raw 3 | md5sum > ref.md5
 .PHONY: task_0
 
 task_1:
@@ -156,6 +157,7 @@ task_1:
 	make
 	mpirun -np 4 --oversubscribe ./lbm -e 1
 	./gen_animate_gif.sh
+	./display --gnuplot output.raw 3 | md5sum -c ref.md5
 .PHONY: task_1
 
 task_2:
@@ -163,6 +165,7 @@ task_2:
 	make
 	mpirun -np 4 --oversubscribe ./lbm -e 2
 	./gen_animate_gif.sh
+	./display --gnuplot output.raw 3 | md5sum -c ref.md5
 .PHONY: task_2
 
 task_3:
@@ -170,6 +173,7 @@ task_3:
 	make
 	mpirun -np 4 --oversubscribe ./lbm -e 3
 	./gen_animate_gif.sh
+	./display --gnuplot output.raw 3 | md5sum -c ref.md5
 .PHONY: task_3
 
 task_4:
@@ -177,6 +181,7 @@ task_4:
 	make
 	mpirun -np 4 --oversubscribe ./lbm -e 4
 	./gen_animate_gif.sh
+	./display --gnuplot output.raw 3 | md5sum -c ref.md5
 .PHONY: task_4
 
 task_5:
@@ -184,6 +189,7 @@ task_5:
 	make
 	mpirun -np 4 --oversubscribe ./lbm -e 5
 	./gen_animate_gif.sh
+	./display --gnuplot output.raw 3 | md5sum -c ref.md5
 .PHONY: task_5
 
 task_6:
@@ -191,4 +197,5 @@ task_6:
 	make
 	mpirun -np 4 --oversubscribe ./lbm -e 6
 	./gen_animate_gif.sh
+	./display --gnuplot output.raw 3 | md5sum -c ref.md5
 .PHONY: task_6
