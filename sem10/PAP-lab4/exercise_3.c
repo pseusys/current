@@ -44,14 +44,14 @@ void lbm_comm_ghost_exchange_ex3(lbm_comm_t * comm, lbm_mesh_t * mesh)
 
 	if (communicate_right) {
 		MPI_Isend(send_right, comm->height * DIRECTIONS, MPI_DOUBLE, comm->rank_x + 1, tag, MPI_COMM_WORLD, comm->requests);
-		MPI_Irecv(recv_left, comm->height * DIRECTIONS, MPI_DOUBLE, comm->rank_x + 1, tag, MPI_COMM_WORLD, comm->requests);
+		MPI_Irecv(recv_left, comm->height * DIRECTIONS, MPI_DOUBLE, comm->rank_x + 1, tag, MPI_COMM_WORLD, comm->requests + 1);
 	}
 	if (communicate_left) {
-		MPI_Isend(send_left, comm->height * DIRECTIONS, MPI_DOUBLE, comm->rank_x - 1, tag, MPI_COMM_WORLD, comm->requests + 1);
-		MPI_Irecv(recv_right, comm->height * DIRECTIONS, MPI_DOUBLE, comm->rank_x - 1, tag, MPI_COMM_WORLD, comm->requests + 1);
+		MPI_Isend(send_left, comm->height * DIRECTIONS, MPI_DOUBLE, comm->rank_x - 1, tag, MPI_COMM_WORLD, comm->requests + 2);
+		MPI_Irecv(recv_right, comm->height * DIRECTIONS, MPI_DOUBLE, comm->rank_x - 1, tag, MPI_COMM_WORLD, comm->requests + 3);
 	}
 
-	if (communicate_right && !communicate_left) MPI_Wait(comm->requests, MPI_STATUS_IGNORE);
-	else if (communicate_left && !communicate_right) MPI_Wait(comm->requests + 1, MPI_STATUS_IGNORE);
-	else if (communicate_right && communicate_left) MPI_Waitall(2, comm->requests, MPI_STATUSES_IGNORE);
+	if (communicate_right && !communicate_left) MPI_Waitall(2, comm->requests, MPI_STATUS_IGNORE);
+	else if (communicate_left && !communicate_right) MPI_Waitall(2, comm->requests + 2, MPI_STATUS_IGNORE);
+	else if (communicate_right && communicate_left) MPI_Waitall(4, comm->requests, MPI_STATUSES_IGNORE);
 }
