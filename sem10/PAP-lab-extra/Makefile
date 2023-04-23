@@ -106,7 +106,7 @@ canon:
 
 autotest: sequential matrix-vector matrix-matrix
 	mkdir -p test
-	bash autotest.sh $(ALGO)
+	bash autotest.sh 
 .PHONY: autotest
 
 venv:

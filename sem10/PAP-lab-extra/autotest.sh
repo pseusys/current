@@ -76,7 +76,7 @@ function test_threads_number {
 }
 
 
-ALGORITHMS=(sequential matrix-matrix )
+ALGORITHMS=(sequential matrix-vector matrix-matrix)
 
 echo -e "Testing with fixed thread number, different matrix size and fixed iterations number..."
 rm -f test/matrix_size.csv 2> /dev/null
