@@ -103,3 +103,19 @@ canon:
 	@
 	make --silent SILENT=1 EXEC=$@ build_and_run
 .PHONY: canon
+
+autotest: sequential matrix-vector matrix-matrix
+	mkdir -p test
+	bash autotest.sh $(ALGO)
+.PHONY: autotest
+
+venv:
+	python3 -m venv venv
+	pip3 install --upgrade pip
+	pip3 install matplotlib~=3.7.1 pandas~=2.0.0
+
+generate_test_graphs: venv autotest
+	python3 -m plotting -i test/matrix_size.csv -x "Matrix size (n * 5n)" -y "Execution time (ns)" -t "Performance test (matrix size)" -l x
+	python3 -m plotting -i test/threads_number.csv -x "Threads number" -y "Execution time (ns)" -t "Performance test (threads number)"
+.PHONY: generate_test_graphs
+
