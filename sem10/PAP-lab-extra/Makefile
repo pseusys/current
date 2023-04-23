@@ -104,7 +104,7 @@ canon:
 	make --silent SILENT=1 EXEC=$@ build_and_run
 .PHONY: canon
 
-autotest: sequential matrix-vector matrix-matrix
+autotest: clean build/sequential.run build/matrix-vector.run build/matrix-matrix.run
 	mkdir -p test
 	bash autotest.sh 
 .PHONY: autotest
