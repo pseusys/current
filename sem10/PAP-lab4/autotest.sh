@@ -61,7 +61,7 @@ function test_matrix_size {
     done
     echo >> $1
 
-    for i in {0..7}; do
+    for i in {0..10}; do
         MT="$((20 * 2 ** $i))"
         flush_config "test/test_config.csv" 16000 $MT
 
