@@ -80,7 +80,7 @@ function test_matrix_size {
             }
             END=`date +%s%N`
             DURATION="$(($END - $START))"
-            echo "$DURATION;" >> $1
+            echo -n "$DURATION;" >> $1
         done
         echo >> $1
         if [[ $EARLY_BREAK == $ALGORITHMS_NUM ]]; then break; fi
@@ -101,15 +101,16 @@ function test_threads_number {
     done
     echo >> $1
 
-    for i in {1..15}; do
+    for i in {0..15}; do
         TH="$((2 * $i))"
+        if [ $i == 0 ]; then TH=1; fi
         flush_config "test/test_config.csv" 16000 160
 
         echo -n "$TH;" >> $1
         EARLY_BREAK=0
         for ((a=0;a<ALGORITHMS_NUM;a++)); do
-            if [ $a == 0 ]; then TH=1;
-            else TH=$TH; fi
+            if [ $a == 0 ] || [ $i == 0 ]; then TH=1;
+            else TH="$((2 * $i))"; fi
 
             echo -e "\ttesting with: THREADS=$TH EXERCISE=$a MATRIX=160x800 ITERATIONS=16000"
             START=`date +%s%N`
@@ -120,7 +121,7 @@ function test_threads_number {
             }
             END=`date +%s%N`
             DURATION="$(($END - $START))"
-            echo "$DURATION;" >> $1
+            echo -n "$DURATION;" >> $1
         done
         echo >> $1
         if [[ $EARLY_BREAK == $ALGORITHMS_NUM ]]; then break; fi

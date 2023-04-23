@@ -1,3 +1,6 @@
+.ONESHELL:
+.EXPORT_ALL_VARIABLES:
+
 #Compiler commands
 CC=gcc
 MPICC=mpicc
@@ -204,7 +207,7 @@ venv:
 	pip3 install matplotlib~=3.7.1 pandas~=2.0.0
 
 generate_test_graphs: venv autotest
-	python3 plotting.py -i test/iterations_number.csv -x "Iterations number" -y "Execution time (ns)" -t "Performance test (iterations number)"
-	python3 plotting.py -i test/matrix_size.csv -x "Matrix size (n * 5n)" -y "Execution time (ns)" -t "Performance test (matrix size)"
-	python3 plotting.py -i test/threads_number.csv -x "Threads number" -y "Execution time (ns)" -t "Performance test (threads number)"
+	python3 -m plotting -i test/iterations_number.csv -x "Iterations number" -y "Execution time (ns)" -t "Performance test (iterations number)"
+	python3 -m plotting -i test/matrix_size.csv -x "Matrix size (n * 5n)" -y "Execution time (ns)" -t "Performance test (matrix size)" -l x
+	python3 -m plotting -i test/threads_number.csv -x "Threads number" -y "Execution time (ns)" -t "Performance test (threads number)"
 .PHONY: generate_test_graphs
