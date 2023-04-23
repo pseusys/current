@@ -2,6 +2,10 @@
 CC=gcc
 MPICC=mpicc
 
+#Python path variable
+SHELL = /bin/bash
+PATH := venv/bin:$(PATH)
+
 #enable/disable
 ENABLE_MAGICK_WAND=false
 ENABLE_COLORS=true
@@ -112,6 +116,9 @@ clean:
 	$(RM) */*.swp
 	$(RM) */.*.swp
 	$(RM) -r __python__
+	$(RM) -rf test
+	$(RM) -rf venv
+	$(RM) -rf **/__pycache__
 
 # Gen deps
 depend:
@@ -144,58 +151,60 @@ objs/display.o: src/lbm_struct.h src/lbm_config.h
 
 
 
-task_0:
-	make clean
-	make
+task_0: clean all
 	mpirun -np 1 ./lbm -e 0
-	./gen_animate_gif.sh
 	./display --gnuplot output.raw 3 | md5sum > ref.md5
+	./gen_animate_gif.sh
 .PHONY: task_0
 
-task_1:
-	make clean
-	make
+task_1: clean all
 	mpirun -np 4 --oversubscribe ./lbm -e 1
-	./gen_animate_gif.sh
 	./display --gnuplot output.raw 3 | md5sum -c ref.md5
+	./gen_animate_gif.sh
 .PHONY: task_1
 
-task_2:
-	make clean
-	make
+task_2: clean all
 	mpirun -np 4 --oversubscribe ./lbm -e 2
-	./gen_animate_gif.sh
 	./display --gnuplot output.raw 3 | md5sum -c ref.md5
+	./gen_animate_gif.sh
 .PHONY: task_2
 
-task_3:
-	make clean
-	make
+task_3: clean all
 	mpirun -np 4 --oversubscribe ./lbm -e 3
-	./gen_animate_gif.sh
 	./display --gnuplot output.raw 3 | md5sum -c ref.md5
+	./gen_animate_gif.sh
 .PHONY: task_3
 
-task_4:
-	make clean
-	make
+task_4: clean all
 	mpirun -np 4 --oversubscribe ./lbm -e 4
-	./gen_animate_gif.sh
 	./display --gnuplot output.raw 3 | md5sum -c ref.md5
+	./gen_animate_gif.sh
 .PHONY: task_4
 
-task_5:
-	make clean
-	make
+task_5: clean all
 	mpirun -np 4 --oversubscribe ./lbm -e 5
-	./gen_animate_gif.sh
 	./display --gnuplot output.raw 3 | md5sum -c ref.md5
+	./gen_animate_gif.sh
 .PHONY: task_5
 
-task_6:
-	make clean
-	make
+task_6: clean all
 	mpirun -np 4 --oversubscribe ./lbm -e 6
-	./gen_animate_gif.sh
 	./display --gnuplot output.raw 3 | md5sum -c ref.md5
+	./gen_animate_gif.sh
 .PHONY: task_6
+
+autotest: clean all
+	mkdir -p test
+	bash autotest.sh $(ALGO)
+.PHONY: autotest
+
+venv:
+	python3 -m venv venv
+	pip3 install --upgrade pip
+	pip3 install matplotlib~=3.7.1 pandas~=2.0.0
+
+generate_test_graphs: venv autotest
+	python3 plotting.py -i test/iterations_number.csv -x "Iterations number" -y "Execution time (ns)" -t "Performance test (iterations number)"
+	python3 plotting.py -i test/matrix_size.csv -x "Matrix size (n * 5n)" -y "Execution time (ns)" -t "Performance test (matrix size)"
+	python3 plotting.py -i test/threads_number.csv -x "Threads number" -y "Execution time (ns)" -t "Performance test (threads number)"
+.PHONY: generate_test_graphs
