@@ -1,3 +1,5 @@
 venv
 models
+logs
+
 compas-scores-two-years.csv
