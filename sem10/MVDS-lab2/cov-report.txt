@@ -1,0 +1,17 @@
+Coverage Report Summary Data by file
+
+=================================================================================
+=== File: cryptogarage.vhd
+=================================================================================
+    Enabled Coverage            Active      Hits    Misses % Covered
+    ----------------            ------      ----    ------ ---------
+    Stmts                           49        37        12      75.5
+    Branches                        57        45        12      78.9
+    FSMs                                                        76.5
+        States                      11        11         0     100.0
+        Transitions                 47        25        22      53.1
+
+
+Total Coverage By File (code coverage only, filtered view): 77.0%
+
+
