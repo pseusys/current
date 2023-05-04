@@ -1,0 +1,34 @@
+
+*******************************************************
+
+Cell: CryptoGarage    View: Automaton    Library: work
+
+*******************************************************
+
+
+ Cell      Library  References     Total Area
+
+AOI211     c35_CORELIB     5 x     73    364 um2
+AOI221     c35_CORELIB     4 x     91    364 um2
+AOI311     c35_CORELIB     3 x     91    273 um2
+CLKIN1     c35_CORELIB     9 x     36    328 um2
+DFC1       c35_CORELIB    10 x    309   3094 um2
+DFP1       c35_CORELIB     1 x    309    309 um2
+NAND21     c35_CORELIB     8 x     55    437 um2
+NAND31     c35_CORELIB     3 x     73    218 um2
+NOR21      c35_CORELIB    11 x     55    601 um2
+NOR31      c35_CORELIB     5 x     73    364 um2
+NOR40      c35_CORELIB     2 x     73    146 um2
+OAI211     c35_CORELIB     8 x     73    582 um2
+OAI2111    c35_CORELIB     2 x     91    182 um2
+OAI221     c35_CORELIB     2 x     91    182 um2
+OAI311     c35_CORELIB     3 x     91    273 um2
+
+ Number of ports :                      16
+ Number of nets :                       95
+ Number of instances :                  76
+ Number of references to this view :     0
+
+Total accumulated area : 
+ Number of um2 :                      7717
+ Number of accumulated instances :      76
