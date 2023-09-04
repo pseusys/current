@@ -27,7 +27,7 @@ void test1(void) {
     struct elem *e = alloc_elem();
     u_isnotnull("unexpected allocation failure", e);
 
-    printf("%lld\n", e);
+    printf("%lld %d\n", e, sizeof(struct elem));
     e->val = i;
     e->next = 0;
     e = NULL;

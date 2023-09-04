@@ -6,6 +6,10 @@
    Ajouter la fonction de comparaison du tri ici
 */
 
+int compare(const double complex* a, const double complex* b) {
+  return carg(*a) - carg(*b) > 0 ? 1 : -1;
+}
+
 const int TAILLE = 100;
 
 int main(void) {
@@ -19,6 +23,8 @@ int main(void) {
   /**
      Mettre le code d'appel de qsort ici
   */
+
+  qsort(tableau, TAILLE, sizeof(double complex), &compare);
 
   /**
      Vérification du tri

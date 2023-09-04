@@ -32,7 +32,7 @@ static unsigned char *memoire_elem_pool = 0;
 struct elem *alloc_elem(void) {
   for (size_t i = 0; i < memory_limit; i ++) if (bt1k_get(i) == false) {
     bt1k_set(i, true);
-    return &(memoire_elem_pool[i]);
+    return &((struct elem*) memoire_elem_pool)[i];
   }
   return NULL;
 }
@@ -46,7 +46,7 @@ struct elem *alloc_elem(void) {
 */
 void gc_elems(const int nbheads, struct elem *const heads[nbheads]) {
   for (size_t i = 0; i < nbheads; i ++) {
-    printf("%lld %lld %lld\n", ((void*) *(heads + i)), (void*) memoire_elem_pool, ((void*) heads[i]) - ((void*) memoire_elem_pool));
+    printf("%lld\n", &(heads[i]));
     bt1k_set((((void*) heads[i]) - ((void*) memoire_elem_pool)) / sizeof(struct elem), false);
   }
 }

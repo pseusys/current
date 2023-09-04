@@ -84,6 +84,7 @@ void test2(void) {
   /* check the list */
   e = head;
   for (int j = 0; j < 1000; j++) {
+    printf("%lld\n", e->val);
     u_assert("incoherent val field in elem", e->val == (1000 - j - 1));
     e = e->next;
   }
