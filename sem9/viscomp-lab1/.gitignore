@@ -1,0 +1,6 @@
+pgmtopgm
+ppmto3pgm
+
+*.pgm
+*.ppm
+*.o
