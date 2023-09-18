@@ -1,6 +1,8 @@
 /* Headers for PBM+ */
 /* E.B.             */
 
+#include <stdio.h>
+
 typedef unsigned char byte;
 typedef unsigned char gray;
 

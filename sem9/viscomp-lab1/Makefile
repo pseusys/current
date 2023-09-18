@@ -1,29 +1,33 @@
-#######################################
-# Makefile PBM                        #
-#                                     #
-# E.B.                                #
-#######################################
+.PHONY: all build rebuild clean pgmtopgm ppmto3pgm
 
+CC=gcc
 
-PROG = pgmtopgm ppmto3pgm
+CFLAGS=-g -Wall -O0 -Werror
+LDFLAGS=
 
-all : $(PROG)
+PGMTOPGM_INPUT=mandrill.pgm
+PGMTOPGM_OUTPUT=mandrill_alt.pgm
+PPMTO3PGM_INPUT=mandrill.ppm
+PPMTO3PGM_OUTPUT=mandrill_red.pgm mandrill_green.pgm mandrill_blue.pgm
 
-# Variables for file compilation
-CC        =  gcc
-CFLAGS    =  -g -Wall
-CPPFLAGS  =  -DDEBUG
-LDFLAGS   =  -g -lm
+all: build
 
-#pxmtopxm : pxmtopxm.o Util.o
+build: build/pgmtopgm.run build/ppmto3pgm.run
 
-pgmtopgm : pgmtopgm.o Util.o
+rebuild: clean build
 
-ppmto3pgm : ppmto3pgm.o Util.o
+pgmtopgm: build/pgmtopgm.run
+	@ ./$^ $(PGMTOPGM_INPUT) $(PGMTOPGM_OUTPUT)
 
-clean :
-	@rm -f *.o
+ppmto3pgm: build/ppmto3pgm.run
+	@ ./$^ $(PPMTO3PGM_INPUT) $(PPMTO3PGM_OUTPUT)
 
-cleanall : clean
-	@rm -f $(PROG)
+build/%.run: build/%.o build/Util.o Util.h
+	@ $(CC) -o $@ $^ $(LDFLAGS)
 
+build/%.o: %.c
+	@ mkdir -p build
+	@ $(CC) -o $@ -c $< $(CFLAGS)
+
+clean:
+	@ rm -rf build $(PGMTOPGM_OUTPUT) $(PPMTO3PGM_OUTPUT)
