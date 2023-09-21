@@ -1,0 +1,9 @@
+For now, the test that’s ready is as follows:
+The garage door is initially opened.
+When we’re first at the state powerup, the switch is on and don’t have an encryption key available, we move to state nokey.
+In state nokey, we stay there until we get an encryption key.
+When we get an encryption key, we move to state deactivated.
+Later, we turn the switch off and go to the powerdown state.
+After that, we put the switch on again and we go back to the powerup state.
+Since we have an encryption key, then after we powerup again, we go to the deactivated state again.
+

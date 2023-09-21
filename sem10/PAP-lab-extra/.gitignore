@@ -1,0 +1,12 @@
+# IDE configuration dirs:
+.vscode
+.idea
+
+# build artifacts:
+build/*.run
+
+# Task description PDF:
+*.pdf
+
+# Test data
+test/*

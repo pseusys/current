@@ -1,0 +1,20 @@
+# IDE configuration dirs:
+.vscode
+.idea
+
+# build artifacts:
+objs
+check_comm
+display
+lbm
+output.*
+
+# Task description PDF:
+*.pdf
+
+# Test results:
+test/*.csv
+test/*.png
+
+# Python virtual environment
+venv
