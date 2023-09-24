@@ -13,15 +13,11 @@ func (r *Room) doorHorizontal() bool {
 	return r.height > r.width
 }
 
-func (r *Room) hasDoor() bool {
-	return r.door_x != 0 && r.door_y != 0
-}
-
-func (r *Room) doorIncluded(x uint, y uint, horizontal bool) bool {
-	if horizontal {
-		return x >= r.x && x < r.x+r.width && (y == r.y || y == r.y+r.height)
+func (r *Room) doorIncluded(room_door *Room) bool {
+	if room_door.doorHorizontal() {
+		return room_door.door_x >= r.x && room_door.door_x < r.x+r.width && (room_door.door_y == r.y || room_door.door_y == r.y+r.height)
 	} else {
-		return y >= r.y && y < r.y+r.height && (x == r.x || x == r.x+r.width)
+		return room_door.door_y >= r.y && room_door.door_y < r.y+r.height && (room_door.door_x == r.x || room_door.door_x == r.x+r.width)
 	}
 }
 
@@ -65,10 +61,10 @@ func (r *Room) divideRecursive(pivot *Room) (uint, error) {
 	}
 
 	if pivot != nil {
-		if first_child.doorIncluded(pivot.door_x, pivot.door_y, pivot.doorHorizontal()) {
+		if first_child.doorIncluded(pivot) {
 			r.right_child = &first_child
 			r.left_child = &second_child
-		} else if second_child.doorIncluded(pivot.door_x, pivot.door_y, pivot.doorHorizontal()) {
+		} else if second_child.doorIncluded(pivot) {
 			r.right_child = &second_child
 			r.left_child = &first_child
 		} else {

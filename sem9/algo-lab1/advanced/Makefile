@@ -8,7 +8,7 @@ build:
 .PHONY: build
 
 run: build
-	build/$(EXECUTABLE_NAME) -v -s 50x50
+	build/$(EXECUTABLE_NAME) -v -s 50x50 -f ppm
 .PHONY: run
 
 lint:
@@ -18,5 +18,5 @@ lint:
 
 clean:
 	rm -rf build
-	rm -f go.sum
+	rm -f go.sum *.bin *.ppm *.svg *.txt
 .PHONY: clean

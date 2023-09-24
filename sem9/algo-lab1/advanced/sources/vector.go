@@ -14,12 +14,17 @@ const (
 	SVG_NONE_COLOR = "none"
 )
 
-func writeHeader(file *os.File, width uint, height uint) (int, error) {
-	str := fmt.Sprintf("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"%d\" height=\"%d\">\n", width, height)
+var (
+	SVG_WIDTH  uint
+	SVG_HEIGHT uint
+)
+
+func svgHeader(file *os.File) (int, error) {
+	str := fmt.Sprintf("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"%d\" height=\"%d\">\n", SVG_WIDTH, SVG_HEIGHT)
 	return file.WriteString(str)
 }
 
-func writeFooter(file *os.File) (int, error) {
+func svgFooter(file *os.File) (int, error) {
 	return file.WriteString("</svg>\n")
 }
 
@@ -80,14 +85,14 @@ func (m *Maze) SaveSVG(name string, path *list.List) error {
 	}
 	defer file.Close()
 
-	width := m.tree.width + 6
-	height := m.tree.height + 6
-	_, err = writeHeader(file, width, height)
+	SVG_WIDTH = m.tree.width + 6
+	SVG_HEIGHT = m.tree.height + 6
+	_, err = svgHeader(file)
 	if err != nil {
 		return JoinError("error writing header", err)
 	}
 
-	_, err = svgRect(file, 0, 0, float64(width), float64(height), SVG_NONE_COLOR, SVG_BACK_COLOR)
+	_, err = svgRect(file, 0, 0, float64(SVG_WIDTH), float64(SVG_HEIGHT), SVG_NONE_COLOR, SVG_BACK_COLOR)
 	if err != nil {
 		return JoinError("error clearing background", err)
 	}
@@ -98,7 +103,7 @@ func (m *Maze) SaveSVG(name string, path *list.List) error {
 
 	for i := 0; i < int(m.rooms); i++ {
 		room := m.array[i]
-		if !room.hasDoor() {
+		if room.isFinal() {
 			continue
 		}
 		_, err = room.svgWall(file)
@@ -140,7 +145,7 @@ func (m *Maze) SaveSVG(name string, path *list.List) error {
 		}
 	}
 
-	_, err = writeFooter(file)
+	_, err = svgFooter(file)
 	if err != nil {
 		return JoinError("error writing footer", err)
 	}

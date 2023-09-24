@@ -13,9 +13,9 @@ func (m *Maze) downfall(start *Room, current *Room) (*Room, error) {
 	switch {
 	case current.isFinal():
 		return current, nil
-	case current.left_child.doorIncluded(start.door_x, start.door_y, start.doorHorizontal()):
+	case current.left_child.doorIncluded(start):
 		return m.downfall(start, current.left_child)
-	case current.right_child.doorIncluded(start.door_x, start.door_y, start.doorHorizontal()):
+	case current.right_child.doorIncluded(start):
 		return m.downfall(start, current.right_child)
 	}
 	current_index := fmt.Sprintf("current %d", current.findRoomIndex(m.array))
@@ -115,15 +115,12 @@ func (m *Maze) BuildPath(x1 uint, y1 uint, x2 uint, y2 uint) (*list.List, error)
 	var last_common *Room
 	start_val := start_path.Back()
 	end_val := end_path.Back()
-	for start_val.Value == end_val.Value {
+	for start_val != nil && end_val != nil && start_val.Value == end_val.Value {
 		last_common = start_val.Value.(*Room)
 		start_path.Remove(start_val)
 		end_path.Remove(end_val)
 		start_val = start_path.Back()
 		end_val = end_path.Back()
-		if start_val == nil || end_val == nil {
-			break
-		}
 	}
 
 	// Merge lists, creating path

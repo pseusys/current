@@ -26,11 +26,11 @@ var (
 	image    = flag.String("n", DEF_IMAGE_NAME, fmt.Sprintf("Output image base name (default: '%s')", DEF_IMAGE_NAME))
 	format   = flag.String("f", BINARY_FORMAT, fmt.Sprintf("Output image format, should be either 'ppm' or 'svg' (default: '%s')", BINARY_FORMAT))
 	size     = flag.String("s", DEF_SIZE, fmt.Sprintf("Size of maze, formatted like [WIDTH]x[HEIGHT] (default: '%s')", DEF_SIZE))
+	path     = flag.Bool("p", DEF_PATH, fmt.Sprintf("Calculate and draw path from entrance to exit (default: %v)", DEF_PATH))
 	route    = flag.String("r", DEF_ROUTE_NAME, fmt.Sprintf("Output path base name (default: '%s')", DEF_ROUTE_NAME))
 	entrance = flag.String("b", NONE_STRING, "Maze entrance, formatted like [X]x[Y] (defualt: will be generated)")
 	exit     = flag.String("e", NONE_STRING, "Maze exit, formatted like [X]x[Y] (defualt: will be generated)")
 	verbose  = flag.Bool("v", DEF_VERBOSE, fmt.Sprintf("Print intermediate output (default: %v)", DEF_VERBOSE))
-	path     = flag.Bool("p", DEF_PATH, fmt.Sprintf("Calculate and draw path from entrance to exit (default: %v)", DEF_PATH))
 	help     = flag.Bool("h", false, "Print this message again and exit")
 )
 
@@ -100,7 +100,17 @@ func main() {
 		os.WriteFile(path_file, []byte(maze.SprintPath(path_list, false, true)), FILE_PERMISSIONS)
 	}
 
-	maze.SaveSVG(fmt.Sprintf("%s-%dx%d.%s", *image, MAZE_WIDTH, MAZE_HEIGHT, *format), path_list)
+	switch *format {
+	case BINARY_FORMAT:
+		err = maze.SavePPM(fmt.Sprintf("%s-%dx%d.ppm", *image, MAZE_WIDTH, MAZE_HEIGHT), path_list)
+	case VECTOR_FORMAT:
+		err = maze.SaveSVG(fmt.Sprintf("%s-%dx%d.svg", *image, MAZE_WIDTH, MAZE_HEIGHT), path_list)
+	default:
+		LogE("unknown image format", errors.New(*format))
+	}
+	if err != nil {
+		LogE("error drawing maze", err)
+	}
 
 	if *output != NONE_STRING {
 		data, err := maze.DumpMaze()
