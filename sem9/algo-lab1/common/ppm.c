@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include "ppm.h"
 
 /* Image width and height */
@@ -18,17 +19,17 @@ void fill_buffer (unsigned char* color, unsigned char* buffer, unsigned int size
 }
 
 /* Draws wall according to coordinate grid */
-void set_wall (unsigned char* color, unsigned char* buffer, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2) {
+void set_wall (unsigned char* color, unsigned char* buffer, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, bool is_door) {
   int line_start, line_end, line_coord;
   if (x1 == x2) {
 
     line_coord = x1 * 4 + 3;
     if (y1 > y2) {
-      line_start = y2 * 4 + 3;
-      line_end = y1 * 4 + 3;
+      line_start = y2 * 4 + 3 + is_door;
+      line_end = y1 * 4 + 3 - is_door;
     } else {
-      line_start = y1 * 4 + 3;
-      line_end = y2 * 4 + 3;
+      line_start = y1 * 4 + 3 + is_door;
+      line_end = y2 * 4 + 3 - is_door;
     }
 
     for (int i = line_start; i <= line_end; i++)
@@ -39,11 +40,11 @@ void set_wall (unsigned char* color, unsigned char* buffer, unsigned int x1, uns
     
     line_coord = y1 * 4 + 3;
     if (x1 > x2) {
-      line_start = x2 * 4 + 3;
-      line_end = x1 * 4 + 3;
+      line_start = x2 * 4 + 3 + is_door;
+      line_end = x1 * 4 + 3 - is_door;
     } else {
-      line_start = x1 * 4 + 3;
-      line_end = x2 * 4 + 3;
+      line_start = x1 * 4 + 3 + is_door;
+      line_end = x2 * 4 + 3 - is_door;
     }
 
     for (int i = line_start; i <= line_end; i++)
@@ -66,19 +67,19 @@ void maze_ppm (maze* m, char* filename) {
   unsigned char* buffer = malloc(buff_size * 3 * sizeof(unsigned char));
 
   fill_buffer(ppm_back_color, buffer, buff_size);
-  set_wall(ppm_wall_color, buffer, 0, 0, m->room_tree->width, 0);
-  set_wall(ppm_wall_color, buffer, 0, m->room_tree->height, m->room_tree->width, m->room_tree->height);
-  set_wall(ppm_wall_color, buffer, 0, 0, 0, m->room_tree->height);
-  set_wall(ppm_wall_color, buffer, m->room_tree->width, 0, m->room_tree->width, m->room_tree->height);
+  set_wall(ppm_wall_color, buffer, 0, 0, m->room_tree->width, 0, false);
+  set_wall(ppm_wall_color, buffer, 0, m->room_tree->height, m->room_tree->width, m->room_tree->height, false);
+  set_wall(ppm_wall_color, buffer, 0, 0, 0, m->room_tree->height, false);
+  set_wall(ppm_wall_color, buffer, m->room_tree->width, 0, m->room_tree->width, m->room_tree->height, false);
 
   for (int i = 0; i < m->rooms; i++) {
     room* r = m->room_array[i];
     if (r->height > r->width) {
-      set_wall(ppm_wall_color, buffer, r->x, r->door_y, r->x + r->width, r->door_y);
-      set_wall(ppm_door_color, buffer, r->door_x, r->door_y, r->door_x - 1, r->door_y);
+      set_wall(ppm_wall_color, buffer, r->x, r->door_y, r->x + r->width, r->door_y, false);
+      set_wall(ppm_door_color, buffer, r->door_x, r->door_y, r->door_x - 1, r->door_y, true);
     } else {
-      set_wall(ppm_wall_color, buffer, r->door_x, r->y, r->door_x, r->y + r->height);
-      set_wall(ppm_door_color, buffer, r->door_x, r->door_y, r->door_x, r->door_y - 1);
+      set_wall(ppm_wall_color, buffer, r->door_x, r->y, r->door_x, r->y + r->height, false);
+      set_wall(ppm_door_color, buffer, r->door_x, r->door_y, r->door_x, r->door_y - 1, true);
     }
   }
 
