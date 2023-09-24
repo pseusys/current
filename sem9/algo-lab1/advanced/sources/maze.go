@@ -25,7 +25,7 @@ func (r *Room) isFinal() bool {
 	return r.width == 1 || r.height == 1
 }
 
-func (r *Room) divideRecursive() (uint, error) {
+func (r *Room) divideRecursive(pivot *Room) (uint, error) {
 	if r.isFinal() {
 		return 1, nil
 	}
@@ -60,26 +60,27 @@ func (r *Room) divideRecursive() (uint, error) {
 		second_child.height = r.height
 	}
 
-	if r.parent != nil {
-		if first_child.doorIncluded(r.parent.door_x, r.parent.door_y, r.parent.doorHorizontal()) {
+	if pivot != nil {
+		if first_child.doorIncluded(pivot.door_x, pivot.door_y, pivot.doorHorizontal()) {
 			r.right_child = &first_child
 			r.left_child = &second_child
-		} else if second_child.doorIncluded(r.parent.door_x, r.parent.door_y, r.parent.doorHorizontal()) {
+		} else if second_child.doorIncluded(pivot.door_x, pivot.door_y, pivot.doorHorizontal()) {
 			r.right_child = &second_child
 			r.left_child = &first_child
 		} else {
 			return 0, errors.New("entrance doesn't belong to children")
 		}
 	} else {
+		pivot = r
 		r.right_child = &first_child
 		r.left_child = &second_child
 	}
 
-	right_weight, err := r.right_child.divideRecursive()
+	right_weight, err := r.right_child.divideRecursive(pivot)
 	if err != nil {
 		return 0, JoinError("invalid right subtree", err)
 	}
-	left_weight, err := r.left_child.divideRecursive()
+	left_weight, err := r.left_child.divideRecursive(r)
 	if err != nil {
 		return 0, JoinError("invalid left subtree", err)
 	}
@@ -119,7 +120,7 @@ func GenerateMaze(w uint, h uint) (*Maze, error) {
 	}
 
 	var err error
-	maze.rooms, err = maze.tree.divideRecursive()
+	maze.rooms, err = maze.tree.divideRecursive(nil)
 	if err != nil {
 		return nil, JoinError("tree generation error", err)
 	}
