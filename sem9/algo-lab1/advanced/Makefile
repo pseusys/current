@@ -8,7 +8,7 @@ build:
 .PHONY: build
 
 run: build
-	build/$(EXECUTABLE_NAME) -v -s 10x10
+	build/$(EXECUTABLE_NAME) -v -s 50x50
 .PHONY: run
 
 lint:

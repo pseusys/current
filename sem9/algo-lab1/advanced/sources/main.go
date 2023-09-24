@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/list"
 	"errors"
 	"flag"
 	"fmt"
@@ -43,6 +44,7 @@ var (
 )
 
 func main() {
+	var err error
 	flag.Parse()
 	if *help {
 		flag.Usage()
@@ -63,7 +65,6 @@ func main() {
 		MAZE_WIDTH = maze.tree.width
 		MAZE_HEIGHT = maze.tree.height
 	} else {
-		var err error
 		fmt.Sscanf(*size, "%dx%d", &MAZE_WIDTH, &MAZE_HEIGHT)
 		LogF("Generating maze of size: %dx%d\n", MAZE_WIDTH, MAZE_HEIGHT)
 		maze, err = GenerateMaze(MAZE_WIDTH, MAZE_HEIGHT)
@@ -74,9 +75,7 @@ func main() {
 		}
 	}
 
-	// TODO: remove!
-	maze.SaveSVG(fmt.Sprintf("%s-%dx%d.%s", *image, MAZE_WIDTH, MAZE_HEIGHT, *format))
-
+	var path_list *list.List
 	if *path {
 		if *entrance != NONE_STRING {
 			fmt.Sscanf(*entrance, "%dx%d", &MAZE_ENTRANCE_X, &MAZE_ENTRANCE_Y)
@@ -92,7 +91,7 @@ func main() {
 		}
 		LogF("Calculating path from %dx%d to %dx%d\n", MAZE_ENTRANCE_X, MAZE_ENTRANCE_Y, MAZE_EXIT_X, MAZE_EXIT_Y)
 
-		path_list, err := maze.BuildPath(MAZE_ENTRANCE_X, MAZE_ENTRANCE_Y, MAZE_EXIT_X, MAZE_EXIT_Y)
+		path_list, err = maze.BuildPath(MAZE_ENTRANCE_X, MAZE_ENTRANCE_Y, MAZE_EXIT_X, MAZE_EXIT_Y)
 		if err != nil {
 			LogE("error building path", err)
 		}
@@ -100,6 +99,8 @@ func main() {
 		path_file := fmt.Sprintf("%s-%dx%d-%dx%d.txt", *route, MAZE_ENTRANCE_X, MAZE_ENTRANCE_Y, MAZE_EXIT_X, MAZE_EXIT_Y)
 		os.WriteFile(path_file, []byte(maze.SprintPath(path_list, false, true)), FILE_PERMISSIONS)
 	}
+
+	maze.SaveSVG(fmt.Sprintf("%s-%dx%d.%s", *image, MAZE_WIDTH, MAZE_HEIGHT, *format), path_list)
 
 	if *output != NONE_STRING {
 		data, err := maze.DumpMaze()

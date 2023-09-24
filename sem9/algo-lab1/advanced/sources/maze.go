@@ -13,6 +13,10 @@ func (r *Room) doorHorizontal() bool {
 	return r.height > r.width
 }
 
+func (r *Room) hasDoor() bool {
+	return r.door_x != 0 && r.door_y != 0
+}
+
 func (r *Room) doorIncluded(x uint, y uint, horizontal bool) bool {
 	if horizontal {
 		return x >= r.x && x < r.x+r.width && (y == r.y || y == r.y+r.height)
@@ -87,14 +91,18 @@ func (r *Room) divideRecursive(pivot *Room) (uint, error) {
 	return right_weight + left_weight + 1, nil
 }
 
-func (r *Room) collectRooms(counter uint, array []*Room) uint {
-	array[counter] = r
-	LogF("Room #%d: (x: %d, y: %d) - (w: %d, h:%d)\n", counter, r.x, r.y, r.width, r.height)
+func (r *Room) PrintRoom(index int) {
+	LogF("Room #%d: (x: %d, y: %d) - (w: %d, h:%d)\n", index, r.x, r.y, r.width, r.height)
 	if !r.isFinal() {
 		LogF("\thas a door: (x: %d, y: %d), horizontal: %v.\n", r.door_x, r.door_y, r.doorHorizontal())
 	} else {
 		LogF("\tis a leaf room.\n")
 	}
+}
+
+func (r *Room) collectRooms(counter uint, array []*Room) uint {
+	array[counter] = r
+	r.PrintRoom(int(counter))
 
 	if r.left_child != nil {
 		counter = r.left_child.collectRooms(counter+1, array)

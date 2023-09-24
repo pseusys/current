@@ -70,6 +70,7 @@ func (m *compactMaze) expandMaze() *Maze {
 	}
 	for i := 0; i < int(m.Rooms); i++ {
 		m.Array[i].expandRoom(array[i], array)
+		array[i].PrintRoom(i)
 	}
 	maze := Maze{
 		m.Rooms,
