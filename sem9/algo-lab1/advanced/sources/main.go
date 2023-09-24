@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -68,6 +69,8 @@ func main() {
 		maze, err = GenerateMaze(MAZE_WIDTH, MAZE_HEIGHT)
 		if err != nil {
 			LogE("error generating maze", err)
+		} else if MAZE_WIDTH == 1 || MAZE_HEIGHT == 1 {
+			LogE("maze of size 1", errors.New("it's boring"))
 		}
 	}
 
@@ -89,10 +92,13 @@ func main() {
 		}
 		LogF("Calculating path from %dx%d to %dx%d\n", MAZE_ENTRANCE_X, MAZE_ENTRANCE_Y, MAZE_EXIT_X, MAZE_EXIT_Y)
 
-		_, err := maze.BuildPath(MAZE_ENTRANCE_X, MAZE_ENTRANCE_Y, MAZE_EXIT_X, MAZE_EXIT_Y)
+		path_list, err := maze.BuildPath(MAZE_ENTRANCE_X, MAZE_ENTRANCE_Y, MAZE_EXIT_X, MAZE_EXIT_Y)
 		if err != nil {
 			LogE("error building path", err)
 		}
+
+		path_file := fmt.Sprintf("%s-%dx%d-%dx%d.txt", *route, MAZE_ENTRANCE_X, MAZE_ENTRANCE_Y, MAZE_EXIT_X, MAZE_EXIT_Y)
+		os.WriteFile(path_file, []byte(maze.SprintPath(path_list, false, true)), FILE_PERMISSIONS)
 	}
 
 	if *output != NONE_STRING {

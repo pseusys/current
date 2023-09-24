@@ -31,21 +31,30 @@ func svgRect(file *os.File, x float64, y float64, w float64, h float64, stroke s
 	return file.WriteString(str)
 }
 
-func (m *Maze) SaveSVG(name string) {
+func (m *Maze) SaveSVG(name string) error {
 	file, err := os.Create(name)
 	if err != nil {
-		LogE("error opening file", err)
+		return JoinError("error opening file", err)
 	}
 	defer file.Close()
 
 	width := m.tree.width + 6
 	height := m.tree.height + 6
-	writeHeader(file, width, height)
+	_, err = writeHeader(file, width, height)
+	if err != nil {
+		return JoinError("error writing header", err)
+	}
 
-	svgRect(file, 0, 0, float64(width), float64(height), SVG_NONE_COLOR, SVG_BACK_COLOR)
+	_, err = svgRect(file, 0, 0, float64(width), float64(height), SVG_NONE_COLOR, SVG_BACK_COLOR)
+	if err != nil {
+		return JoinError("error writing outline", err)
+	}
 	for i := 0; i < int(m.rooms); i++ {
 		room := m.array[i]
-		svgRect(file, float64(room.x)+3.0, float64(room.y)+3.0, float64(room.width), float64(room.height), SVG_WALL_COLOR, SVG_NONE_COLOR)
+		_, err = svgRect(file, float64(room.x)+3.0, float64(room.y)+3.0, float64(room.width), float64(room.height), SVG_WALL_COLOR, SVG_NONE_COLOR)
+		if err != nil {
+			return JoinError(fmt.Sprintf("error writing room #%d", room.findRoomIndex(m.array)), err)
+		}
 	}
 	for i := 0; i < int(m.rooms); i++ {
 		room := m.array[i]
@@ -53,11 +62,18 @@ func (m *Maze) SaveSVG(name string) {
 			continue
 		}
 		if room.height > room.width {
-			svgLine(file, float64(room.door_x)+2.9, float64(room.door_y)+3.0, float64(room.door_x)+2.1, float64(room.door_y)+3.0, SVG_DOOR_COLOR)
+			_, err = svgLine(file, float64(room.door_x)+2.9, float64(room.door_y)+3.0, float64(room.door_x)+2.1, float64(room.door_y)+3.0, SVG_DOOR_COLOR)
 		} else {
-			svgLine(file, float64(room.door_x)+3.0, float64(room.door_y)+2.9, float64(room.door_x)+3.0, float64(room.door_y)+2.1, SVG_DOOR_COLOR)
+			_, err = svgLine(file, float64(room.door_x)+3.0, float64(room.door_y)+2.9, float64(room.door_x)+3.0, float64(room.door_y)+2.1, SVG_DOOR_COLOR)
+		}
+		if err != nil {
+			return JoinError(fmt.Sprintf("error writing door #%d", room.findRoomIndex(m.array)), err)
 		}
 	}
 
-	writeFooter(file)
+	_, err = writeFooter(file)
+	if err != nil {
+		return JoinError("error writing footer", err)
+	}
+	return nil
 }

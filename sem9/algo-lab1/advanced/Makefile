@@ -8,7 +8,7 @@ build:
 .PHONY: build
 
 run: build
-	build/$(EXECUTABLE_NAME) -i maze.bin -v -s 3x3
+	build/$(EXECUTABLE_NAME) -v -s 10x10
 .PHONY: run
 
 lint:
