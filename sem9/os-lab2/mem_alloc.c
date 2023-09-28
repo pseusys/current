@@ -66,30 +66,37 @@ void memory_init(void)
 
 void *memory_alloc(size_t size)
 {
-    // fprintf(stderr, "ALLOC at %lu\n", ULONG((char*)first_free - (char*)heap_start));
     mb_free_t *next_empty_block = first_free, *previous_empty_block = NULL;
     while (next_empty_block != NULL) {
+        if (next_empty_block->size < size + sizeof(mb_allocated_t)) {
+            previous_empty_block = next_empty_block;
+            next_empty_block = next_empty_block->next_block;
+            continue;
+        }
+
         mb_allocated_t *alloc_block = NULL;
-        if (next_empty_block->size == size + sizeof(mb_allocated_t)) {
+
+        if (next_empty_block->size < size + sizeof(mb_allocated_t) + sizeof(mb_free_t)) {
             if (previous_empty_block != NULL) previous_empty_block->next_block = next_empty_block->next_block;
+            else first_free = next_empty_block->next_block;
             alloc_block = (mb_allocated_t *) next_empty_block;
-        } else if (next_empty_block->size >= size + sizeof(mb_allocated_t) + sizeof(mb_free_t)) {
+            alloc_block->size = next_empty_block->size - sizeof(mb_allocated_t);
+
+        } else {
             mb_free_t *new_empty = (mb_free_t *) (((byte *) next_empty_block) + sizeof(mb_allocated_t) + size);
             if (previous_empty_block != NULL) previous_empty_block->next_block = new_empty;
             else first_free = new_empty;
             new_empty->next_block = next_empty_block->next_block;
             new_empty->size = next_empty_block->size - sizeof(mb_allocated_t) - size;
             alloc_block = (mb_allocated_t *) next_empty_block;
-        }
-        if (alloc_block != NULL) {
             alloc_block->size = size;
-            byte *address = ((byte *) alloc_block) + sizeof(mb_allocated_t);
-            print_alloc_info(address, size);
-            return address;
         }
-        previous_empty_block = next_empty_block;
-        next_empty_block = next_empty_block->next_block;
+
+        byte *address = ((byte *) alloc_block) + sizeof(mb_allocated_t);
+        print_alloc_info(address, size);
+        return address;
     }
+
     print_alloc_error(size);
     exit(0);
 }
@@ -111,11 +118,12 @@ void memory_free(void *p)
     if (next_empty_block == NULL) freeing_block->next_block = NULL;
     else freeing_block->next_block = next_empty_block;
 
-    if (previous_empty_block != NULL && previous_empty_block + previous_empty_block->size == freeing_block) {
+    if (previous_empty_block != NULL && ((byte *) previous_empty_block) + previous_empty_block->size == (byte *) freeing_block) {
         previous_empty_block->next_block = next_empty_block;
-        previous_empty_block->size += alloc_block_size;
+        alloc_block_size += previous_empty_block->size;
+        freeing_block = previous_empty_block;
     }
-    if (next_empty_block != NULL && freeing_block + alloc_block_size == next_empty_block) {
+    if (next_empty_block != NULL && ((byte *) freeing_block) + alloc_block_size == (byte *) next_empty_block) {
         freeing_block->next_block = next_empty_block->next_block;
         alloc_block_size += next_empty_block->size;
     }
