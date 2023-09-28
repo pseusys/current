@@ -6,7 +6,7 @@
 /* Structure declaration for a free block */
 struct mb_free{
     size_t size;
-    struct mb_free *next_block, *previous_block;
+    struct mb_free *next_block;
 }; 
 typedef struct mb_free mb_free_t; 
 

@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 
+#define byte unsigned char
+
 
 /* Allocator functions, to be implemented in mem_alloc.c */
 void memory_init(void);
@@ -21,6 +23,8 @@ void print_mem_state(void);
 void run_at_exit(void);
 
 /* Trace functions: */
+
+void print_info(void);
 
 /* 
  * This trace function must be called upon a successful block allocation.

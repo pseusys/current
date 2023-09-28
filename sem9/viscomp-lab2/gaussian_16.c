@@ -10,7 +10,7 @@ long long int gaussian(int dimension, long long int* matrix) {
     int dimstep = (dimension - 1) / 2;
     for (int i = 0; i <= dimstep; i++) {
         for (int j = 0; j <= dimstep; j++) {
-            int val = pow(2, j + i);
+            long long int val = pow(2, j + i);
             matrix[i * dimension + j] = val;
             matrix[(i + 1) * dimension - 1 - j] = val;
             matrix[(dimension - 1 - i) * dimension + j] = val;

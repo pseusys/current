@@ -3,3 +3,5 @@
 
 bin/
 libmalloc.so
+
+tests/*.out*

@@ -47,66 +47,98 @@ mb_free_t *first_free;
 
 void run_at_exit(void)
 {
-    fprintf(stderr,"YEAH B-)\n");
+    print_mem_state();
     my_munmap(heap_start, MEM_POOL_SIZE);
 }
-
-
-
 
 void memory_init(void)
 {
     /* register the function that will be called when the programs exits */
     atexit(run_at_exit);
 
+    // Allocate some space for heap
     heap_start = my_mmap(MEM_POOL_SIZE);
     first_free = (mb_free_t *) heap_start;
     first_free->size = MEM_POOL_SIZE;
     first_free->next_block = NULL;
-    first_free->previous_block = NULL;
+    print_info();
 }
 
 void *memory_alloc(size_t size)
 {
-    mb_free_t *empty_block = first_free;
-    while (empty_block != NULL) {
-        if (empty_block->size == size + sizeof(mb_allocated_t)) {
-            empty_block->next_block->previous_block = empty_block->previous_block;
-            empty_block->previous_block->next_block = empty_block->next_block;
-            mb_allocated_t *alloc_block = (mb_allocated_t *) empty_block;
-            alloc_block->size = size;
-            return ((void *) alloc_block) + sizeof(mb_allocated_t);
-        } else if (next_block->size >= size + sizeof(mb_allocated_t) + sizeof(mb_free_t)) {
-            void *empty_difference = empty_block->size - size - sizeof(mb_allocated_t);
-            empty_block->size = (size_t) empty_difference;
+    // fprintf(stderr, "ALLOC at %lu\n", ULONG((char*)first_free - (char*)heap_start));
+    mb_free_t *next_empty_block = first_free, *previous_empty_block = NULL;
+    while (next_empty_block != NULL) {
+        mb_allocated_t *alloc_block = NULL;
+        if (next_empty_block->size == size + sizeof(mb_allocated_t)) {
+            if (previous_empty_block != NULL) previous_empty_block->next_block = next_empty_block->next_block;
+            alloc_block = (mb_allocated_t *) next_empty_block;
+        } else if (next_empty_block->size >= size + sizeof(mb_allocated_t) + sizeof(mb_free_t)) {
+            mb_free_t *new_empty = (mb_free_t *) (((byte *) next_empty_block) + sizeof(mb_allocated_t) + size);
+            if (previous_empty_block != NULL) previous_empty_block->next_block = new_empty;
+            else first_free = new_empty;
+            new_empty->next_block = next_empty_block->next_block;
+            new_empty->size = next_empty_block->size - sizeof(mb_allocated_t) - size;
+            alloc_block = (mb_allocated_t *) next_empty_block;
         }
-        empty_block = empty_block->next_block;
+        if (alloc_block != NULL) {
+            alloc_block->size = size;
+            byte *address = ((byte *) alloc_block) + sizeof(mb_allocated_t);
+            print_alloc_info(address, size);
+            return address;
+        }
+        previous_empty_block = next_empty_block;
+        next_empty_block = next_empty_block->next_block;
     }
+    print_alloc_error(size);
     exit(0);
 }
 
 void memory_free(void *p)
 {
+    mb_allocated_t *alloc_block = (mb_allocated_t *) (((byte *) p) - sizeof(mb_allocated_t));
+    size_t alloc_block_size = alloc_block->size + sizeof(mb_allocated_t);
+    mb_free_t *freeing_block = (mb_free_t *) alloc_block;
 
-    /* TODO: insert your code here */
+    mb_free_t *next_empty_block = first_free, *previous_empty_block = NULL;
+    while (((byte *) next_empty_block) < ((byte *) alloc_block) && next_empty_block != NULL) {
+        previous_empty_block = next_empty_block;
+        next_empty_block = next_empty_block->next_block;
+    }
 
-    /* TODO : don't forget to call the function print_free_info()
-     * appropriately */
+    if (previous_empty_block == NULL) first_free = freeing_block;
+    else previous_empty_block->next_block = freeing_block;
+    if (next_empty_block == NULL) freeing_block->next_block = NULL;
+    else freeing_block->next_block = next_empty_block;
 
+    if (previous_empty_block != NULL && previous_empty_block + previous_empty_block->size == freeing_block) {
+        previous_empty_block->next_block = next_empty_block;
+        previous_empty_block->size += alloc_block_size;
+    }
+    if (next_empty_block != NULL && freeing_block + alloc_block_size == next_empty_block) {
+        freeing_block->next_block = next_empty_block->next_block;
+        alloc_block_size += next_empty_block->size;
+    }
+
+    freeing_block->size = alloc_block_size;
+    print_free_info(p);
 }
 
 size_t memory_get_allocated_block_size(void *addr)
 {
-
-    /* TODO: insert your code here */
-
-    return 0;
+    mb_allocated_t *alloc_block = (mb_allocated_t *) (((byte *) addr) - sizeof(mb_allocated_t));
+    return alloc_block->size - sizeof(mb_allocated_t);
 }
 
 
 void print_mem_state(void)
 {
-    /* TODO: insert your code here */
+    printf("Free heap blocks:\n");
+    mb_free_t *empty_block = first_free;
+    while (empty_block != NULL) {
+        printf("\tBlock at %p of size %ld, next %p\n", empty_block, empty_block->size, empty_block->next_block);
+        empty_block = empty_block->next_block;
+    }
 }
 
 
