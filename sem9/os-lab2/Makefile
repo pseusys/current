@@ -1,3 +1,4 @@
+.ONESHELL:
 CPU_ARCH=$(shell uname -m)
 
 CC=gcc
@@ -66,77 +67,82 @@ all: mem_shell mem_shell_sim
 mem_shell: bin/mem_shell
 
 bin/mem_shell: libmalloc.o mem_shell.o
-	$(CC) $(LDFLAGS) -o $@ $^ -ldl
+	@$(CC) $(LDFLAGS) -o $@ $^ -ldl
 
 mem_alloc_test: bin/mem_alloc_test
 
 bin/mem_alloc_test: mem_alloc_test.o my_mmap.o
-	$(CC) $(LDFLAGS) $^ -o $@ -ldl
+	@$(CC) $(LDFLAGS) $^ -o $@ -ldl
 
 mem_alloc_test.o: mem_alloc.c mem_alloc_types.h my_mmap.h
-	$(CC) -c -DMAIN $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
+	@$(CC) -c -DMAIN $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
 
 my_mmap.o: my_mmap.c my_mmap.h
-	$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
+	@$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
 
 mem_shell.o: mem_shell.c
-	$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
+	@$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
 
 #############################################################################
 
 # Notice the presence (and the precise position in the command line) of "-ldl":
 #    both are very important because mem_alloc.c uses dlsym
 libmalloc.so: libmalloc.o libmalloc_std.o
-	$(CC)  -shared  -Wl,-soname,$@ $^ -o $@ -ldl
+	@$(CC)  -shared  -Wl,-soname,$@ $^ -o $@ -ldl
 
 libmalloc_std.o:mem_alloc_std.c mem_alloc.h mem_alloc_types.h
-	$(CC) $(CONFIG_FLAGS) $(CFLAGS) -fPIC -c $< -o $@
+	@$(CC) $(CONFIG_FLAGS) $(CFLAGS) -fPIC -c $< -o $@
 
 libmalloc.o: mem_alloc-lib.o my_mmap-lib.o
-	$(LD) -r $^ -o $@
+	@$(LD) -r $^ -o $@
 
 mem_alloc-lib.o: mem_alloc.c mem_alloc_types.h my_mmap.h
-	$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) -fPIC $< -o $@ -ldl
+	@$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) -fPIC $< -o $@ -ldl
 
 my_mmap-lib.o: my_mmap.c my_mmap.h
-	$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) -fPIC $< -o $@
+	@$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) -fPIC $< -o $@
 
 #############################################################################
 
 test_ls: libmalloc.so
-	LD_PRELOAD=./libmalloc.so ls
-	LD_PRELOAD=""
+	@LD_PRELOAD=./libmalloc.so ls
+	@LD_PRELOAD=""
 
 test_ps: libmalloc.so
-	LD_PRELOAD=./libmalloc.so ps
-	LD_PRELOAD=""
+	@LD_PRELOAD=./libmalloc.so ps
+	@LD_PRELOAD=""
 
 #############################################################################
 
 %.trace: %.in bin/mem_shell
-	cat $< | bin/mem_shell 2>&1 
+	@cat $< | bin/mem_shell 2>&1 
 
 %.out: %.in bin/mem_shell
-	cat $< | bin/mem_shell 2>&1 | grep -E '^ALLOC|^FREE' >$@
+	@cat $< | bin/mem_shell 2>&1 | grep -E '^ALLOC|^FREE' >$@
 
 %.out.expected: %.in bin/mem_shell_sim
-	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./lib ; \
+	@export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./lib
 	cat $< | bin/mem_shell_sim ${MEM_POOL_SIZE} ${ALLOC_POLICY} ${MEM_ALIGNMENT} 2>&1 | grep -E '^ALLOC|^FREE' >$@
 
 %.test: %.out %.out.expected
-	@if diff $^  >/dev/null; then \
-	  echo -e "\e[32m**** Test $@ Passed *****\e[0m"; \
-	  cat $< ;\
-	else \
-	  echo -e "\e[31m**** Test $@ FAILED *****\e[0m"; \
-	  echo -e "\t Your trace \t vs \t Expected trace";\
-	  diff -y $^ ;\
+	@if diff $^  >/dev/null; then
+	  echo "\e[32m**** Test $@ Passed *****\e[0m";
+	else
+	  echo "\e[31m**** Test $@ FAILED *****\e[0m";
+	  echo "\t Your trace \t vs \t Expected trace";
+	  diff -y $^;
 	fi
+
+test_all:
+	@for index in 1 2 3 4 5 6; do
+		echo "\e[33;1m**** Test $$index *****\e[0m";
+		make --no-print-directory -s -B tests/alloc$$index.test || exit 1 ;
+	done
 
 #############################################################################
 
 clean:
-	rm -f *.o *~ tests/*~ tests/*.out tests/*.expected *.so bin/*
+	@rm -f *.o *~ tests/*~ tests/*.out tests/*.expected *.so bin/*
 
 .PHONY: clean test mem_shell mem_shell_sim mem_alloc_test
 
@@ -145,21 +151,21 @@ clean:
 mem_shell_sim: bin/mem_shell_sim
 
 bin/mem_shell_sim: mem_shell_sim.o mem_alloc_sim.o lib/$(LIBSIM_FILE) 
-	$(CC) $(CONFIG_FLAGS) $(CFLAGS) $(LDFLAGS) -L./lib  mem_shell_sim.o mem_alloc_sim.o -o $@ -l$(LIBSIM_NAME)
+	@$(CC) $(CONFIG_FLAGS) $(CFLAGS) $(LDFLAGS) -L./lib  mem_shell_sim.o mem_alloc_sim.o -o $@ -l$(LIBSIM_NAME)
 
 mem_shell_sim.o: mem_shell_sim.c mem_alloc_types.h
-	$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
+	@$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
 
 mem_alloc_sim.o: mem_alloc_sim.c mem_alloc_types.h sim_alloc.h
-	$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
+	@$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
 
 #############################################################################
 
 html: $(HTML_TARGETS)
 
 %.html: %.md
-	pandoc $< -s -o $@
+	@pandoc $< -s -o $@
 
 clean_html:
-	rm -f $(HTML_TARGETS)
+	@rm -f $(HTML_TARGETS)
 
