@@ -1,5 +1,9 @@
 .ONESHELL:
-.PHONY: all build rebuild clean gaussian_16 test
+.PHONY: all build rebuild help test filter refilter histogram rehistogram clean
+
+SOURCES=main gaussian average mean histogram
+OBJECTS=$(foreach obj,$(SOURCES),build/$(obj).o)
+HEADERS=$(foreach hed,$(filter-out main,$(SOURCES)),sources/$(hed).h)
 
 CC=gcc
 
@@ -7,33 +11,50 @@ CFLAGS=-g -Wall -O0 -Werror
 LDFLAGS=
 
 FILTER_TIMES=1
-FILTER_DIMENSION=101
+FILTER_DIMENSION=11
 FILTER_TYPE=average
-GAUSSIAN_16_INPUT=boat_noise2.pgm
-GAUSSIAN_16_OUTPUT=denoised
+
+MAIN_INPUT=boat_noise2.pgm
+MAIN_OUTPUT=denoised
 
 all: build
 
-build: build/gaussian_16.run
+build: build/main.run
 
 rebuild: clean build
 
-test: build/gaussian_16.run
-	@ $(foreach var,$(shell seq 3 2 13),./$^ $(GAUSSIAN_16_INPUT) $(GAUSSIAN_16_OUTPUT)_$(var).pgm $(FILTER_TYPE) 1 $(var);)
+help: build/main.run
+	@ ./$^
 
-gaussian_16: build/gaussian_16.run
-	@ ./$^ $(GAUSSIAN_16_INPUT) $(GAUSSIAN_16_OUTPUT)_$(FILTER_DIMENSION).pgm $(FILTER_TYPE) $(FILTER_TIMES) $(FILTER_DIMENSION)
+test_filter: build/main.run
+	@
+	echo "\e[33;1m**** Testing app for $(FILTER_TYPE) filters from 3 to 13 *****\e[0m"
+	$(foreach var,$(shell seq 3 2 13),./$^ $(MAIN_INPUT) $(MAIN_OUTPUT)_$(var).pgm filter $(FILTER_TYPE) 1 $(var);)
 
-build/%.run: build/%.o build/Util.o ../viscomp-lab1/Util.h
+filter: build/main.run
+	@
+	echo "\e[33;1m**** Running app for $(FILTER_TYPE) filter of size $(FILTER_DIMENSION) *****\e[0m"
+	./$^ $(MAIN_INPUT) $(MAIN_OUTPUT)_$(FILTER_DIMENSION).pgm filter $(FILTER_TYPE) $(FILTER_TIMES) $(FILTER_DIMENSION)
+
+refilter: clean filter
+
+histogram: build/main.run
+	@
+	echo "\e[33;1m**** Running app for $(FILTER_TYPE) filter of size $(FILTER_DIMENSION) *****\e[0m"
+	./$^ $(MAIN_INPUT) $(MAIN_OUTPUT)_$(FILTER_DIMENSION).pgm $(FILTER_TYPE) $(FILTER_TIMES) $(FILTER_DIMENSION)
+
+rehistogram: clean histogram
+
+build/main.run: $(OBJECTS) build/Util.o ../viscomp-lab1/Util.h $(HEADERS)
 	@ $(CC) -o $@ $^ $(LDFLAGS) -lm
 
 build/Util.o: ../viscomp-lab1/Util.c
 	@ mkdir -p build
-	@ $(CC) -o $@ -c $< $(CFLAGS) -lm
+	@ $(CC) -o $@ -c $< $(CFLAGS)
 
-build/%.o: %.c
+build/%.o: sources/%.c
 	@ mkdir -p build
 	@ $(CC) -o $@ -c $< $(CFLAGS) -lm
 
 clean:
-	@ rm -rf build $(GAUSSIAN_16_OUTPUT)_*.pgm
+	@ rm -rf build $(MAIN_OUTPUT)_*.pgm

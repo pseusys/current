@@ -1,3 +1,6 @@
+#ifndef VISCOMP_LAB_1_UTILS_H
+#define VISCOMP_LAB_1_UTILS_H
+
 /* Headers for PBM+ */
 /* E.B.             */
 
@@ -12,3 +15,5 @@ unsigned char pm_getrawbyte(FILE* file);
 int pm_getint( FILE* file);
 
 void pm_erreur(char *);
+
+#endif // VISCOMP_LAB_1_UTILS_H
