@@ -15,9 +15,11 @@ FILE* svg_header(char* file_name, int svg_width, int svg_height);
 */
 void svg_footer(FILE* file);
 
-void svg_line(FILE* file, double x1, double y1, double x2, double y2, char* s);
+void svg_number(FILE* file, double x, double y, long long int s);
 
-void svg_rect(FILE* file, double x, double y, double w, double h, char* s, char* f);
+void svg_arrow(FILE* file, double x1, double y1, double x2, double y2);
+
+void svg_rect(FILE* file, double x, double y, double w, double h, char* f);
 
 /**
  * GENERATES: return value

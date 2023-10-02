@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "mean.h"
+#include "padding.h"
 
 
 byte filter_one_mean(int x, int y, int width, int dimension, byte* source) {
@@ -14,9 +15,9 @@ byte filter_one_mean(int x, int y, int width, int dimension, byte* source) {
     return data_sum / (dimension * dimension);
 }
 
-void filter_all_mean(int width, int height, int ntimes, int dimension, byte* source) {
+void filter_all_mean(char* padding_type, int maxval, int width, int height, int ntimes, int dimension, byte* source) {
     int dimstep = (dimension - 1) / 2;
-    byte* bytepadded = (byte*) calloc((width + dimstep * 2) * (height + dimstep * 2), sizeof(byte));
+    byte* bytepadded = get_padded(padding_type, (width + dimstep * 2) * (height + dimstep * 2), maxval);
 
     for (int i = 0; i < ntimes; i++) {
         for (int i = dimstep; i < height + dimstep; i++)

@@ -6,10 +6,7 @@
 
 
 int svg_size = 1024;
-
 char* svg_back_color = "burlywood";
-char* svg_border_color = "black";
-char* svg_none_color = "none";
 
 
 /**
@@ -35,16 +32,24 @@ void write_histogram(char* output, int size, long long int* container) {
 
     int chart = (svg_size / 5) * 4;
     int margin = chart / 10;
+    int legend = chart / 7.5;
 
     int full_size = chart + margin * 2;
-    FILE* output_file = svg_header(output, full_size, full_size);
-    svg_rect(output_file, 0, 0, full_size, full_size, svg_none_color, svg_back_color);
+    FILE* output_file = svg_header(output, full_size + legend, full_size + legend);
+    svg_rect(output_file, 0, 0, full_size + legend, full_size + legend, svg_back_color);
+
+    svg_arrow(output_file, legend, full_size, legend, margin);
+    svg_number(output_file, legend - 20, full_size - margin, 0);
+    svg_number(output_file, legend - 20, margin, maximum);
+    svg_arrow(output_file, legend, full_size, legend + chart + margin, full_size);
+    svg_number(output_file, legend + margin, full_size + 30, 0);
+    svg_number(output_file, legend + chart + margin, full_size + 30, size);
 
     for (int i = 0; i < size; i++) {
         double width = (double) chart / size;
         double height = ((double) container[i] / maximum) * chart;
         char* color = svg_color(((double) i / size) * 255);
-        svg_rect(output_file, i * width + margin, chart - height + margin, width, height, svg_border_color, color);
+        svg_rect(output_file, i * width + margin + legend, chart - height + margin, width, height, color);
         free(color);
     }
 

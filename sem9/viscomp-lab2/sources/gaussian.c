@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "gaussian.h"
+#include "padding.h"
 
 
 long long int gaussian(int dimension, long long int* matrix) {
@@ -29,12 +30,12 @@ long long int filter_one_gaussian(int x, int y, int width, int dimension, long l
     return result;
 }
 
-void filter_all_gaussian(int width, int height, int ntimes, int dimension, byte* source) {
+void filter_all_gaussian(char* padding_type, int maxval, int width, int height, int ntimes, int dimension, byte* source) {
     long long int* matrix = (long long int*) malloc(dimension * dimension * sizeof(long long int));
     long long int gaussian_sum = gaussian(dimension, matrix);
 
     int dimstep = (dimension - 1) / 2;
-    byte* bytepadded = (byte*) calloc((width + dimstep * 2) * (height + dimstep * 2), sizeof(byte));
+    byte* bytepadded = get_padded(padding_type, (width + dimstep * 2) * (height + dimstep * 2), maxval);
 
     for (int i = 0; i < ntimes; i++) {
         for (int i = dimstep; i < height + dimstep; i++)

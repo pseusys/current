@@ -1,12 +1,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "gaussian.h"
 #include "average.h"
 #include "mean.h"
 #include "histogram.h"
 #include "imagine.h"
+#include "alter.h"
+#include "padding.h"
 
 #include "../../viscomp-lab1/Util.h"
 
@@ -25,15 +28,15 @@ void print_usage(char* app_name) {
     exit(EXIT_SUCCESS);
 }
 
-void filter(char* filter_type, int times, int dimension, char* input_file, char* output_file) {
+void filter(char* filter_type, char* padding_type, int times, int dimension, char* input_file, char* output_file) {
     if (dimension <= 0 || dimension % 2 == 0 || times <= 0) pm_erreur("Filter dimension should be a positive odd number, times should be a positive number");
 
     int version, height, width, maxval = 255;
     byte* bytemap = read_pgm(input_file, &version, &width, &height, &maxval);
 
-    if (strcmp(filter_type, "gaussian") == 0) filter_all_gaussian(width, height, times, dimension, bytemap);
-    else if (strcmp(filter_type, "average") == 0) filter_all_average(width, height, times, dimension, bytemap);
-    else if (strcmp(filter_type, "mean") == 0) filter_all_mean(width, height, times, dimension, bytemap);
+    if (strcmp(filter_type, "gaussian") == 0) filter_all_gaussian(padding_type, maxval, width, height, times, dimension, bytemap);
+    else if (strcmp(filter_type, "average") == 0) filter_all_average(padding_type, maxval, width, height, times, dimension, bytemap);
+    else if (strcmp(filter_type, "mean") == 0) filter_all_mean(padding_type, maxval, width, height, times, dimension, bytemap);
     else pm_erreur("Unknown filtering type");
 
     write_pgm(output_file, width, height, maxval, bytemap);
@@ -48,15 +51,38 @@ void histogram(char* input_file, char* output_file) {
     free(bytemap);
 }
 
+void stretch(char* input_file, char* output_file) {
+    int version, height, width, maxval = 255;
+    byte* bytemap = read_pgm(input_file, &version, &width, &height, &maxval);
+
+    stretch_histogram(width, height, maxval, bytemap);
+    write_pgm(output_file, width, height, maxval, bytemap);
+}
+
+void equalize(char* input_file, char* output_file) {
+    int version, height, width, maxval = 255;
+    byte* bytemap = read_pgm(input_file, &version, &width, &height, &maxval);
+
+    equalize_histogram(width, height, maxval, bytemap);
+    write_pgm(output_file, width, height, maxval, bytemap);
+}
+
 int main(int argc, char* argv[]) {
+    srand(time(NULL));
     if (argc < 4) print_usage(argv[0]);
 
     if (strcmp(argv[3], "filter") == 0) {
-        if (argc != 7) pm_erreur("Wrong argument number for filtering");
-        else filter(argv[4], atoi(argv[5]), atoi(argv[6]), argv[1], argv[2]);
+        if (argc != 8) pm_erreur("Wrong argument number for filtering");
+        else filter(argv[4], argv[5], atoi(argv[6]), atoi(argv[7]), argv[1], argv[2]);
     } else if (strcmp(argv[3], "histogram") == 0) {
         if (argc != 4) pm_erreur("Wrong argument number for histogram drawing");
         else histogram(argv[1], argv[2]);
+    } else if (strcmp(argv[3], "stretch") == 0) {
+        if (argc != 4) pm_erreur("Wrong argument number for image stretching");
+        else stretch(argv[1], argv[2]);
+    } else if (strcmp(argv[3], "equalize") == 0) {
+        if (argc != 4) pm_erreur("Wrong argument number for image equalization");
+        else equalize(argv[1], argv[2]);
     } else pm_erreur("Wrong execution mode");
 
     return EXIT_SUCCESS;
