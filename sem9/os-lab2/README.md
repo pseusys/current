@@ -33,7 +33,7 @@ force all files to be recompiled and be sure that all your changes have
 been taken into account.
 
 **Note 2**: You can also run the test defined in the main function of the
-file mem_alloc.c by running:
+file sources/mem_alloc.c by running:
 ```
     make -B mem_alloc_test
 ```
@@ -63,11 +63,11 @@ Please read [gdb_README](./gdb_README.html) for instruction on how to run your c
 
 ## List of provided files
 
-  * *mem_alloc.h*: The interface of your allocator.
+  * *sources/mem_alloc.h*: The interface of your allocator.
   
-  * *mem_alloc_types.h*: The data types used by the allocator.
+  * *sources/mem_alloc_types.h*: The data types used by the allocator.
   
-  * *mem_alloc.c*: The code of your allocator.
+  * *sources/mem_alloc.c*: The code of your allocator.
     
   * *my_mmap.h* and *my_mmap.c*: Wrapper code for simplifying the usage of mmap.
   

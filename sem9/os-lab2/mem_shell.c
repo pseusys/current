@@ -2,7 +2,7 @@
 #include <string.h>
 
 
-#include "mem_alloc.h"
+#include "sources/mem_alloc.h"
 
 #define SIZE_BUFFER 128
 

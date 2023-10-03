@@ -11,7 +11,7 @@
 
 
 #include "mem_alloc_types.h"
-#include "my_mmap.h"
+#include "../my_mmap.h"
 
 /* pointer to the beginning of the memory region to manage */
 void *heap_start;

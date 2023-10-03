@@ -74,7 +74,7 @@ mem_alloc_test: bin/mem_alloc_test
 bin/mem_alloc_test: mem_alloc_test.o my_mmap.o
 	@$(CC) $(LDFLAGS) $^ -o $@ -ldl
 
-mem_alloc_test.o: mem_alloc.c mem_alloc_types.h my_mmap.h
+mem_alloc_test.o: sources/mem_alloc.c sources/mem_alloc_types.h my_mmap.h
 	@$(CC) -c -DMAIN $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
 
 my_mmap.o: my_mmap.c my_mmap.h
@@ -86,17 +86,17 @@ mem_shell.o: mem_shell.c
 #############################################################################
 
 # Notice the presence (and the precise position in the command line) of "-ldl":
-#    both are very important because mem_alloc.c uses dlsym
+#    both are very important because sources/mem_alloc.c uses dlsym
 libmalloc.so: libmalloc.o libmalloc_std.o
 	@$(CC)  -shared  -Wl,-soname,$@ $^ -o $@ -ldl
 
-libmalloc_std.o:mem_alloc_std.c mem_alloc.h mem_alloc_types.h
+libmalloc_std.o:mem_alloc_std.c sources/mem_alloc.h sources/mem_alloc_types.h
 	@$(CC) $(CONFIG_FLAGS) $(CFLAGS) -fPIC -c $< -o $@
 
 libmalloc.o: mem_alloc-lib.o my_mmap-lib.o
 	@$(LD) -r $^ -o $@
 
-mem_alloc-lib.o: mem_alloc.c mem_alloc_types.h my_mmap.h
+mem_alloc-lib.o: sources/mem_alloc.c sources/mem_alloc_types.h my_mmap.h
 	@$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) -fPIC $< -o $@ -ldl
 
 my_mmap-lib.o: my_mmap.c my_mmap.h
@@ -153,10 +153,10 @@ mem_shell_sim: bin/mem_shell_sim
 bin/mem_shell_sim: mem_shell_sim.o mem_alloc_sim.o lib/$(LIBSIM_FILE) 
 	@$(CC) $(CONFIG_FLAGS) $(CFLAGS) $(LDFLAGS) -L./lib  mem_shell_sim.o mem_alloc_sim.o -o $@ -l$(LIBSIM_NAME)
 
-mem_shell_sim.o: mem_shell_sim.c mem_alloc_types.h
+mem_shell_sim.o: mem_shell_sim.c sources/mem_alloc_types.h
 	@$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
 
-mem_alloc_sim.o: mem_alloc_sim.c mem_alloc_types.h sim_alloc.h
+mem_alloc_sim.o: mem_alloc_sim.c sources/mem_alloc_types.h sim_alloc.h
 	@$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
 
 #############################################################################

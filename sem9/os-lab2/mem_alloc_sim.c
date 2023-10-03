@@ -3,9 +3,9 @@
 #include <string.h>
 
 
-#include "./mem_alloc_types.h"
-#include "./mem_alloc_sim.h"
-#include "./sim_alloc.h"
+#include "sources/mem_alloc_types.h"
+#include "mem_alloc_sim.h"
+#include "sim_alloc.h"
 
 simulator_state_t *sim_state;
 

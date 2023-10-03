@@ -5,7 +5,7 @@
 
 #include "sim_alloc.h"
 
-/* Allocator functions, to be implemented in mem_alloc.c */
+/* Allocator functions, to be implemented in sources/mem_alloc.c */
 void memory_init_sim(size_t pool_size, policy_t policy, unsigned alignment);
 void *memory_alloc(size_t size);
 void memory_free(void *p);
