@@ -15,10 +15,12 @@ WARNINGS = 			$(REASONABLY_CAREFUL_DUDE)
 CFLAGS =   -g  $(WARNINGS)
 LDFLAGS= 
 
+SILENT =	false
+
 # defines the set of configuration variables for the Makefile
 include Makefile.config
 
-
+ifeq ($(SILENT), true)
 ifeq ($(ALLOC_POLICY), BF)
 $(info Using Best Fit policy)
 CONFIG_FLAGS += -DBEST_FIT
@@ -33,6 +35,7 @@ $(info Using Next Fit policy)
 CONFIG_FLAGS += -DNEXT_FIT
 else 
 $(error ERROR: using unknown value for ALLOC_POLICY)
+endif
 endif
 
 
@@ -71,7 +74,7 @@ bin/mem_shell: libmalloc.o mem_shell.o
 
 mem_alloc_test: bin/mem_alloc_test
 
-bin/mem_alloc_test: mem_alloc_test.o my_mmap.o
+bin/mem_alloc_test: mem_alloc_test.o sources/basic_safety.o my_mmap.o
 	@$(CC) $(LDFLAGS) $^ -o $@ -ldl
 
 mem_alloc_test.o: sources/mem_alloc.c sources/mem_alloc_types.h my_mmap.h
@@ -93,7 +96,7 @@ libmalloc.so: libmalloc.o libmalloc_std.o
 libmalloc_std.o:mem_alloc_std.c sources/mem_alloc.h sources/mem_alloc_types.h
 	@$(CC) $(CONFIG_FLAGS) $(CFLAGS) -fPIC -c $< -o $@
 
-libmalloc.o: mem_alloc-lib.o my_mmap-lib.o
+libmalloc.o: mem_alloc-lib.o my_mmap-lib.o sources/basic_safety.o
 	@$(LD) -r $^ -o $@
 
 mem_alloc-lib.o: sources/mem_alloc.c sources/mem_alloc_types.h my_mmap.h
@@ -104,12 +107,29 @@ my_mmap-lib.o: my_mmap.c my_mmap.h
 
 #############################################################################
 
+sources/%.o: sources/%.c sources/%.h sources/mem_alloc_types.h
+	@$(CC) -c $(CONFIG_FLAGS) $(CFLAGS) $< -o $@
+
+#############################################################################
+
+test_ls: MEM_POOL_SIZE=1048576
 test_ls: libmalloc.so
 	@LD_PRELOAD=./libmalloc.so ls
 	@LD_PRELOAD=""
 
+test_ps: MEM_POOL_SIZE=1048576
 test_ps: libmalloc.so
 	@LD_PRELOAD=./libmalloc.so ps
+	@LD_PRELOAD=""
+
+#############################################################################
+
+extests/%.run: extests/%.c
+	@$(CC) $(LDFLAGS) -o $@ $^
+
+extests/%.test: MEM_POOL_SIZE=4096
+extests/%.test: extests/%.run libmalloc.so
+	@LD_PRELOAD=./libmalloc.so $<
 	@LD_PRELOAD=""
 
 #############################################################################
@@ -126,23 +146,35 @@ test_ps: libmalloc.so
 
 %.test: %.out %.out.expected
 	@if diff $^  >/dev/null; then
-	  echo "\e[32m**** Test $@ Passed *****\e[0m";
+	  echo "\e[32m**** Test $@ Passed *****\e[0m"
 	else
-	  echo "\e[31m**** Test $@ FAILED *****\e[0m";
-	  echo "\t Your trace \t vs \t Expected trace";
+	  echo "\e[31m**** Test $@ FAILED *****\e[0m"
+	  echo "\t Your trace \t vs \t Expected trace"
 	  diff -y $^;
 	fi
 
+#############################################################################
+
+test_all: SILENT=true
 test_all:
-	@for index in 1 2 3 4 5 6; do
-		echo "\e[33;1m**** Test $$index *****\e[0m";
-		make --no-print-directory -s -B tests/alloc$$index.test || exit 1 ;
+	@
+	for index in 1 2 3 4 5 6; do
+		echo "\e[33;1m**** Allocation test $$index *****\e[0m"
+		make --no-print-directory -s -B tests/alloc$$index.test 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
 	done
+	for index in 1 2; do
+		echo "\e[33;1m**** Extra basic safety test $$index *****\e[0m"
+		make --no-print-directory -s -B extests/safety_test$$index.test 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
+	done
+	echo "\e[33;1m**** LS test $$index *****\e[0m"
+	make --no-print-directory -s -B test_ls 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
+	echo "\e[33;1m**** PS test $$index *****\e[0m"
+	make --no-print-directory -s -B test_ps 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
 
 #############################################################################
 
 clean:
-	@rm -f *.o *~ tests/*~ tests/*.out tests/*.expected *.so bin/*
+	@rm -f **.o *~ tests/*~ tests/*.out tests/*.expected *.so bin/*
 
 .PHONY: clean test mem_shell mem_shell_sim mem_alloc_test
 

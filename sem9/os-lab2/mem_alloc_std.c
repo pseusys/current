@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 #include "sources/mem_alloc.h"
-#include "mem_alloc_types.h"
+#include "sources/mem_alloc_types.h"
 
 
 static int __mem_alloc_init_flag=0;
@@ -86,7 +86,7 @@ void handle_bootstrap_free(void *p) {
 int is_bootstrap_buffer(void *p) {
     int res = 0;
     debug_printf("enter - p = %p\n", p);
-    if ((p >= (void*)(bootstrap_buffers[0].buf)) && (p < ((void*)(bootstrap_buffers[NB_BOOTSTRAP_BUFFERS-1].buf)+BOOTSTRAP_BUFFER_SIZE-1))) {
+    if (((size_t)p >= (size_t)(bootstrap_buffers[0].buf)) && ((size_t)p < ((size_t)(bootstrap_buffers[NB_BOOTSTRAP_BUFFERS-1].buf)+BOOTSTRAP_BUFFER_SIZE-1))) {
         res = 1;
     }
     debug_printf("return %d\n", res);

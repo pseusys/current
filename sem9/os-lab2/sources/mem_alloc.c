@@ -10,8 +10,9 @@
 #include <unistd.h>
 
 
-#include "mem_alloc_types.h"
 #include "../my_mmap.h"
+
+#include "basic_safety.h"
 
 /* pointer to the beginning of the memory region to manage */
 void *heap_start;
@@ -48,6 +49,7 @@ mb_free_t *first_free;
 void run_at_exit(void)
 {
     print_mem_state();
+    check_no_leaks(heap_start, first_free);
     my_munmap(heap_start, MEM_POOL_SIZE);
 }
 
@@ -104,6 +106,12 @@ void *memory_alloc(size_t size)
 void memory_free(void *p)
 {
     mb_allocated_t *alloc_block = (mb_allocated_t *) (((byte *) p) - sizeof(mb_allocated_t));
+    char *free_error = check_freeing_block(alloc_block, first_free, heap_start);
+    if (free_error != NULL) {
+        printf("Error freeing memory block at %ld: %s!\n", (size_t) p - (size_t) heap_start, free_error);
+        return;
+    }
+
     size_t alloc_block_size = alloc_block->size + sizeof(mb_allocated_t);
     mb_free_t *freeing_block = (mb_free_t *) alloc_block;
 
@@ -113,10 +121,17 @@ void memory_free(void *p)
         next_empty_block = next_empty_block->next_block;
     }
 
+    mb_free_t *next_empty_block_next;
+    size_t next_empty_block_size;
+
     if (previous_empty_block == NULL) first_free = freeing_block;
     else previous_empty_block->next_block = freeing_block;
     if (next_empty_block == NULL) freeing_block->next_block = NULL;
-    else freeing_block->next_block = next_empty_block;
+    else {
+        next_empty_block_next = next_empty_block->next_block;
+        next_empty_block_size = next_empty_block->size;
+        freeing_block->next_block = next_empty_block;
+    }
 
     if (previous_empty_block != NULL && ((byte *) previous_empty_block) + previous_empty_block->size == (byte *) freeing_block) {
         previous_empty_block->next_block = next_empty_block;
@@ -124,8 +139,8 @@ void memory_free(void *p)
         freeing_block = previous_empty_block;
     }
     if (next_empty_block != NULL && ((byte *) freeing_block) + alloc_block_size == (byte *) next_empty_block) {
-        freeing_block->next_block = next_empty_block->next_block;
-        alloc_block_size += next_empty_block->size;
+        freeing_block->next_block = next_empty_block_next;
+        alloc_block_size += next_empty_block_size;
     }
 
     freeing_block->size = alloc_block_size;
@@ -144,7 +159,10 @@ void print_mem_state(void)
     printf("Free heap blocks:\n");
     mb_free_t *empty_block = first_free;
     while (empty_block != NULL) {
-        printf("\tBlock at %p of size %ld, next %p\n", empty_block, empty_block->size, empty_block->next_block);
+        if (empty_block->next_block != NULL)
+            printf("\tBlock at %ld of size %ld, next %ld\n", ULONG((char*) empty_block - (char*) heap_start), empty_block->size, ULONG((char*) empty_block->next_block - (char*) heap_start));
+        else
+            printf("\tLast block at %ld of size %ld\n", ULONG((char*) empty_block - (char*) heap_start), empty_block->size);
         empty_block = empty_block->next_block;
     }
 }

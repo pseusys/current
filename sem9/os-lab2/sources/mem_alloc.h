@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-#define byte unsigned char
+#include "mem_alloc_types.h"
 
 
 /* Allocator functions, to be implemented in mem_alloc.c */

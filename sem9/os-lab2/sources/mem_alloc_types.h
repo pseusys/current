@@ -17,4 +17,6 @@ struct mb_allocated{
 typedef struct mb_allocated mb_allocated_t;
 
 
+#define byte unsigned char
+
 #endif
