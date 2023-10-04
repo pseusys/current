@@ -157,10 +157,14 @@ extests/%.test: extests/%.run libmalloc.so
 
 test_all: SILENT=true
 test_all:
-	@
+	@ # Run all the tests together
 	for index in 1 2 3 4 5 6; do
 		echo "\e[33;1m**** Allocation test $$index *****\e[0m"
 		make --no-print-directory -s -B tests/alloc$$index.test 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
+	done
+	for index in 1 2; do
+		echo "\e[33;1m**** Extra basic test $$index *****\e[0m"
+		make --no-print-directory -s -B extests/basic_test$$index.test 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
 	done
 	for index in 1 2; do
 		echo "\e[33;1m**** Extra basic safety test $$index *****\e[0m"
