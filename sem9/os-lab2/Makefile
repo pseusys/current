@@ -74,7 +74,7 @@ bin/mem_shell: libmalloc.o mem_shell.o
 
 mem_alloc_test: bin/mem_alloc_test
 
-bin/mem_alloc_test: mem_alloc_test.o sources/basic_safety.o my_mmap.o
+bin/mem_alloc_test: mem_alloc_test.o sources/block_safety.o my_mmap.o
 	@$(CC) $(LDFLAGS) $^ -o $@ -ldl
 
 mem_alloc_test.o: sources/mem_alloc.c sources/mem_alloc_types.h my_mmap.h
@@ -96,7 +96,7 @@ libmalloc.so: libmalloc.o libmalloc_std.o
 libmalloc_std.o:mem_alloc_std.c sources/mem_alloc.h sources/mem_alloc_types.h
 	@$(CC) $(CONFIG_FLAGS) $(CFLAGS) -fPIC -c $< -o $@
 
-libmalloc.o: mem_alloc-lib.o my_mmap-lib.o sources/basic_safety.o
+libmalloc.o: mem_alloc-lib.o my_mmap-lib.o sources/block_safety.o
 	@$(LD) -r $^ -o $@
 
 mem_alloc-lib.o: sources/mem_alloc.c sources/mem_alloc_types.h my_mmap.h
@@ -169,6 +169,10 @@ test_all:
 	for index in 1 2; do
 		echo "\e[33;1m**** Extra basic safety test $$index *****\e[0m"
 		make --no-print-directory -s -B extests/safety_test$$index.test 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
+	done
+	for index in 3 4 5; do
+		echo "\e[33;1m**** Extra advanced safety test $$index *****\e[0m"
+		make --no-print-directory -s -B extests/basic_test$$index.test 1>/dev/null 2>&1 && exit 1 || echo "\t\e[32mPassed!\e[0m"
 	done
 	echo "\e[33;1m**** LS test $$index *****\e[0m"
 	make --no-print-directory -s -B test_ls 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1

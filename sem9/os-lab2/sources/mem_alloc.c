@@ -12,7 +12,7 @@
 
 #include "../my_mmap.h"
 
-#include "basic_safety.h"
+#include "block_safety.h"
 
 /* pointer to the beginning of the memory region to manage */
 void *heap_start;
@@ -66,10 +66,20 @@ void memory_init(void)
     print_info();
 }
 
+void check_empty_block(mb_free_t *empty_block) {
+    char *allocate_error = validate_free_block(empty_block, first_free, heap_start);
+    if (allocate_error != NULL) {
+        printf("Error checking free memory block at %ld: %s!\n", (size_t) empty_block - (size_t) heap_start, allocate_error);
+        exit(EXIT_FAILURE);
+    }
+}
+
 void *memory_alloc(size_t size)
 {
     mb_free_t *next_empty_block = first_free, *previous_empty_block = NULL;
     while (next_empty_block != NULL) {
+        check_empty_block(next_empty_block);
+
         if (next_empty_block->size < size + sizeof(mb_allocated_t)) {
             previous_empty_block = next_empty_block;
             next_empty_block = next_empty_block->next_block;
@@ -106,7 +116,7 @@ void *memory_alloc(size_t size)
 void memory_free(void *p)
 {
     mb_allocated_t *alloc_block = (mb_allocated_t *) (((byte *) p) - sizeof(mb_allocated_t));
-    char *free_error = check_freeing_block(alloc_block, first_free, heap_start);
+    char *free_error = validate_allocated_block(alloc_block, first_free, heap_start);
     if (free_error != NULL) {
         printf("Error freeing memory block at %ld: %s!\n", (size_t) p - (size_t) heap_start, free_error);
         return;
@@ -117,6 +127,7 @@ void memory_free(void *p)
 
     mb_free_t *next_empty_block = first_free, *previous_empty_block = NULL;
     while (((byte *) next_empty_block) < ((byte *) alloc_block) && next_empty_block != NULL) {
+        check_empty_block(next_empty_block);
         previous_empty_block = next_empty_block;
         next_empty_block = next_empty_block->next_block;
     }

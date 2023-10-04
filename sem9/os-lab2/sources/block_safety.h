@@ -7,6 +7,7 @@
 
 void check_no_leaks(void *heap_start, mb_free_t *first_free);
 
-char* check_freeing_block(mb_allocated_t *p, mb_free_t *first_free, void *heap_start);
+char* validate_allocated_block(mb_allocated_t *p, mb_free_t *first_free, void *heap_start);
+char* validate_free_block(mb_free_t *p, mb_free_t *first_free, void *heap);
 
 #endif // OS_LAB2_SOURCES_BASIC_SAFETY_H
