@@ -15,28 +15,28 @@ WARNINGS = 			$(REASONABLY_CAREFUL_DUDE)
 CFLAGS =   -g  $(WARNINGS)
 LDFLAGS= 
 
-SILENT =	false
+VERBOSE =	true
 
 # defines the set of configuration variables for the Makefile
 include Makefile.config
 
 ifeq ($(ALLOC_POLICY), BF)
-ifneq ($(SILENT), true)
+ifeq ($(VERBOSE), true)
 $(info Using Best Fit policy)
 endif
 CONFIG_FLAGS += -DBEST_FIT
 else ifeq ($(ALLOC_POLICY), WF)
-ifneq ($(SILENT), true)
+ifeq ($(VERBOSE), true)
 $(info Using Worst Fit policy)
 endif
 CONFIG_FLAGS += -DWORST_FIT
 else ifeq ($(ALLOC_POLICY), FF)
-ifneq ($(SILENT), true)
+ifeq ($(VERBOSE), true)
 $(info Using First Fit policy)
 endif
 CONFIG_FLAGS += -DFIRST_FIT
 else ifeq ($(ALLOC_POLICY), NF)
-ifneq ($(SILENT), true)
+ifeq ($(VERBOSE), true)
 $(info Using Next Fit policy)
 endif
 CONFIG_FLAGS += -DNEXT_FIT
@@ -161,7 +161,7 @@ extests/%.test: extests/%.run libmalloc.so
 
 #############################################################################
 
-test_all: SILENT=true
+test_all: VERBOSE=false
 test_all:
 	@ # Run all the tests together
 	for policy in FF BF WF NF; do 

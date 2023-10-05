@@ -30,14 +30,23 @@ void check_empty_block(mb_free_t *empty_block) {
     }
 }
 
+size_t align(size_t raw) {
+    if (raw % MEM_ALIGNMENT == 0) return raw;
+    else return ((raw / MEM_ALIGNMENT) + 1) * MEM_ALIGNMENT;
+}
+
 #if defined(FIRST_FIT)
 
 void *memory_alloc(size_t size) {
+    size_t a_size = align(size);
+    size_t a_alloc = align(sizeof(mb_allocated_t));
+    size_t a_free = align(sizeof(mb_free_t));
+
     mb_free_t *empty_block = first_free, *previous_empty_block = NULL;
     while (empty_block != NULL) {
         check_empty_block(empty_block);
 
-        if (empty_block->size < size + sizeof(mb_allocated_t)) {
+        if (empty_block->size < a_size + a_alloc) {
             previous_empty_block = empty_block;
             empty_block = empty_block->next_block;
             continue;
@@ -45,23 +54,23 @@ void *memory_alloc(size_t size) {
 
         mb_allocated_t *alloc_block = NULL;
 
-        if (empty_block->size < size + sizeof(mb_allocated_t) + sizeof(mb_free_t)) {
+        if (empty_block->size < a_size + a_alloc + a_free) {
             if (previous_empty_block != NULL) previous_empty_block->next_block = empty_block->next_block;
             else first_free = empty_block->next_block;
             alloc_block = (mb_allocated_t *) empty_block;
-            alloc_block->size = empty_block->size - sizeof(mb_allocated_t);
+            alloc_block->size = empty_block->size - a_alloc;
 
         } else {
-            mb_free_t *new_empty = (mb_free_t *) (((byte *) empty_block) + sizeof(mb_allocated_t) + size);
+            mb_free_t *new_empty = (mb_free_t *) (((byte *) empty_block) + a_alloc + a_size);
             if (previous_empty_block != NULL) previous_empty_block->next_block = new_empty;
             else first_free = new_empty;
             new_empty->next_block = empty_block->next_block;
-            new_empty->size = empty_block->size - sizeof(mb_allocated_t) - size;
+            new_empty->size = empty_block->size - a_alloc - a_size;
             alloc_block = (mb_allocated_t *) empty_block;
             alloc_block->size = size;
         }
 
-        byte *address = ((byte *) alloc_block) + sizeof(mb_allocated_t);
+        byte *address = ((byte *) alloc_block) + a_alloc;
         print_alloc_info(address, size);
         return address;
     }
@@ -73,11 +82,15 @@ void *memory_alloc(size_t size) {
 #elif defined(BEST_FIT)
 
 void *memory_alloc(size_t size) {
+    size_t a_size = align(size);
+    size_t a_alloc = align(sizeof(mb_allocated_t));
+    size_t a_free = align(sizeof(mb_free_t));
+
     mb_free_t *best_empty_block = NULL, *best_previous_empty_block = NULL;
     mb_free_t *empty_block = first_free, *previous_empty_block = NULL;
     while (empty_block != NULL) {
         check_empty_block(empty_block);
-        if (empty_block->size >= size + sizeof(mb_allocated_t)) {
+        if (empty_block->size >= a_size + a_alloc) {
             if (best_empty_block == NULL || empty_block->size < best_empty_block->size) {
                 best_empty_block = empty_block;
                 best_previous_empty_block = previous_empty_block;
@@ -94,23 +107,23 @@ void *memory_alloc(size_t size) {
 
     mb_allocated_t *alloc_block = NULL;
 
-    if (best_empty_block->size < size + sizeof(mb_allocated_t) + sizeof(mb_free_t)) {
+    if (best_empty_block->size < a_size + a_alloc + a_free) {
         if (best_previous_empty_block != NULL) best_previous_empty_block->next_block = best_empty_block->next_block;
         else first_free = best_empty_block->next_block;
         alloc_block = (mb_allocated_t *) best_empty_block;
-        alloc_block->size = best_empty_block->size - sizeof(mb_allocated_t);
+        alloc_block->size = best_empty_block->size - a_alloc;
 
     } else {
-        mb_free_t *new_empty = (mb_free_t *) (((byte *) best_empty_block) + sizeof(mb_allocated_t) + size);
+        mb_free_t *new_empty = (mb_free_t *) (((byte *) best_empty_block) + a_alloc + a_size);
         if (best_previous_empty_block != NULL) best_previous_empty_block->next_block = new_empty;
         else first_free = new_empty;
         new_empty->next_block = best_empty_block->next_block;
-        new_empty->size = best_empty_block->size - sizeof(mb_allocated_t) - size;
+        new_empty->size = best_empty_block->size - a_alloc - a_size;
         alloc_block = (mb_allocated_t *) best_empty_block;
-        alloc_block->size = size;
+        alloc_block->size = a_alloc;
     }
 
-    byte *address = ((byte *) alloc_block) + sizeof(mb_allocated_t);
+    byte *address = ((byte *) alloc_block) + a_alloc;
     print_alloc_info(address, size);
     return address;
 }
@@ -118,44 +131,48 @@ void *memory_alloc(size_t size) {
 #elif defined(WORST_FIT)
 
 void *memory_alloc(size_t size) {
-    mb_free_t *best_empty_block = NULL, *best_previous_empty_block = NULL;
+    size_t a_size = align(size);
+    size_t a_alloc = align(sizeof(mb_allocated_t));
+    size_t a_free = align(sizeof(mb_free_t));
+
+    mb_free_t *worst_empty_block = NULL, *worst_previous_empty_block = NULL;
     mb_free_t *empty_block = first_free, *previous_empty_block = NULL;
     while (empty_block != NULL) {
         check_empty_block(empty_block);
-        if (empty_block->size >= size + sizeof(mb_allocated_t)) {
-            if (best_empty_block == NULL || empty_block->size > best_empty_block->size) {
-                best_empty_block = empty_block;
-                best_previous_empty_block = previous_empty_block;
+        if (empty_block->size >= a_size + a_alloc) {
+            if (worst_empty_block == NULL || empty_block->size > worst_empty_block->size) {
+                worst_empty_block = empty_block;
+                worst_previous_empty_block = previous_empty_block;
             }
         }
         previous_empty_block = empty_block;
         empty_block = empty_block->next_block;
     }
 
-    if (best_empty_block == NULL) {
+    if (worst_empty_block == NULL) {
         print_alloc_error(size);
         exit(EXIT_SUCCESS);
     }
 
     mb_allocated_t *alloc_block = NULL;
 
-    if (best_empty_block->size < size + sizeof(mb_allocated_t) + sizeof(mb_free_t)) {
-        if (best_previous_empty_block != NULL) best_previous_empty_block->next_block = best_empty_block->next_block;
-        else first_free = best_empty_block->next_block;
-        alloc_block = (mb_allocated_t *) best_empty_block;
-        alloc_block->size = best_empty_block->size - sizeof(mb_allocated_t);
+    if (worst_empty_block->size < a_size + a_alloc + a_free) {
+        if (worst_previous_empty_block != NULL) worst_previous_empty_block->next_block = worst_empty_block->next_block;
+        else first_free = worst_empty_block->next_block;
+        alloc_block = (mb_allocated_t *) worst_empty_block;
+        alloc_block->size = worst_empty_block->size - a_alloc;
 
     } else {
-        mb_free_t *new_empty = (mb_free_t *) (((byte *) best_empty_block) + sizeof(mb_allocated_t) + size);
-        if (best_previous_empty_block != NULL) best_previous_empty_block->next_block = new_empty;
+        mb_free_t *new_empty = (mb_free_t *) (((byte *) worst_empty_block) + a_alloc + a_size);
+        if (worst_previous_empty_block != NULL) worst_previous_empty_block->next_block = new_empty;
         else first_free = new_empty;
-        new_empty->next_block = best_empty_block->next_block;
-        new_empty->size = best_empty_block->size - sizeof(mb_allocated_t) - size;
-        alloc_block = (mb_allocated_t *) best_empty_block;
-        alloc_block->size = size;
+        new_empty->next_block = worst_empty_block->next_block;
+        new_empty->size = worst_empty_block->size - a_alloc - a_size;
+        alloc_block = (mb_allocated_t *) worst_empty_block;
+        alloc_block->size = a_alloc;
     }
 
-    byte *address = ((byte *) alloc_block) + sizeof(mb_allocated_t);
+    byte *address = ((byte *) alloc_block) + a_alloc;
     print_alloc_info(address, size);
     return address;
 }
@@ -165,13 +182,17 @@ void *memory_alloc(size_t size) {
 mb_free_t *next_free; 
 
 void *memory_alloc(size_t size) {
+    size_t a_size = align(size);
+    size_t a_alloc = align(sizeof(mb_allocated_t));
+    size_t a_free = align(sizeof(mb_free_t));
+
     if (next_free == NULL) next_free = first_free;
 
     mb_free_t *empty_block = next_free, *previous_empty_block = NULL;
     while (empty_block != NULL) {
         check_empty_block(empty_block);
 
-        if (empty_block->size < size + sizeof(mb_allocated_t)) {
+        if (empty_block->size < a_size + a_alloc) {
             previous_empty_block = empty_block;
             empty_block = empty_block->next_block;
             continue;
@@ -179,25 +200,25 @@ void *memory_alloc(size_t size) {
 
         mb_allocated_t *alloc_block = NULL;
 
-        if (empty_block->size < size + sizeof(mb_allocated_t) + sizeof(mb_free_t)) {
+        if (empty_block->size < a_size + a_alloc + a_free) {
             if (previous_empty_block != NULL) previous_empty_block->next_block = empty_block->next_block;
             else first_free = empty_block->next_block;
             alloc_block = (mb_allocated_t *) empty_block;
-            alloc_block->size = empty_block->size - sizeof(mb_allocated_t);
+            alloc_block->size = empty_block->size - a_alloc;
             next_free = empty_block->next_block;
 
         } else {
-            mb_free_t *new_empty = (mb_free_t *) (((byte *) empty_block) + sizeof(mb_allocated_t) + size);
+            mb_free_t *new_empty = (mb_free_t *) (((byte *) empty_block) + a_alloc + a_size);
             if (previous_empty_block != NULL) previous_empty_block->next_block = new_empty;
             else first_free = new_empty;
             new_empty->next_block = empty_block->next_block;
-            new_empty->size = empty_block->size - sizeof(mb_allocated_t) - size;
+            new_empty->size = empty_block->size - a_alloc - a_size;
             alloc_block = (mb_allocated_t *) empty_block;
             alloc_block->size = size;
             next_free = new_empty;
         }
 
-        byte *address = ((byte *) alloc_block) + sizeof(mb_allocated_t);
+        byte *address = ((byte *) alloc_block) + a_alloc;
         print_alloc_info(address, size);
         return address;
     }
@@ -231,14 +252,14 @@ void memory_init(void)
 
 void memory_free(void *p)
 {
-    mb_allocated_t *alloc_block = (mb_allocated_t *) (((byte *) p) - sizeof(mb_allocated_t));
+    mb_allocated_t *alloc_block = (mb_allocated_t *) (((byte *) p) - align(sizeof(mb_allocated_t)));
     char *free_error = validate_allocated_block(alloc_block, first_free, heap_start);
     if (free_error != NULL) {
         printf("Error freeing memory block at %ld: %s!\n", (size_t) p - (size_t) heap_start, free_error);
         return;
     }
 
-    size_t alloc_block_size = alloc_block->size + sizeof(mb_allocated_t);
+    size_t alloc_block_size = align(alloc_block->size) + align(sizeof(mb_allocated_t));
     mb_free_t *freeing_block = (mb_free_t *) alloc_block;
 
     mb_free_t *next_empty_block = first_free, *previous_empty_block = NULL;
@@ -272,7 +293,6 @@ void memory_free(void *p)
 
     freeing_block->size = alloc_block_size;
     print_free_info(p);
-    print_mem_state();
 }
 
 size_t memory_get_allocated_block_size(void *addr)
