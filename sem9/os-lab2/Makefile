@@ -20,22 +20,28 @@ SILENT =	false
 # defines the set of configuration variables for the Makefile
 include Makefile.config
 
-ifeq ($(SILENT), true)
 ifeq ($(ALLOC_POLICY), BF)
+ifneq ($(SILENT), true)
 $(info Using Best Fit policy)
+endif
 CONFIG_FLAGS += -DBEST_FIT
 else ifeq ($(ALLOC_POLICY), WF)
+ifneq ($(SILENT), true)
 $(info Using Worst Fit policy)
+endif
 CONFIG_FLAGS += -DWORST_FIT
 else ifeq ($(ALLOC_POLICY), FF)
+ifneq ($(SILENT), true)
 $(info Using First Fit policy)
+endif
 CONFIG_FLAGS += -DFIRST_FIT
 else ifeq ($(ALLOC_POLICY), NF)
+ifneq ($(SILENT), true)
 $(info Using Next Fit policy)
+endif
 CONFIG_FLAGS += -DNEXT_FIT
 else 
 $(error ERROR: using unknown value for ALLOC_POLICY)
-endif
 endif
 
 
@@ -158,26 +164,26 @@ extests/%.test: extests/%.run libmalloc.so
 test_all: SILENT=true
 test_all:
 	@ # Run all the tests together
-	for policy in FF; do 
+	for policy in FF BF WF NF; do 
 		for index in 1 2 3 4 5 6; do
-			echo "\e[33;1m**** Allocation test $$index *****\e[0m"
+			echo "\e[33;1m**** Allocation test $$index for policy $$policy *****\e[0m"
 			make --no-print-directory -s -B tests/alloc$$index.test ALLOC_POLICY=$$policy 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
 		done
 		for index in 1 2; do
-			echo "\e[33;1m**** Extra basic test $$index *****\e[0m"
+			echo "\e[33;1m**** Extra basic test $$index for policy $$policy *****\e[0m"
 			make --no-print-directory -s -B extests/basic_test$$index.test ALLOC_POLICY=$$policy 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
 		done
 		for index in 1 2; do
-			echo "\e[33;1m**** Extra basic safety test $$index *****\e[0m"
+			echo "\e[33;1m**** Extra basic safety test $$index for policy $$policy *****\e[0m"
 			make --no-print-directory -s -B extests/safety_test$$index.test ALLOC_POLICY=$$policy 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
 		done
 		for index in 3 4 5; do
-			echo "\e[33;1m**** Extra advanced safety test $$index *****\e[0m"
+			echo "\e[33;1m**** Extra advanced safety test $$index for policy $$policy *****\e[0m"
 			make --no-print-directory -s -B extests/basic_test$$index.test ALLOC_POLICY=$$policy 1>/dev/null 2>&1 && exit 1 || echo "\t\e[32mPassed!\e[0m"
 		done
-		echo "\e[33;1m**** LS test $$index *****\e[0m"
+		echo "\e[33;1m**** LS test $$index for policy $$policy *****\e[0m"
 		make --no-print-directory -s -B test_ls ALLOC_POLICY=$$policy 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
-		echo "\e[33;1m**** PS test $$index *****\e[0m"
+		echo "\e[33;1m**** PS test $$index for policy $$policy *****\e[0m"
 		make --no-print-directory -s -B test_ps ALLOC_POLICY=$$policy 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
 	done
 

@@ -22,25 +22,189 @@ mb_free_t *first_free;
 
 #define ULONG(x)((long unsigned int)(x))
 
+void check_empty_block(mb_free_t *empty_block) {
+    char *allocate_error = validate_free_block(empty_block, first_free, heap_start);
+    if (allocate_error != NULL) {
+        printf("Error checking free memory block at %ld: %s!\n", (size_t) empty_block - (size_t) heap_start, allocate_error);
+        exit(EXIT_FAILURE);
+    }
+}
+
 #if defined(FIRST_FIT)
 
-/* TODO: code specific to the FIRST FIT allocation policy can be
- * inserted here */
+void *memory_alloc(size_t size) {
+    mb_free_t *empty_block = first_free, *previous_empty_block = NULL;
+    while (empty_block != NULL) {
+        check_empty_block(empty_block);
 
-/* You can define here functions that will be compiled only if the
- * symbol FIRST_FIT is defined, that is, only if the selected policy
- * is FF */
+        if (empty_block->size < size + sizeof(mb_allocated_t)) {
+            previous_empty_block = empty_block;
+            empty_block = empty_block->next_block;
+            continue;
+        }
 
+        mb_allocated_t *alloc_block = NULL;
+
+        if (empty_block->size < size + sizeof(mb_allocated_t) + sizeof(mb_free_t)) {
+            if (previous_empty_block != NULL) previous_empty_block->next_block = empty_block->next_block;
+            else first_free = empty_block->next_block;
+            alloc_block = (mb_allocated_t *) empty_block;
+            alloc_block->size = empty_block->size - sizeof(mb_allocated_t);
+
+        } else {
+            mb_free_t *new_empty = (mb_free_t *) (((byte *) empty_block) + sizeof(mb_allocated_t) + size);
+            if (previous_empty_block != NULL) previous_empty_block->next_block = new_empty;
+            else first_free = new_empty;
+            new_empty->next_block = empty_block->next_block;
+            new_empty->size = empty_block->size - sizeof(mb_allocated_t) - size;
+            alloc_block = (mb_allocated_t *) empty_block;
+            alloc_block->size = size;
+        }
+
+        byte *address = ((byte *) alloc_block) + sizeof(mb_allocated_t);
+        print_alloc_info(address, size);
+        return address;
+    }
+
+    print_alloc_error(size);
+    exit(EXIT_SUCCESS);
+}
 
 #elif defined(BEST_FIT)
 
-/* TODO: code specific to the BEST FIT allocation policy can be
- * inserted here */
+void *memory_alloc(size_t size) {
+    mb_free_t *best_empty_block = NULL, *best_previous_empty_block = NULL;
+    mb_free_t *empty_block = first_free, *previous_empty_block = NULL;
+    while (empty_block != NULL) {
+        check_empty_block(empty_block);
+        if (empty_block->size >= size + sizeof(mb_allocated_t)) {
+            if (best_empty_block == NULL || empty_block->size < best_empty_block->size) {
+                best_empty_block = empty_block;
+                best_previous_empty_block = previous_empty_block;
+            }
+        }
+        previous_empty_block = empty_block;
+        empty_block = empty_block->next_block;
+    }
+
+    if (best_empty_block == NULL) {
+        print_alloc_error(size);
+        exit(EXIT_SUCCESS);
+    }
+
+    mb_allocated_t *alloc_block = NULL;
+
+    if (best_empty_block->size < size + sizeof(mb_allocated_t) + sizeof(mb_free_t)) {
+        if (best_previous_empty_block != NULL) best_previous_empty_block->next_block = best_empty_block->next_block;
+        else first_free = best_empty_block->next_block;
+        alloc_block = (mb_allocated_t *) best_empty_block;
+        alloc_block->size = best_empty_block->size - sizeof(mb_allocated_t);
+
+    } else {
+        mb_free_t *new_empty = (mb_free_t *) (((byte *) best_empty_block) + sizeof(mb_allocated_t) + size);
+        if (best_previous_empty_block != NULL) best_previous_empty_block->next_block = new_empty;
+        else first_free = new_empty;
+        new_empty->next_block = best_empty_block->next_block;
+        new_empty->size = best_empty_block->size - sizeof(mb_allocated_t) - size;
+        alloc_block = (mb_allocated_t *) best_empty_block;
+        alloc_block->size = size;
+    }
+
+    byte *address = ((byte *) alloc_block) + sizeof(mb_allocated_t);
+    print_alloc_info(address, size);
+    return address;
+}
+
+#elif defined(WORST_FIT)
+
+void *memory_alloc(size_t size) {
+    mb_free_t *best_empty_block = NULL, *best_previous_empty_block = NULL;
+    mb_free_t *empty_block = first_free, *previous_empty_block = NULL;
+    while (empty_block != NULL) {
+        check_empty_block(empty_block);
+        if (empty_block->size >= size + sizeof(mb_allocated_t)) {
+            if (best_empty_block == NULL || empty_block->size > best_empty_block->size) {
+                best_empty_block = empty_block;
+                best_previous_empty_block = previous_empty_block;
+            }
+        }
+        previous_empty_block = empty_block;
+        empty_block = empty_block->next_block;
+    }
+
+    if (best_empty_block == NULL) {
+        print_alloc_error(size);
+        exit(EXIT_SUCCESS);
+    }
+
+    mb_allocated_t *alloc_block = NULL;
+
+    if (best_empty_block->size < size + sizeof(mb_allocated_t) + sizeof(mb_free_t)) {
+        if (best_previous_empty_block != NULL) best_previous_empty_block->next_block = best_empty_block->next_block;
+        else first_free = best_empty_block->next_block;
+        alloc_block = (mb_allocated_t *) best_empty_block;
+        alloc_block->size = best_empty_block->size - sizeof(mb_allocated_t);
+
+    } else {
+        mb_free_t *new_empty = (mb_free_t *) (((byte *) best_empty_block) + sizeof(mb_allocated_t) + size);
+        if (best_previous_empty_block != NULL) best_previous_empty_block->next_block = new_empty;
+        else first_free = new_empty;
+        new_empty->next_block = best_empty_block->next_block;
+        new_empty->size = best_empty_block->size - sizeof(mb_allocated_t) - size;
+        alloc_block = (mb_allocated_t *) best_empty_block;
+        alloc_block->size = size;
+    }
+
+    byte *address = ((byte *) alloc_block) + sizeof(mb_allocated_t);
+    print_alloc_info(address, size);
+    return address;
+}
 
 #elif defined(NEXT_FIT)
 
-/* TODO: code specific to the NEXT FIT allocation policy can be
- * inserted here */
+mb_free_t *next_free; 
+
+void *memory_alloc(size_t size) {
+    if (next_free == NULL) next_free = first_free;
+
+    mb_free_t *empty_block = next_free, *previous_empty_block = NULL;
+    while (empty_block != NULL) {
+        check_empty_block(empty_block);
+
+        if (empty_block->size < size + sizeof(mb_allocated_t)) {
+            previous_empty_block = empty_block;
+            empty_block = empty_block->next_block;
+            continue;
+        }
+
+        mb_allocated_t *alloc_block = NULL;
+
+        if (empty_block->size < size + sizeof(mb_allocated_t) + sizeof(mb_free_t)) {
+            if (previous_empty_block != NULL) previous_empty_block->next_block = empty_block->next_block;
+            else first_free = empty_block->next_block;
+            alloc_block = (mb_allocated_t *) empty_block;
+            alloc_block->size = empty_block->size - sizeof(mb_allocated_t);
+            next_free = empty_block->next_block;
+
+        } else {
+            mb_free_t *new_empty = (mb_free_t *) (((byte *) empty_block) + sizeof(mb_allocated_t) + size);
+            if (previous_empty_block != NULL) previous_empty_block->next_block = new_empty;
+            else first_free = new_empty;
+            new_empty->next_block = empty_block->next_block;
+            new_empty->size = empty_block->size - sizeof(mb_allocated_t) - size;
+            alloc_block = (mb_allocated_t *) empty_block;
+            alloc_block->size = size;
+            next_free = new_empty;
+        }
+
+        byte *address = ((byte *) alloc_block) + sizeof(mb_allocated_t);
+        print_alloc_info(address, size);
+        return address;
+    }
+
+    print_alloc_error(size);
+    exit(EXIT_SUCCESS);
+}
 
 #endif
 
@@ -63,53 +227,6 @@ void memory_init(void)
     first_free->size = MEM_POOL_SIZE;
     first_free->next_block = NULL;
     print_info();
-}
-
-void check_empty_block(mb_free_t *empty_block) {
-    char *allocate_error = validate_free_block(empty_block, first_free, heap_start);
-    if (allocate_error != NULL) {
-        printf("Error checking free memory block at %ld: %s!\n", (size_t) empty_block - (size_t) heap_start, allocate_error);
-        exit(EXIT_FAILURE);
-    }
-}
-
-void *memory_alloc(size_t size)
-{
-    mb_free_t *next_empty_block = first_free, *previous_empty_block = NULL;
-    while (next_empty_block != NULL) {
-        check_empty_block(next_empty_block);
-
-        if (next_empty_block->size < size + sizeof(mb_allocated_t)) {
-            previous_empty_block = next_empty_block;
-            next_empty_block = next_empty_block->next_block;
-            continue;
-        }
-
-        mb_allocated_t *alloc_block = NULL;
-
-        if (next_empty_block->size < size + sizeof(mb_allocated_t) + sizeof(mb_free_t)) {
-            if (previous_empty_block != NULL) previous_empty_block->next_block = next_empty_block->next_block;
-            else first_free = next_empty_block->next_block;
-            alloc_block = (mb_allocated_t *) next_empty_block;
-            alloc_block->size = next_empty_block->size - sizeof(mb_allocated_t);
-
-        } else {
-            mb_free_t *new_empty = (mb_free_t *) (((byte *) next_empty_block) + sizeof(mb_allocated_t) + size);
-            if (previous_empty_block != NULL) previous_empty_block->next_block = new_empty;
-            else first_free = new_empty;
-            new_empty->next_block = next_empty_block->next_block;
-            new_empty->size = next_empty_block->size - sizeof(mb_allocated_t) - size;
-            alloc_block = (mb_allocated_t *) next_empty_block;
-            alloc_block->size = size;
-        }
-
-        byte *address = ((byte *) alloc_block) + sizeof(mb_allocated_t);
-        print_alloc_info(address, size);
-        return address;
-    }
-
-    print_alloc_error(size);
-    exit(EXIT_SUCCESS);
 }
 
 void memory_free(void *p)
@@ -155,6 +272,7 @@ void memory_free(void *p)
 
     freeing_block->size = alloc_block_size;
     print_free_info(p);
+    print_mem_state();
 }
 
 size_t memory_get_allocated_block_size(void *addr)
@@ -206,28 +324,3 @@ void print_alloc_error(int size)
 {
     fprintf(stderr, "ALLOC error : can't allocate %d bytes\n", size);
 }
-
-
-#ifdef MAIN
-int main(int argc, char **argv){
-
-  /* The main can be changed, it is *not* involved in tests */
-  memory_init();
-  print_info();
-  int i ; 
-  for( i = 0; i < 10; i++){
-    char *b = memory_alloc(rand()%8);
-    memory_free(b);
-  }
-
-  char * a = memory_alloc(15);
-  memory_free(a);
-
-
-  a = memory_alloc(10);
-  memory_free(a);
-
-  fprintf(stderr,"%lu\n",(long unsigned int) (memory_alloc(9)));
-  return EXIT_SUCCESS;
-}
-#endif 
