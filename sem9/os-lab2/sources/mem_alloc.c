@@ -9,10 +9,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-
 #include "../my_mmap.h"
-
 #include "block_safety.h"
+
 
 /* pointer to the beginning of the memory region to manage */
 void *heap_start;
@@ -110,7 +109,7 @@ void *memory_alloc(size_t size)
     }
 
     print_alloc_error(size);
-    exit(0);
+    exit(EXIT_SUCCESS);
 }
 
 void memory_free(void *p)
