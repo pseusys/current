@@ -7,7 +7,8 @@ int main() {
     printf("This program is an advanced safety test.\n");
     printf("We have already considered allocated block metadata corruption in previous safety tests.\n");
     printf("In general, we were detecting it during 'free' calls only and just ignored the errors as well as if 'free' was called for a wrong memory address.\n");
-    printf("Now we will consider three extra cases of free block metadata corruption, we will detect it during 'alloc' call and every detection will lead to an error.\n");
+    printf("Now we will consider three extra cases: three of them will involve free block metadata corruption and the last one will cover use-after-free case.\n");
+    printf("We will detect the corruption during both 'alloc' and 'free' calls and every detection will lead to an error.\n");
     printf("The first corruption case is overwriting block size so that it becomes greater than heap size (again, considered to be 4096 bytes):\n");
     printf("\nFirst we will allocate a memory block:\n");
     void *block1 = malloc(128);

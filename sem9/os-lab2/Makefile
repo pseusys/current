@@ -164,27 +164,29 @@ extests/%.test: extests/%.run libmalloc.so
 test_all: VERBOSE=false
 test_all:
 	@ # Run all the tests together
-	for policy in FF BF WF NF; do 
-		for index in 1 2 3 4 5 6; do
-			echo "\e[33;1m**** Allocation test $$index for policy $$policy *****\e[0m"
-			make --no-print-directory -s -B tests/alloc$$index.test ALLOC_POLICY=$$policy 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
+	for alignment in 1 2 4 8 16 32 64; do
+		for policy in FF BF WF NF; do
+			for index in 1 2 3 4 5 6; do
+				echo "\e[33;1m**** Allocation test $$index for policy $$policy with alignment $$alignment *****\e[0m"
+				make --no-print-directory -s -B tests/alloc$$index.test ALLOC_POLICY=$$policy MEM_ALIGNMENT=$$alignment 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
+			done
+			for index in 1 2; do
+				echo "\e[33;1m**** Extra basic test $$index for policy $$policy with alignment $$alignment *****\e[0m"
+				make --no-print-directory -s -B extests/basic_test$$index.test ALLOC_POLICY=$$policy MEM_ALIGNMENT=$$alignment 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
+			done
+			for index in 1 2; do
+				echo "\e[33;1m**** Extra basic safety test $$index for policy $$policy with alignment $$alignment *****\e[0m"
+				make --no-print-directory -s -B extests/safety_test$$index.test ALLOC_POLICY=$$policy MEM_ALIGNMENT=$$alignment 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
+			done
+			for index in 3 4 5 6; do
+				echo "\e[33;1m**** Extra advanced safety test $$index for policy $$policy with alignment $$alignment *****\e[0m"
+				make --no-print-directory -s -B extests/basic_test$$index.test ALLOC_POLICY=$$policy MEM_ALIGNMENT=$$alignment 1>/dev/null 2>&1 && exit 1 || echo "\t\e[32mPassed!\e[0m"
+			done
+			echo "\e[33;1m**** LS test $$index for policy $$policy with alignment $$alignment *****\e[0m"
+			make --no-print-directory -s -B test_ls ALLOC_POLICY=$$policy MEM_ALIGNMENT=$$alignment 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
+			echo "\e[33;1m**** PS test $$index for policy $$policy with alignment $$alignment *****\e[0m"
+			make --no-print-directory -s -B test_ps ALLOC_POLICY=$$policy MEM_ALIGNMENT=$$alignment 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
 		done
-		for index in 1 2; do
-			echo "\e[33;1m**** Extra basic test $$index for policy $$policy *****\e[0m"
-			make --no-print-directory -s -B extests/basic_test$$index.test ALLOC_POLICY=$$policy 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
-		done
-		for index in 1 2; do
-			echo "\e[33;1m**** Extra basic safety test $$index for policy $$policy *****\e[0m"
-			make --no-print-directory -s -B extests/safety_test$$index.test ALLOC_POLICY=$$policy 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
-		done
-		for index in 3 4 5; do
-			echo "\e[33;1m**** Extra advanced safety test $$index for policy $$policy *****\e[0m"
-			make --no-print-directory -s -B extests/basic_test$$index.test ALLOC_POLICY=$$policy 1>/dev/null 2>&1 && exit 1 || echo "\t\e[32mPassed!\e[0m"
-		done
-		echo "\e[33;1m**** LS test $$index for policy $$policy *****\e[0m"
-		make --no-print-directory -s -B test_ls ALLOC_POLICY=$$policy 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
-		echo "\e[33;1m**** PS test $$index for policy $$policy *****\e[0m"
-		make --no-print-directory -s -B test_ps ALLOC_POLICY=$$policy 1>/dev/null 2>&1 && echo "\t\e[32mPassed!\e[0m" || exit 1
 	done
 
 #############################################################################

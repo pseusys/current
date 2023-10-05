@@ -12,6 +12,8 @@
 #include "../my_mmap.h"
 #include "block_safety.h"
 
+#define ULONG(x)((long unsigned int)(x))
+
 
 /* pointer to the beginning of the memory region to manage */
 void *heap_start;
@@ -20,19 +22,18 @@ void *heap_start;
 mb_free_t *first_free; 
 
 
-#define ULONG(x)((long unsigned int)(x))
+size_t align(size_t raw) {
+    if (raw % MEM_ALIGNMENT == 0) return raw;
+    else return ((raw / MEM_ALIGNMENT) + 1) * MEM_ALIGNMENT;
+}
 
 void check_empty_block(mb_free_t *empty_block) {
-    char *allocate_error = validate_free_block(empty_block, first_free, heap_start);
+    size_t a_free = align(sizeof(mb_free_t));
+    char *allocate_error = validate_free_block(empty_block, first_free, heap_start, (void *) ((size_t) empty_block + a_free), empty_block->size - a_free);
     if (allocate_error != NULL) {
         printf("Error checking free memory block at %ld: %s!\n", (size_t) empty_block - (size_t) heap_start, allocate_error);
         exit(EXIT_FAILURE);
     }
-}
-
-size_t align(size_t raw) {
-    if (raw % MEM_ALIGNMENT == 0) return raw;
-    else return ((raw / MEM_ALIGNMENT) + 1) * MEM_ALIGNMENT;
 }
 
 #if defined(FIRST_FIT)
@@ -120,7 +121,7 @@ void *memory_alloc(size_t size) {
         new_empty->next_block = best_empty_block->next_block;
         new_empty->size = best_empty_block->size - a_alloc - a_size;
         alloc_block = (mb_allocated_t *) best_empty_block;
-        alloc_block->size = a_alloc;
+        alloc_block->size = size;
     }
 
     byte *address = ((byte *) alloc_block) + a_alloc;
@@ -230,36 +231,37 @@ void *memory_alloc(size_t size) {
 #endif
 
 
-void run_at_exit(void)
-{
+void run_at_exit(void) {
     print_mem_state();
     check_no_leaks(heap_start, first_free);
     my_munmap(heap_start, MEM_POOL_SIZE);
 }
 
-void memory_init(void)
-{
+void memory_init(void) {
     /* register the function that will be called when the programs exits */
     atexit(run_at_exit);
 
     // Allocate some space for heap
     heap_start = my_mmap(MEM_POOL_SIZE);
+    memset((void *) heap_start, 0, MEM_POOL_SIZE);
     first_free = (mb_free_t *) heap_start;
     first_free->size = MEM_POOL_SIZE;
     first_free->next_block = NULL;
     print_info();
 }
 
-void memory_free(void *p)
-{
-    mb_allocated_t *alloc_block = (mb_allocated_t *) (((byte *) p) - align(sizeof(mb_allocated_t)));
+void memory_free(void *p) {
+    size_t a_alloc = align(sizeof(mb_allocated_t));
+    size_t a_free = align(sizeof(mb_free_t));
+
+    mb_allocated_t *alloc_block = (mb_allocated_t *) (((byte *) p) - a_alloc);
     char *free_error = validate_allocated_block(alloc_block, first_free, heap_start);
     if (free_error != NULL) {
         printf("Error freeing memory block at %ld: %s!\n", (size_t) p - (size_t) heap_start, free_error);
         return;
     }
 
-    size_t alloc_block_size = align(alloc_block->size) + align(sizeof(mb_allocated_t));
+    size_t alloc_block_size = align(alloc_block->size) + a_alloc;
     mb_free_t *freeing_block = (mb_free_t *) alloc_block;
 
     mb_free_t *next_empty_block = first_free, *previous_empty_block = NULL;
@@ -292,18 +294,17 @@ void memory_free(void *p)
     }
 
     freeing_block->size = alloc_block_size;
+    memset((void *) ((size_t) freeing_block + a_free), 0, freeing_block->size - a_free);
     print_free_info(p);
 }
 
-size_t memory_get_allocated_block_size(void *addr)
-{
+size_t memory_get_allocated_block_size(void *addr) {
     mb_allocated_t *alloc_block = (mb_allocated_t *) (((byte *) addr) - sizeof(mb_allocated_t));
     return alloc_block->size - sizeof(mb_allocated_t);
 }
 
 
-void print_mem_state(void)
-{
+void print_mem_state(void) {
     printf("Free heap blocks:\n");
     mb_free_t *empty_block = first_free;
     while (empty_block != NULL) {
@@ -320,7 +321,7 @@ void print_info(void) {
     fprintf(stderr, "Memory : [%lu %lu] (%lu bytes)\n", (long unsigned int) heap_start, (long unsigned int) ((char*)heap_start+MEM_POOL_SIZE), (long unsigned int) (MEM_POOL_SIZE));
 }
 
-void print_free_info(void *addr){
+void print_free_info(void *addr) {
     if(addr){
         fprintf(stderr, "FREE  at : %lu \n", ULONG((char*)addr - (char*)heap_start));
     }
@@ -330,7 +331,7 @@ void print_free_info(void *addr){
     
 }
 
-void print_alloc_info(void *addr, int size){
+void print_alloc_info(void *addr, int size) {
   if(addr){
     fprintf(stderr, "ALLOC at : %lu (%d byte(s))\n", 
 	    ULONG((char*)addr - (char*)heap_start), size);
@@ -340,7 +341,6 @@ void print_alloc_info(void *addr, int size){
   }
 }
 
-void print_alloc_error(int size) 
-{
+void print_alloc_error(int size) {
     fprintf(stderr, "ALLOC error : can't allocate %d bytes\n", size);
 }

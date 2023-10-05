@@ -3,6 +3,9 @@
 
 #include "block_safety.h"
 
+#define byte unsigned char
+
+
 void check_no_leaks(void *heap_start, mb_free_t *first_free) {
     mb_free_t *expected_first_free = (mb_free_t *) heap_start;
     bool expected_size = expected_first_free->size == MEM_POOL_SIZE;
@@ -47,7 +50,7 @@ char* validate_allocated_block(mb_allocated_t *p, mb_free_t *first_free, void *h
     return NULL;
 }
 
-char* validate_free_block(mb_free_t *p, mb_free_t *first_free, void *heap_start) {
+char* validate_free_block(mb_free_t *p, mb_free_t *first_free, void *heap_start, void *actual_start, size_t actual_size) {
     if (p == NULL) return NULL;
 
     size_t heap_end = (size_t) heap_start + MEM_POOL_SIZE;
@@ -56,5 +59,10 @@ char* validate_free_block(mb_free_t *p, mb_free_t *first_free, void *heap_start)
     if (p->size > MEM_POOL_SIZE) return "list element size exceeds heap";
     if ((size_t) p < (size_t) heap_start || (size_t) p > heap_end || pointer_end > heap_end) return "list element outside of the heap";
     if (p->next_block != NULL && (size_t) p->next_block <= (size_t) p) return "list element pointing backwards";
+
+    int block_sum = 0;
+    for (size_t i = 0; i < actual_size; i++) block_sum += ((byte *) actual_start)[i];
+    if (block_sum != 0) return "empty block damaged, presumably it was written";
+
     return NULL;
 }
