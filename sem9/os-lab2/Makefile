@@ -192,7 +192,7 @@ test_all:
 #############################################################################
 
 clean:
-	@rm -f **.o *~ tests/*~ tests/*.out tests/*.expected *.so bin/*
+	@rm -f **.o *~ tests/*~ tests/*.out tests/*.expected *.so bin/* *.html
 
 .PHONY: clean test mem_shell mem_shell_sim mem_alloc_test
 
