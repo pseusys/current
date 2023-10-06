@@ -3,8 +3,6 @@
 
 #include "block_safety.h"
 
-#define byte unsigned char
-
 
 void check_no_leaks(void *heap_start, mb_free_t *first_free) {
     mb_free_t *expected_first_free = (mb_free_t *) heap_start;
