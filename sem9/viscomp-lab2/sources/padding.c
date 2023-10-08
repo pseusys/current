@@ -30,17 +30,17 @@ byte* mean_padding(int size, int maxval) {
 /**
  * GENERATES: return value
 */
-byte* random_padding(int size) {
+byte* random_padding(int size, int maxval) {
     byte* padded = (byte*) malloc(size * sizeof(byte));
-    for (int i = 0; i < size; i++) padded[i] = rand();
+    for (int i = 0; i < size; i++) padded[i] = rand() % maxval;
     return padded;
 }
 
 byte* get_padded(char* padding_type, int size, int maxval) {
     if (strcmp(padding_type, "zero") == 0) return zero_padding(size);
     else if (strcmp(padding_type, "maxval") == 0) return maxval_padding(size, maxval);
-    else if (strcmp(padding_type, "mean") == 0) return zero_padding(size);
-    else if (strcmp(padding_type, "random") == 0) return zero_padding(size);
+    else if (strcmp(padding_type, "mean") == 0) return mean_padding(size, maxval);
+    else if (strcmp(padding_type, "random") == 0) return random_padding(size, maxval);
     else pm_erreur("Unknown padding type");
     return NULL;
 }
