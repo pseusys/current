@@ -1,7 +1,7 @@
 .ONESHELL:
-.PHONY: all build rebuild help ensure_dirs test filter refilter histogram rehistogram stretch restretch equalize reequalize clean
+.PHONY: all build rebuild help ensure_dirs test filter refilter histogram rehistogram stretch restretch equalize reequalize gradient regradient nonmax renonmax hysteresis rehysteresis clean
 
-SOURCES=main filter histogram imagine alter padding gradient
+SOURCES=main filter histogram imagine alter padding gradient cannys
 OBJECTS=$(foreach obj,$(SOURCES),build/$(obj).o)
 HEADERS=$(foreach hed,$(filter-out main,$(SOURCES)),sources/$(hed).h)
 
@@ -15,8 +15,11 @@ FILTER_DIMENSION=11
 FILTER_TYPE=average
 FILTER_PADDING=mean
 
-GRADIENT_TYPE=prewitt
+GRADIENT_TYPE=scharr
 GRADIENT_THRESHOLD=100
+
+HYSTERESIS_LOWER=32
+HYSTERESIS_HIGHER=128
 
 IMAGE_NAME=boat
 
@@ -82,6 +85,22 @@ gradient: build/main.run ensure_dirs
 	./$< pictures/$(IMAGE_NAME).pgm $(OUTPUT_IMAGE) gradient $(GRADIENT_TYPE) $(FILTER_PADDING) $(GRADIENT_THRESHOLD)
 	echo "Output gradient: $(OUTPUT_IMAGE)"
 regradient: clean gradient
+
+nonmax: export OUTPUT_IMAGE=processed/$(IMAGE_NAME)_nonmax_$(GRADIENT_TYPE).pgm
+nonmax: build/main.run ensure_dirs
+	@
+	echo "\e[33;1m**** Running app for nonmax suppression calculation *****\e[0m"
+	./$< pictures/$(IMAGE_NAME).pgm $(OUTPUT_IMAGE) nonmax $(GRADIENT_TYPE) $(FILTER_PADDING)
+	echo "Output nonmax suppressed image: $(OUTPUT_IMAGE)"
+renonmax: clean nonmax
+
+hysteresis: export OUTPUT_IMAGE=processed/$(IMAGE_NAME)_hysteresis_$(GRADIENT_TYPE)_$(HYSTERESIS_HIGHER)_$(HYSTERESIS_LOWER).pgm
+hysteresis: build/main.run ensure_dirs
+	@
+	echo "\e[33;1m**** Running app for hysteresis thresholding *****\e[0m"
+	./$< pictures/$(IMAGE_NAME).pgm $(OUTPUT_IMAGE) hysteresis $(GRADIENT_TYPE) $(FILTER_PADDING) $(HYSTERESIS_HIGHER) $(HYSTERESIS_LOWER)
+	echo "Output hysteresis thresholded image: $(OUTPUT_IMAGE)"
+rehysteresis: clean hysteresis
 
 build/main.run: $(OBJECTS) build/Util.o ../viscomp-lab1/Util.h $(HEADERS)
 	@ $(CC) -o $@ $^ $(LDFLAGS) -lm

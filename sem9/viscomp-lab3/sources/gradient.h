@@ -3,9 +3,23 @@
 
 #include "../../viscomp-lab1/Util.h"
 
-void scharr_gradient_all(char* padding_type, int maxval, int width, int height, byte* source);
-void sobel_gradient_all(char* padding_type, int maxval, int width, int height, byte* source);
-void prewitt_gradient_all(char* padding_type, int maxval, int width, int height, byte* source);
-void roberts_gradient_all(char* padding_type, int maxval, int width, int height, byte* source);
+typedef enum {
+  DEG_0 = 0,
+  DEG_45 = 1,
+  DEG_90 = 2,
+  DEG_135 = 3,
+  DEG_180 = 4,
+  DEG_225 = 5,
+  DEG_270 = 6,
+  DEG_315 = 7
+} Angle;
+
+typedef struct {
+    byte magnitude;
+    Angle angle;
+} Gradient;
+
+void (*get_gradient_one(char* gradient_type)) (int, int, int, byte*, Gradient*);
+void gradient_all(char* gradient_type, char* padding_type, int maxval, int width, int height, byte* source);
 
 #endif // VISCOMP_LAB_2_GRADIENT_H

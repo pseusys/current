@@ -80,7 +80,7 @@ void filter_all_gaussian(char* padding_type, int maxval, int width, int height, 
                 bytepadded[i * width + j] = source[(i - dimstep) * width + j - dimstep];
         for (int i = dimstep; i < height + dimstep; i++)
             for (int j = dimstep; j < width + dimstep; j++)
-                source[(i - dimstep) * width + j - dimstep] = round(filter_one_gaussian(i, j, width, dimension, matrix, bytepadded) / gaussian_sum);
+                source[(i - dimstep) * width + j - dimstep] = filter_one_gaussian(i, j, width, dimension, matrix, bytepadded) / gaussian_sum;
     }
 
     free(bytepadded);

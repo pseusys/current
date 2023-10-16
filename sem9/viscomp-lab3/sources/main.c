@@ -8,6 +8,7 @@
 #include "imagine.h"
 #include "alter.h"
 #include "gradient.h"
+#include "cannys.h"
 
 #include "../../viscomp-lab1/Util.h"
 
@@ -68,14 +69,23 @@ void equalize(char* input_file, char* output_file) {
 void gradient(char* gradient_type, char* padding_type, char* input_file, char* output_file, byte threshold) {
     int version, height, width, maxval = 255;
     byte* bytemap = read_pgm(input_file, &version, &width, &height, &maxval);
-
-    if (strcmp(gradient_type, "roberts") == 0) roberts_gradient_all(padding_type, maxval, width, height, bytemap);
-    else if (strcmp(gradient_type, "prewitt") == 0) prewitt_gradient_all(padding_type, maxval, width, height, bytemap);
-    else if (strcmp(gradient_type, "sobel") == 0) sobel_gradient_all(padding_type, maxval, width, height, bytemap);
-    else if (strcmp(gradient_type, "scharr") == 0) scharr_gradient_all(padding_type, maxval, width, height, bytemap);
-    else pm_erreur("Unknown gradient type");
+    gradient_all(gradient_type, padding_type, maxval, width, height, bytemap);
 
     for (int i = 0; i < width * height; i++) bytemap[i] = bytemap[i] > threshold ? bytemap[i] : 0;
+    write_pgm(output_file, width, height, maxval, bytemap);
+}
+
+void nonmax(char* gradient_type, char* padding_type, char* input_file, char* output_file) {
+    int version, height, width, maxval = 255;
+    byte* bytemap = read_pgm(input_file, &version, &width, &height, &maxval);
+    non_max_suppress(gradient_type, padding_type, maxval, width, height, bytemap);
+    write_pgm(output_file, width, height, maxval, bytemap);
+}
+
+void hysteresis(char* gradient_type, char* padding_type, char* input_file, char* output_file, byte higher, byte lower) {
+    int version, height, width, maxval = 255;
+    byte* bytemap = read_pgm(input_file, &version, &width, &height, &maxval);
+    hysteresis_threshold(gradient_type, padding_type, maxval, width, height, bytemap, higher, lower);
     write_pgm(output_file, width, height, maxval, bytemap);
 }
 
@@ -98,6 +108,12 @@ int main(int argc, char* argv[]) {
     } else if (strcmp(argv[3], "gradient") == 0) {
         if (argc != 7) pm_erreur("Wrong argument number for image gradient calculation");
         else gradient(argv[4], argv[5], argv[1], argv[2], atoi(argv[6]));
+    } else if (strcmp(argv[3], "nonmax") == 0) {
+        if (argc != 6) pm_erreur("Wrong argument number for image nonmax suppression");
+        else nonmax(argv[4], argv[5], argv[1], argv[2]);
+    } else if (strcmp(argv[3], "hysteresis") == 0) {
+        if (argc != 8) pm_erreur("Wrong argument number for image hysteresis thresholding");
+        else hysteresis(argv[4], argv[5], argv[1], argv[2], atoi(argv[6]), atoi(argv[7]));
     } else pm_erreur("Wrong execution mode");
 
     return EXIT_SUCCESS;
