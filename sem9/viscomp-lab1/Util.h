@@ -15,5 +15,6 @@ unsigned char pm_getrawbyte(FILE* file);
 int pm_getint( FILE* file);
 
 void pm_erreur(char *);
+void pm_nonimpl();
 
 #endif // VISCOMP_LAB_1_UTILS_H
