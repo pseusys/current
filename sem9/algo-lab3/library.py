@@ -30,7 +30,7 @@ class Matrix:
         self.matrix = [[int(num) for num in line.split()] for line in lines]
 
     def gap(self, ending_course: int, beginning_course: int) -> int:
-        return self.matrix[ending_course][beginning_course]
+        return self.matrix[beginning_course][ending_course]
 
     def __repr__(self) -> str:
         matrix_string = "\n\t".join([", ".join([str(value) for value in line]) for line in self.matrix])
