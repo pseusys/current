@@ -1,4 +1,13 @@
-from library import read_input, split_courses
+from math import ceil
+from typing import List
+from library import Course, Occupation, read_input
+
+
+def split_courses(room_capacity: int, course_list: List[Course]) -> List[Occupation]:
+    occupation_list = list()
+    for course_index, course in enumerate(course_list):
+        occupation_list += [Occupation.from_course(course, course_index) for _ in range(ceil(course.student_number / room_capacity))]
+    return occupation_list
 
 
 if __name__ == "__main__":
