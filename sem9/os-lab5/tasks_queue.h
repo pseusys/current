@@ -9,7 +9,7 @@ typedef struct tasks_queue{
     unsigned int task_buffer_size;
     unsigned int index;
 } tasks_queue_t;
-    
+
 
 tasks_queue_t* create_tasks_queue(void);
 void free_tasks_queue(tasks_queue_t *q);

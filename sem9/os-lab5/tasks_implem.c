@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
 
@@ -59,8 +60,12 @@ void delete_queues(void)
 
 void create_thread_pool(void)
 {
-
-    return ;
+    for (int i = 0; i < THREAD_COUNT; i++) {
+        if (pthread_create(&thread_pool[i], NULL, thread_routine, NULL) != 0){
+            fprintf(stderr, "ERROR: failed to create thread %u\n", i);
+            exit(EXIT_FAILURE);
+        }
+    }
 }
 
 void dispatch_task(task_t *t)

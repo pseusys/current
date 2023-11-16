@@ -65,10 +65,10 @@ test_all: $(TARGETS)
 	@ # Run all the tests together
 	for test in $^; do
 		echo "\e[33;1m**** Test $$test *****\e[0m"
-		OUTPUT=$(bash $$test)
-		if [[ $$OUTPUT == Usage:* ]]; then
-			OUTPUT=$(bash $$test 100)
-		fi
+		OUTPUT=$(shell ./$$test 2>&1)
+		echo $$OUTPUT
+		test "$$OUTPUT" = Usage:* && export OUTPUT=$(shell $$test 100)
+		echo $$OUTPUT
 		if [[ $$OUTPUT == ERROR:* ]]; then
 			echo "\e[33;1m$$OUTPUT\e[0m"
 		fi
