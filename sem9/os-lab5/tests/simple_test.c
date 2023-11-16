@@ -97,6 +97,7 @@ int main(void)
     double seconds = end.tv_sec - begin.tv_sec;
     
     if (seconds < SLEEP_DURATION){
+        printf("Seconds: %lf\n", seconds);
         PRINT_TEST_FAILED("it seems that some tasks have not fully been executed\n");
     }
     else {

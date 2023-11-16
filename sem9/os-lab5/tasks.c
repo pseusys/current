@@ -40,7 +40,7 @@ void runtime_finalize(void)
     task_waitall();
 
     PRINT_DEBUG(1, "Terminating ... \t Total task count: %lu \n", sys_state.task_counter);
-    
+
     delete_queues();
 }
 

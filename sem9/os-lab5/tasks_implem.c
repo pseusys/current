@@ -4,6 +4,7 @@
 
 #include "tasks_implem.h"
 #include "tasks_queue.h"
+#include "tasks.h"
 #include "debug.h"
 
 bool ready_to_terminate = false;
@@ -27,7 +28,11 @@ void* thread_routine(void* arg) {
 
         threads_busy++;
         ready_to_terminate = false;
-        task_t *active_task = dequeue_task(tqueue);
+        task_t* active_task = dequeue_task(tqueue);
+
+        pthread_cond_signal(&queue_not_full);
+        pthread_mutex_unlock(&queue_mutex);
+
         task_return_value_t ret = exec_task(active_task);
         if (ret == TASK_COMPLETED){
             terminate_task(active_task);
@@ -37,10 +42,13 @@ void* thread_routine(void* arg) {
             active_task->status = WAITING;
         }
 #endif
+        active_task = NULL;
+
+        pthread_mutex_lock(&queue_mutex);
+
         threads_busy--;
         ready_to_terminate = (threads_busy == 0) && (tqueue->index == 0);
 
-        pthread_cond_signal(&queue_not_full);
         pthread_cond_signal(&queue_finished);
         pthread_mutex_unlock(&queue_mutex);
     }
@@ -71,8 +79,6 @@ void create_thread_pool(void)
 void dispatch_task(task_t *t)
 {
     pthread_mutex_lock(&queue_mutex);
-    while (tqueue->index == tqueue->task_buffer_size)
-        pthread_cond_wait(&queue_not_full, &queue_mutex);
 
     enqueue_task(tqueue, t);
 

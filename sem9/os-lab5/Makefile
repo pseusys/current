@@ -62,6 +62,7 @@ tests/%.o: tests/%.c $(DEPS)
 
 
 test_all: $(TARGETS)
+	# TODO: fix
 	@ # Run all the tests together
 	for test in $^; do
 		echo "\e[33;1m**** Test $$test *****\e[0m"
