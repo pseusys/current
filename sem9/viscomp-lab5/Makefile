@@ -12,6 +12,8 @@ CC=gcc
 CFLAGS=-g -Wall -O0 -Werror
 LDFLAGS=-lm
 
+DOCKER=false
+
 OBJECT_NAME=frameCube
 
 TRANSFORM_X=0.0
@@ -49,9 +51,13 @@ ensure_dirs:
 object: export OUTPUT_IMAGE=processed/$(OBJECT_NAME)_object_translate_$(TRANSFORM_X)_$(TRANSFORM_Y)_$(TRANSFORM_Z)_rotate_$(ROTATE_X)_$(ROTATE_Y)_$(ROTATE_Z)_dimension_$(DIMENSION_X)_$(DIMENSION_Y)_aspect_$(ASPECT_X)_$(ASPECT_Y)_center_$(CENTER_X)_$(CENTER_Y)_focal_$(FOCAL)_$(PROJECTION)_drop_$(Z_PERCENT_DROP).ppm
 object: build/main.run ensure_dirs
 	@
+ifeq ($(DOCKER), true)
+	OBJECT_NAME=human TRANSFORM_X=$(TRANSFORM_X) TRANSFORM_Y=$(TRANSFORM_Y) TRANSFORM_Z=1.0 ROTATE_X=180.0 ROTATE_Y=0.0 ROTATE_Z=-90.0 FOCAL=$(FOCAL) PROJECTION=$(PROJECTION) Z_PERCENT_DROP=0.35 DIMENSION_X=$(DIMENSION_X) DIMENSION_Y=$(DIMENSION_Y) ASPECT_X=$(ASPECT_X) ASPECT_Y=$(ASPECT_Y) CENTER_X=$(CENTER_X) CENTER_Y=$(CENTER_Y) docker compose up --build
+else
 	echo "\e[33;1m**** Running app for objectivisation *****\e[0m"
 	./$< objects/$(OBJECT_NAME).off $(OUTPUT_IMAGE) object $(TRANSFORM_X) $(TRANSFORM_Y) $(TRANSFORM_Z) $(ROTATE_X) $(ROTATE_Y) $(ROTATE_Z) $(DIMENSION_X) $(DIMENSION_Y) $(ASPECT_X) $(ASPECT_Y) $(CENTER_X) $(CENTER_Y) $(FOCAL) $(PROJECTION) $(Z_PERCENT_DROP)
 	echo "Output objected image: $(OUTPUT_IMAGE)"
+endif
 reobject: clean object
 
 object_human:

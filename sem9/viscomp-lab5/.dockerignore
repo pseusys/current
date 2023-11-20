@@ -1,0 +1,8 @@
+build
+processed
+
+.dockerignore
+.gitignore
+
+compose.yml
+Dockerfile

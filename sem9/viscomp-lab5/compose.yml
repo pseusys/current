@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  visualizer:
+    image: viscomp-lab5-visualizer
+    build:
+      context: ../
+      dockerfile: viscomp-lab5/Dockerfile
+    environment:
+      OBJECT_NAME: ${OBJECT_NAME}
+      TRANSFORM_X: ${TRANSFORM_X}
+      TRANSFORM_Y: ${TRANSFORM_Y}
+      TRANSFORM_Z: ${TRANSFORM_Z}
+      ROTATE_X: ${ROTATE_X}
+      ROTATE_Y: ${ROTATE_Y}
+      ROTATE_Z: ${ROTATE_Z}
+      FOCAL: ${FOCAL}
+      PROJECTION: ${PROJECTION}
+      Z_PERCENT_DROP: ${Z_PERCENT_DROP}
+      DIMENSION_X: ${DIMENSION_X}
+      DIMENSION_Y: ${DIMENSION_Y}
+      ASPECT_X: ${ASPECT_X}
+      ASPECT_Y: ${ASPECT_Y}
+      CENTER_X: ${CENTER_X}
+      CENTER_Y: ${CENTER_Y}
+    volumes:
+      - ./docker_processed:/app/viscomp-lab5/processed
+    command: object OBJECT_NAME=${OBJECT_NAME} TRANSFORM_X=${TRANSFORM_X} TRANSFORM_Y=${TRANSFORM_Y} TRANSFORM_Z=${TRANSFORM_Z} ROTATE_X=${ROTATE_X} ROTATE_Y=${ROTATE_Y} ROTATE_Z=${ROTATE_Z} FOCAL=${FOCAL} PROJECTION=${PROJECTION} Z_PERCENT_DROP=${Z_PERCENT_DROP} DIMENSION_X=${DIMENSION_X} DIMENSION_Y=${DIMENSION_Y} ASPECT_X=${ASPECT_X} ASPECT_Y=${ASPECT_Y} CENTER_X=${CENTER_X} CENTER_Y=${CENTER_Y} DOCKER=false
