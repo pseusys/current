@@ -62,17 +62,14 @@ tests/%.o: tests/%.c $(DEPS)
 
 
 test_all: $(TARGETS)
-	# TODO: fix
 	@ # Run all the tests together
 	for test in $^; do
 		echo "\e[33;1m**** Test $$test *****\e[0m"
-		OUTPUT=$(shell ./$$test 2>&1)
+		make --no-print-directory -s -B $$test VERBOSE=0 1>/dev/null 2>&1
+		OUTPUT=`./$$test 2>&1`
+		test "$$OUTPUT" = "Usage:*" && OUTPUT=`./$$test 100 2>&1`
+		test "$$OUTPUT" = "\*\*FAILED\*\*:*" && echo "\e[33;1m$$OUTPUT\e[0m"
 		echo $$OUTPUT
-		test "$$OUTPUT" = Usage:* && export OUTPUT=$(shell $$test 100)
-		echo $$OUTPUT
-		if [[ $$OUTPUT == ERROR:* ]]; then
-			echo "\e[33;1m$$OUTPUT\e[0m"
-		fi
 	done
 .PHONY: test_all
 

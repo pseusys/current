@@ -5,47 +5,63 @@
 #include "imagine.h"
 
 
-int dimension = 1024;
+void multiply_matrixes(float *A, float *B, float *result, int rowsA, int colsA, int rowsB, int colsB) {
+    if (colsA != rowsB) {
+        fprintf(stderr, "Cannot perform matrix multiplication. Invalid dimensions.\n");
+        exit(1);
+    }
 
+    for (int i = 0; i < rowsA; i++) {
+        for (int j = 0; j < colsB; j++) {
+            result[i * colsB + j] = 0;
+            for (int k = 0; k < colsA; k++) {
+                result[i * colsB + j] += A[i * colsA + k] * B[k * colsB + j];
+            }
+        }
+    }
+}
 
-byte* dump_points(struct point3d* points, int number) {
-    byte* bytemap = malloc(dimension * dimension * RGB_TRIPLET * sizeof(byte));
+byte* dump_points(struct point3d* points, int number, int dimension_x, int dimension_y) {
+    byte* bytemap = malloc(dimension_x * dimension_y * RGB_TRIPLET * sizeof(byte));
     for (int i = 0; i < number; i++) {
-        printf("%lf %lf %lf\n", points[i].x, points[i].y, points[i].z);
-        bytemap[(((int) points[i].x) * dimension + ((int) points[i].y)) * RGB_TRIPLET] = points[i].r;
-        bytemap[(((int) points[i].x) * dimension + ((int) points[i].y)) * RGB_TRIPLET + 1] = points[i].g;
-        bytemap[(((int) points[i].x) * dimension + ((int) points[i].y)) * RGB_TRIPLET + 2] = points[i].b;
+        if (points[i].x < 0 || points[i].x >= dimension_x || points[i].y < 0 || points[i].y >= dimension_y) continue;
+        bytemap[(((int) points[i].x) * dimension_y + ((int) points[i].y)) * RGB_TRIPLET] = points[i].r;
+        bytemap[(((int) points[i].x) * dimension_y + ((int) points[i].y)) * RGB_TRIPLET + 1] = points[i].g;
+        bytemap[(((int) points[i].x) * dimension_y + ((int) points[i].y)) * RGB_TRIPLET + 2] = points[i].b;
     }
     return bytemap;
 }
 
-void transform(struct point3d* points, int number, float roll, float pitch, float yaw, float T_x, float T_y, float T_z) {
+void rigid_transform(struct point3d* points, int number, float roll, float pitch, float yaw, float T_x, float T_y, float T_z) {
     float trans_matrix[16];
     computeTrans(roll, pitch, yaw, T_x, T_y, T_z, trans_matrix);
 
-    float point[4];
-    float result[4];
+    float point[4], result[4];
     for (int i = 0; i < number; i++) {
         point[0] = points[i].x;
         point[1] = points[i].y;
         point[2] = points[i].z;
         point[3] = 1.0;
 
-        // printf("%lf %lf %lf %lf\n", point[0], point[1], point[2], point[3]);
-        for (int k = 0; k < 4; k++) {
-            result[k] = 0.0;
-            for (int j = 0; j < 4; j++) {
-                result[k] += point[j] * trans_matrix[k * 4 + j];
-                // printf("%lf += %lf * %lf (%lf)\n", result[k], point[j], trans_matrix[k * 4 + j], point[j] * trans_matrix[k * 4 + j]);
-            }
-            // printf("%d: %lf %lf %lf %lf\n", k, trans_matrix[k * 4 + 0], trans_matrix[k * 4 + 1], trans_matrix[k * 4 + 2], trans_matrix[k * 4 + 3]);
-            // printf("%d: %lf %lf %lf %lf\n", k, result[0], result[1], result[2], result[3]);
-        }
-        // printf("%lf %lf %lf %lf\n", result[0], result[1], result[2], result[3]);
-        // printf("\n\n");
+        multiply_matrixes(trans_matrix, point, result, 4, 4, 4, 1);
 
         points[i].x = result[0];
         points[i].y = result[1];
         points[i].z = result[2];
+    }
+}
+
+void pinhole_projection(struct point3d* points, int number, float f) {
+    for (int i = 0; i < number; i++) {
+        float factor = 1.0 + points[i].z / f;
+        points[i].x = points[i].x / factor;
+        points[i].y = points[i].y / factor;
+    }
+}
+
+void u_v_projection(struct point3d* points, int number, float u, float v, float a_u, float a_v) {
+    for (int i = 0; i < number; i++) {
+        points[i].x = points[i].x / a_u + u;
+        points[i].y = points[i].y / a_v + v;
     }
 }
