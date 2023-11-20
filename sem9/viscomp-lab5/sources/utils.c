@@ -29,6 +29,7 @@ struct point3d *readOff(char *fileName, int *N){
 	int i = 0;
 	for(i = 0; i < N_v; i++){
 		fscanf(ifp, "%f %f %f %d %d %d %d", &(points[i].x), &(points[i].y), &(points[i].z), &(points[i].r), &(points[i].g), &(points[i].b), &fooInt);
+    points[i].trans = false;
 		//printf("%f %f %f %d %d %d\n", points[i].x, points[i].y, points[i].z, points[i].r, points[i].g, points[i].b);
 	}
 

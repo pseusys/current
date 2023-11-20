@@ -17,4 +17,6 @@ void pinhole_projection(struct point3d* points, int number, float f);
 
 void u_v_projection(struct point3d* points, int number, float u, float v, float a_u, float a_v);
 
+void z_percent_drop(struct point3d* points, int number, float percentage);
+
 #endif // VISCOMP_LAB_5_OBJECTIZE_H

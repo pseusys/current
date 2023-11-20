@@ -24,7 +24,7 @@ void multiply_matrixes(float *A, float *B, float *result, int rowsA, int colsA, 
 byte* dump_points(struct point3d* points, int number, int dimension_x, int dimension_y) {
     byte* bytemap = malloc(dimension_x * dimension_y * RGB_TRIPLET * sizeof(byte));
     for (int i = 0; i < number; i++) {
-        if (points[i].x < 0 || points[i].x >= dimension_x || points[i].y < 0 || points[i].y >= dimension_y) continue;
+        if (points[i].x < 0 || points[i].x >= dimension_x || points[i].y < 0 || points[i].y >= dimension_y || points[i].trans) continue;
         bytemap[(((int) points[i].x) * dimension_y + ((int) points[i].y)) * RGB_TRIPLET] = points[i].r;
         bytemap[(((int) points[i].x) * dimension_y + ((int) points[i].y)) * RGB_TRIPLET + 1] = points[i].g;
         bytemap[(((int) points[i].x) * dimension_y + ((int) points[i].y)) * RGB_TRIPLET + 2] = points[i].b;
@@ -64,4 +64,14 @@ void u_v_projection(struct point3d* points, int number, float u, float v, float 
         points[i].x = points[i].x / a_u + u;
         points[i].y = points[i].y / a_v + v;
     }
+}
+
+void z_percent_drop(struct point3d* points, int number, float percentage) {
+    float min_z = points[0].z, max_z = points[0].z;
+    for (int i = 0; i < number; i++) {
+        if (min_z > points[i].z) min_z = points[i].z;
+        if (max_z < points[i].z) max_z = points[i].z;
+    }
+    float cut_z = ((max_z - min_z) * percentage) + min_z;
+    for (int i = 0; i < number; i++) if (points[i].z < cut_z) points[i].trans = true;
 }

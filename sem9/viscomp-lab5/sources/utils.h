@@ -1,6 +1,8 @@
 #ifndef VISCOMP_LAB_5_UTILS_H
 #define VISCOMP_LAB_5_UTILS_H
 
+#include <stdbool.h>
+
 /* Code for M1 Mosig Introduction to Visual Computing, TP 5 */
 /* This header contains:
  1. Naive off reader for point cloud from .off file: readOff() 
@@ -19,6 +21,7 @@ struct point3d{
    int r;
    int g;
    int b;
+   bool trans;
 };
 
 /* The following function reads a point cloud from an off file and returns the point cloud in an array of structre of point3d */
