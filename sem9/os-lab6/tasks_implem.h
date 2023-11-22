@@ -5,10 +5,6 @@
 
 #include "tasks_types.h"
 
-extern bool ready_to_terminate;
-extern pthread_mutex_t queue_mutex;
-extern pthread_cond_t queue_finished;
-
 void create_queues(void);
 void delete_queues(void);
 

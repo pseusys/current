@@ -1,6 +1,8 @@
 #ifndef __TASKS_TYPES_H__
 #define __TASKS_TYPES_H__
 
+#include <pthread.h>
+
 
 typedef enum task_status{
     INIT,
@@ -52,7 +54,10 @@ typedef struct task{
 
 
 typedef struct system_state{
-    long unsigned int task_counter;
+    long unsigned int task_created_counter;
+    long unsigned int task_finished_counter;
+    pthread_mutex_t system_mutex;
+    pthread_cond_t system_finished;
 } system_state_t;
 
 

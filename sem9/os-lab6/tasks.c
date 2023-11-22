@@ -20,7 +20,11 @@ void runtime_init(void)
     create_queues();
     create_thread_pool();
 
-    sys_state.task_counter = 0;    
+    sys_state.task_created_counter = 0;
+    sys_state.task_finished_counter = 0;
+
+    pthread_mutex_init(&sys_state.system_mutex, NULL);
+    pthread_cond_init(&sys_state.system_finished, NULL);
 }
 
 void runtime_init_with_deps(void)
@@ -39,7 +43,7 @@ void runtime_finalize(void)
 {
     task_waitall();
 
-    PRINT_DEBUG(1, "Terminating ... \t Total task count: %lu \n", sys_state.task_counter);
+    PRINT_DEBUG(1, "Terminating ... \t Total task count: %lu \n", sys_state.task_created_counter);
 
     delete_queues();
 }
@@ -49,7 +53,10 @@ task_t* create_task(task_routine_t f)
 {
     task_t *t = malloc(sizeof(task_t));
 
-    t->task_id = ++sys_state.task_counter;    
+    pthread_mutex_lock(&sys_state.system_mutex);
+    t->task_id = ++sys_state.task_created_counter;
+    pthread_mutex_unlock(&sys_state.system_mutex);
+
     t->fct = f;
     t->step = 0;
 
@@ -88,8 +95,8 @@ void submit_task(task_t *t)
 
 void task_waitall(void)
 {
-    pthread_mutex_lock(&queue_mutex);
-    while (!ready_to_terminate)
-        pthread_cond_wait(&queue_finished, &queue_mutex);
-    pthread_mutex_unlock(&queue_mutex);
+    pthread_mutex_lock(&sys_state.system_mutex);
+    while (sys_state.task_created_counter != sys_state.task_finished_counter)
+        pthread_cond_wait(&sys_state.system_finished, &sys_state.system_mutex);
+    pthread_mutex_unlock(&sys_state.system_mutex);
 }

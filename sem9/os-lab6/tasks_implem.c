@@ -7,50 +7,34 @@
 #include "tasks.h"
 #include "debug.h"
 
-bool ready_to_terminate = false;
-int threads_busy = 0;
-
 tasks_queue_t *tqueue = NULL;
 
 pthread_t thread_pool[THREAD_COUNT];
-pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t queue_not_empty = PTHREAD_COND_INITIALIZER;
-pthread_cond_t queue_not_full = PTHREAD_COND_INITIALIZER;
-pthread_cond_t queue_finished = PTHREAD_COND_INITIALIZER;
 
 
 void* thread_routine(void* arg) {
     while (true)
     {
-        pthread_mutex_lock(&queue_mutex);
-        while (tqueue->index == 0)
-            pthread_cond_wait(&queue_not_empty, &queue_mutex);
-
-        threads_busy++;
-        ready_to_terminate = false;
-        task_t* active_task = dequeue_task(tqueue);
-
-        pthread_cond_signal(&queue_not_full);
-        pthread_mutex_unlock(&queue_mutex);
+        active_task = get_task_to_execute();
 
         task_return_value_t ret = exec_task(active_task);
+
+        pthread_mutex_lock(&sys_state.system_mutex);
         if (ret == TASK_COMPLETED){
             terminate_task(active_task);
+            if (sys_state.task_created_counter == ++sys_state.task_finished_counter)
+                pthread_cond_signal(&sys_state.system_finished);
         }
 #ifdef WITH_DEPENDENCIES
         else{
             active_task->status = WAITING;
+            PRINT_DEBUG(10, "Task suspended: %u\n", active_task->task_id);
+            task_check_runnable(active_task);
         }
 #endif
+        pthread_mutex_unlock(&sys_state.system_mutex);
+
         active_task = NULL;
-
-        pthread_mutex_lock(&queue_mutex);
-
-        threads_busy--;
-        ready_to_terminate = (threads_busy == 0) && (tqueue->index == 0);
-
-        pthread_cond_signal(&queue_finished);
-        pthread_mutex_unlock(&queue_mutex);
     }
     return NULL;
 }
@@ -78,12 +62,7 @@ void create_thread_pool(void)
 
 void dispatch_task(task_t *t)
 {
-    pthread_mutex_lock(&queue_mutex);
-
     enqueue_task(tqueue, t);
-
-    pthread_cond_signal(&queue_not_empty);
-    pthread_mutex_unlock(&queue_mutex);
 }
 
 task_t* get_task_to_execute(void)
@@ -123,7 +102,7 @@ void terminate_task(task_t *t)
 void task_check_runnable(task_t *t)
 {
 #ifdef WITH_DEPENDENCIES
-    if(t->task_dependency_done == t->task_dependency_count){
+    if(t->task_dependency_done == t->task_dependency_count && t->status == WAITING){
         t->status = READY;
         dispatch_task(t);
     }
