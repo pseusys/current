@@ -1,4 +1,5 @@
 .ONESHELL:
+SHELL=/bin/bash
 
 CC =	gcc
 
@@ -64,12 +65,11 @@ tests/%.o: tests/%.c $(DEPS)
 test_all: $(TARGETS)
 	@ # Run all the tests together
 	for test in $^; do
-		echo "\e[33;1m**** Test $$test *****\e[0m"
+		echo -e "\t\e[33;1m**** Test $$test *****\e[0m"
 		make --no-print-directory -s -B $$test VERBOSE=0 1>/dev/null 2>&1
 		OUTPUT=`./$$test 2>&1`
-		test "$$OUTPUT" = "Usage:*" && OUTPUT=`./$$test 100 2>&1`
-		test "$$OUTPUT" = "\*\*FAILED\*\*:*" && echo "\e[33;1m$$OUTPUT\e[0m"
-		echo $$OUTPUT
+		if [[ "$$OUTPUT" =~ ^Usage:.* ]]; then OUTPUT=`./$$test 5 2>&1`; fi
+		echo "$$OUTPUT"
 	done
 .PHONY: test_all
 
