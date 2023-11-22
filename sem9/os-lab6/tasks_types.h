@@ -56,7 +56,9 @@ typedef struct task{
 typedef struct system_state{
     long unsigned int task_created_counter;
     long unsigned int task_finished_counter;
+    unsigned int last_dispatched_queue;
     pthread_mutex_t system_mutex;
+    pthread_mutex_t thread_mutex;
     pthread_cond_t system_finished;
 } system_state_t;
 

@@ -7,15 +7,15 @@
 #include "tasks.h"
 #include "debug.h"
 
-tasks_queue_t *tqueue = NULL;
-
 pthread_t thread_pool[THREAD_COUNT];
+tasks_queue_t *tqueue_pool[THREAD_COUNT];
 
 
-void* thread_routine(void* arg) {
+void* thread_routine(void* tqueue_pointer) {
+    tasks_queue_t *tqueue = (tasks_queue_t *) tqueue_pointer;
     while (true)
     {
-        active_task = get_task_to_execute();
+        active_task = dequeue_task(tqueue);
 
         task_return_value_t ret = exec_task(active_task);
 
@@ -42,18 +42,20 @@ void* thread_routine(void* arg) {
 
 void create_queues(void)
 {
-    tqueue = create_tasks_queue();
+    for (int i = 0; i < THREAD_COUNT; i++)
+        tqueue_pool[i] = create_tasks_queue();
 }
 
 void delete_queues(void)
 {
-    free_tasks_queue(tqueue);
+    for (int i = 0; i < THREAD_COUNT; i++)
+        free_tasks_queue(tqueue_pool[i]);
 }    
 
 void create_thread_pool(void)
 {
     for (int i = 0; i < THREAD_COUNT; i++) {
-        if (pthread_create(&thread_pool[i], NULL, thread_routine, NULL) != 0){
+        if (pthread_create(&thread_pool[i], NULL, thread_routine, tqueue_pool[i]) != 0){
             fprintf(stderr, "ERROR: failed to create thread %u\n", i);
             exit(EXIT_FAILURE);
         }
@@ -62,12 +64,8 @@ void create_thread_pool(void)
 
 void dispatch_task(task_t *t)
 {
-    enqueue_task(tqueue, t);
-}
-
-task_t* get_task_to_execute(void)
-{
-    return dequeue_task(tqueue);
+    enqueue_task(tqueue_pool[sys_state.last_dispatched_queue], t);
+    sys_state.last_dispatched_queue = (sys_state.last_dispatched_queue + 1) % THREAD_COUNT;
 }
 
 unsigned int exec_task(task_t *t)

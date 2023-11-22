@@ -22,6 +22,7 @@ void runtime_init(void)
 
     sys_state.task_created_counter = 0;
     sys_state.task_finished_counter = 0;
+    sys_state.last_dispatched_queue = 0;
 
     pthread_mutex_init(&sys_state.system_mutex, NULL);
     pthread_cond_init(&sys_state.system_finished, NULL);
@@ -88,8 +89,10 @@ void submit_task(task_t *t)
         PRINT_DEBUG(100, "Dependency %u -> %u\n", active_task->task_id, t->task_id);
     }
 #endif
-    
+
+    pthread_mutex_lock(&sys_state.system_mutex);
     dispatch_task(t);
+    pthread_mutex_unlock(&sys_state.system_mutex);
 }
 
 
