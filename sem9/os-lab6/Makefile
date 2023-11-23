@@ -6,7 +6,7 @@ CC = gcc
 CFLAGS = -g -Wall -Werror -O3
 
 ## picky compiler options
-#CFLAGS=-Wall -Wextra -Wpointer-arith -pedantic -g -std=gnu99
+# CFLAGS += -Wall -Wextra -Wpointer-arith -pedantic -g -std=gnu99
 
 LDFLAGS = -lpthread
 
@@ -66,6 +66,7 @@ tests/%.o: tests/%.c $(DEPS)
 
 
 tests/%.eval: tests/%.run
+	make --no-print-directory -s -B $< VERBOSE=0 1>/dev/null 2>&1
 	./$< $(ARG)
 .PHONY: tests/%.eval
 

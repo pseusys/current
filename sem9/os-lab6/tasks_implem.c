@@ -18,27 +18,25 @@ void* thread_routine(void* tqueue_pointer) {
     while (true)
     {
         pthread_mutex_lock(&sys_state.stealing_mutex);
-        tasks_queue_t *recipient_queue = NULL;
         while (true) {
-            if (tqueue->index == 0) {
+            if (tqueue->length == 0) {
                 for (int i = 0; i < THREAD_COUNT; i++)
-                    if (tqueue_pool[i]->index != 0) {
-                        recipient_queue = tqueue_pool[i];
+                    if (tqueue_pool[i]->length != 0) {
+                        active_task = remove_task(tqueue_pool[i]);
                         PRINT_DEBUG(10, "Task will be stolen from queue: %d\n", i);
                         break;
                     }
             } else {
-                recipient_queue = tqueue;
-                if (tqueue->index > 1) {
-                    PRINT_DEBUG(10, "Tasks %p in queue: %d; waking a helper thread up!\n", tqueue, tqueue->index);
+                active_task = pop_task(tqueue);
+                if (tqueue->length > 1) {
+                    PRINT_DEBUG(10, "Tasks %p in queue: %d; waking a helper thread up!\n", (void *) tqueue, tqueue->length);
                     pthread_cond_signal(&sys_state.stealing_condition);
                 }
             }
-            if (recipient_queue == NULL) 
+            if (active_task == NULL) 
                 pthread_cond_wait(&sys_state.stealing_condition, &sys_state.stealing_mutex);
             else break;
         }
-        active_task = dequeue_task(recipient_queue);
         pthread_mutex_unlock(&sys_state.stealing_mutex);
 
         task_return_value_t ret = exec_task(active_task);
@@ -89,8 +87,8 @@ void create_thread_pool(void)
 
 void dispatch_task(task_t *t)
 {
-    enqueue_task(tqueue, t);
-    if (tqueue->index > 1 || active_task == NULL) pthread_cond_signal(&sys_state.stealing_condition);
+    push_task(tqueue, t);
+    if (tqueue->length > 1 || active_task == NULL) pthread_cond_signal(&sys_state.stealing_condition);
 }
 
 unsigned int exec_task(task_t *t)
@@ -108,7 +106,6 @@ unsigned int exec_task(task_t *t)
 void terminate_task(task_t *t)
 {
     t->status = TERMINATED;
-    
     PRINT_DEBUG(10, "Task terminated: %u\n", t->task_id);
 
 #ifdef WITH_DEPENDENCIES
@@ -120,6 +117,7 @@ void terminate_task(task_t *t)
     }
 #endif
 
+    // free(t);
 }
 
 void task_check_runnable(task_t *t)
