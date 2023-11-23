@@ -7,6 +7,7 @@
 #include "tasks.h"
 #include "debug.h"
 
+tasks_queue_t *garbage_queue;
 pthread_t thread_pool[THREAD_COUNT];
 tasks_queue_t *tqueue_pool[THREAD_COUNT];
 
@@ -65,6 +66,7 @@ void* thread_routine(void* tqueue_pointer) {
 
 void create_queues(void)
 {
+    garbage_queue = create_tasks_queue();
     for (int i = 0; i < THREAD_COUNT; i++)
         tqueue_pool[i] = create_tasks_queue();
     tqueue = tqueue_pool[0];
@@ -74,6 +76,9 @@ void delete_queues(void)
 {
     for (int i = 0; i < THREAD_COUNT; i++)
         free_tasks_queue(tqueue_pool[i]);
+    PRINT_DEBUG(10, "Freeing garbage %d tasks\n", garbage_queue->length);
+    while (garbage_queue->length != 0) free_task(pop_task(garbage_queue));
+    free_tasks_queue(garbage_queue);
 }    
 
 void create_thread_pool(void)
@@ -88,6 +93,7 @@ void create_thread_pool(void)
 
 void dispatch_task(task_t *t)
 {
+    if (!t->root_task) t->root_task = active_task == NULL;
     push_task(tqueue, t);
     if (tqueue->length > 1 || active_task == NULL) pthread_cond_signal(&sys_state.stealing_condition);
 }
@@ -118,7 +124,8 @@ void terminate_task(task_t *t)
     }
 #endif
 
-    // free(t);
+    if (!t->root_task) free_task(t);
+    else push_task(garbage_queue, t);
 }
 
 void task_check_runnable(task_t *t)

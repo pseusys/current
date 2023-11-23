@@ -2,6 +2,7 @@
 #define __TASKS_H__
 
 #include <stddef.h>
+#include <stdbool.h>
 
 #include "tasks_types.h"
 
@@ -28,6 +29,9 @@ void* retrieve_input(task_t *t);
 void* retrieve_output(task_t *t);
 
 void* retrieve_output_from_dependencies(task_t *t);
+
+task_param_list_t* init_task_io_list();
+void free_task_io_list(task_param_list_t *list);
 
 /* global variables that might be accessed from multiple files */
 extern __thread task_t *active_task;

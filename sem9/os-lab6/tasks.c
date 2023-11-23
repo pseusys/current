@@ -61,12 +61,13 @@ task_t* create_task(task_routine_t f)
 
     t->fct = f;
     t->step = 0;
+    t->root_task = false;
 
-    t->tstate.input_list = NULL;
-    t->tstate.output_list = NULL;
+    t->tstate.input_list = init_task_io_list();
+    t->tstate.output_list = init_task_io_list();
 
 #ifdef WITH_DEPENDENCIES
-    t->tstate.output_from_dependencies_list = NULL;
+    t->tstate.output_from_dependencies_list = init_task_io_list();
     t->task_dependency_count = 0;
     t->task_dependency_done = 0;
     t->parent_task = NULL;
@@ -104,4 +105,13 @@ void task_waitall(void)
     while (sys_state.task_created_counter != sys_state.task_finished_counter)
         pthread_cond_wait(&sys_state.system_finished, &sys_state.system_mutex);
     pthread_mutex_unlock(&sys_state.system_mutex);
+}
+
+
+void free_task(task_t* t)
+{
+    free_task_io_list(t->tstate.input_list);
+    free_task_io_list(t->tstate.output_list);
+    free_task_io_list(t->tstate.output_from_dependencies_list);
+    free(t);
 }

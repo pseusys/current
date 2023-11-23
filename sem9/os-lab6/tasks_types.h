@@ -2,6 +2,7 @@
 #define __TASKS_TYPES_H__
 
 #include <pthread.h>
+#include <stdbool.h>
 
 
 typedef enum task_status{
@@ -20,18 +21,28 @@ typedef enum task_return_value{
 struct task;
 typedef task_return_value_t (*task_routine_t)(struct task*, unsigned int);
 
+typedef struct task_param_payload {
+    void* elem;
+    unsigned int uses;
+} task_param_payload_t;
+
 typedef struct task_param{
-    void *elem;
+    task_param_payload_t *payload;
     struct task_param *next;
 } task_param_t;
 
+typedef struct task_param_list{
+    task_param_t *head;
+    task_param_t *next;
+} task_param_list_t;
+
 typedef struct task_state{
-    task_param_t *input_list;
-    task_param_t *output_list;
+    task_param_list_t *input_list;
+    task_param_list_t *output_list;
 #ifdef WITH_DEPENDENCIES
-    task_param_t *output_from_dependencies_list; /* the outputs coming
-                                                  * from
-                                                  * dependencies */
+    task_param_list_t *output_from_dependencies_list; /* the outputs coming
+                                                       * from
+                                                       * dependencies */
 #endif
 } task_state_t;
 
@@ -41,6 +52,7 @@ typedef struct task{
     task_routine_t fct;
     task_state_t tstate;
     unsigned int step;
+    bool root_task;
 
 #ifdef WITH_DEPENDENCIES
     unsigned int task_dependency_count;  /* number of tasks this task

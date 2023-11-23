@@ -11,8 +11,8 @@ CFLAGS = -g -Wall -Werror -O3
 LDFLAGS = -lpthread
 
 ## add the memory sanitizer
-# CFLAGS += -fsanitize=address
-# LDFLAGS += -fsanitize=address
+CFLAGS += -fsanitize=address
+LDFLAGS += -fsanitize=address
 
 # defines the set of configuration variables for the Makefile
 include Makefile.config
