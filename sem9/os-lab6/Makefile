@@ -46,7 +46,7 @@ CONFIG_FLAGS += -DQUEUE_SIZE=$(QUEUE_SIZE)
 CONFIG_FLAGS += -DTHREAD_COUNT=$(THREAD_COUNT)
 
 # input argument
-ARG = 5
+ARG = 10
 
 
 
@@ -81,7 +81,7 @@ test_all: $(TARGETS)
 		echo -e "\t\e[33;1m**** Test $$test *****\e[0m"
 		make --no-print-directory -s -B $$test VERBOSE=0 1>/dev/null 2>&1
 		OUTPUT=`./$$test 2>&1`
-		if [[ "$$OUTPUT" =~ ^Usage:.* ]]; then OUTPUT=`./$$test 5 2>&1`; fi
+		if [[ "$$OUTPUT" =~ ^Usage:.* ]]; then OUTPUT=`./$$test $(ARG) 2>&1`; fi
 		echo "$$OUTPUT"
 	done
 .PHONY: test_all

@@ -20,6 +20,7 @@ void* thread_routine(void* tqueue_pointer) {
         pthread_mutex_lock(&sys_state.stealing_mutex);
         while (true) {
             if (tqueue->length == 0) {
+                PRINT_DEBUG(10, "Task will be stolen!\n");
                 for (int i = 0; i < THREAD_COUNT; i++)
                     if (tqueue_pool[i]->length != 0) {
                         active_task = remove_task(tqueue_pool[i]);
