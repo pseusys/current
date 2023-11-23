@@ -10,12 +10,36 @@
 pthread_t thread_pool[THREAD_COUNT];
 tasks_queue_t *tqueue_pool[THREAD_COUNT];
 
+__thread tasks_queue_t *tqueue;
+
 
 void* thread_routine(void* tqueue_pointer) {
-    tasks_queue_t *tqueue = (tasks_queue_t *) tqueue_pointer;
+    tqueue = (tasks_queue_t *) tqueue_pointer;
     while (true)
     {
-        active_task = dequeue_task(tqueue);
+        pthread_mutex_lock(&sys_state.stealing_mutex);
+        tasks_queue_t *recipient_queue = NULL;
+        while (true) {
+            if (tqueue->index == 0) {
+                for (int i = 0; i < THREAD_COUNT; i++)
+                    if (tqueue_pool[i]->index != 0) {
+                        recipient_queue = tqueue_pool[i];
+                        PRINT_DEBUG(10, "Task will be stolen from queue: %d\n", i);
+                        break;
+                    }
+            } else {
+                recipient_queue = tqueue;
+                if (tqueue->index > 1) {
+                    PRINT_DEBUG(10, "Tasks %p in queue: %d; waking a helper thread up!\n", tqueue, tqueue->index);
+                    pthread_cond_signal(&sys_state.stealing_condition);
+                }
+            }
+            if (recipient_queue == NULL) 
+                pthread_cond_wait(&sys_state.stealing_condition, &sys_state.stealing_mutex);
+            else break;
+        }
+        active_task = dequeue_task(recipient_queue);
+        pthread_mutex_unlock(&sys_state.stealing_mutex);
 
         task_return_value_t ret = exec_task(active_task);
 
@@ -44,6 +68,7 @@ void create_queues(void)
 {
     for (int i = 0; i < THREAD_COUNT; i++)
         tqueue_pool[i] = create_tasks_queue();
+    tqueue = tqueue_pool[0];
 }
 
 void delete_queues(void)
@@ -64,8 +89,8 @@ void create_thread_pool(void)
 
 void dispatch_task(task_t *t)
 {
-    enqueue_task(tqueue_pool[sys_state.last_dispatched_queue], t);
-    sys_state.last_dispatched_queue = (sys_state.last_dispatched_queue + 1) % THREAD_COUNT;
+    enqueue_task(tqueue, t);
+    if (tqueue->index > 1 || active_task == NULL) pthread_cond_signal(&sys_state.stealing_condition);
 }
 
 unsigned int exec_task(task_t *t)
