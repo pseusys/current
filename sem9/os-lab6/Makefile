@@ -1,9 +1,9 @@
 .ONESHELL:
-SHELL=/bin/bash
+SHELL = /bin/bash
 
-CC =	gcc
+CC = gcc
 
-CFLAGS =  -g -Wall -Werror 
+CFLAGS = -g -Wall -Werror -O3
 
 ## picky compiler options
 #CFLAGS=-Wall -Wextra -Wpointer-arith -pedantic -g -std=gnu99
@@ -45,6 +45,9 @@ endif
 CONFIG_FLAGS += -DQUEUE_SIZE=$(QUEUE_SIZE)
 CONFIG_FLAGS += -DTHREAD_COUNT=$(THREAD_COUNT)
 
+# input argument
+ARG = 5
+
 
 
 all: $(TARGETS)
@@ -61,6 +64,15 @@ tests/%.o: tests/%.c $(DEPS)
 	@
 	$(CC) -c $< $(CFLAGS) $(CONFIG_FLAGS)
 
+
+tests/%.eval: tests/%.run
+	./$< $(ARG)
+.PHONY: tests/%.eval
+
+tests/%.perf: tests/%.run
+	make --no-print-directory -s -B $< VERBOSE=0 1>/dev/null 2>&1
+	time ./$< $(ARG)
+.PHONY: tests/%.eval
 
 test_all: $(TARGETS)
 	@ # Run all the tests together
