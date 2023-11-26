@@ -19,8 +19,8 @@ OBJECT_NAME=frameCube
 TRANSFORM_X=0.0
 TRANSFORM_Y=0.0
 TRANSFORM_Z=0.0
-ROTATE_X=13.0
-ROTATE_Y=27.0
+ROTATE_X=0.0
+ROTATE_Y=0.0
 ROTATE_Z=0.0
 
 FOCAL=1.0
@@ -52,7 +52,7 @@ object: export OUTPUT_IMAGE=processed/$(OBJECT_NAME)_object_translate_$(TRANSFOR
 object: build/main.run ensure_dirs
 	@
 ifeq ($(DOCKER), true)
-	OBJECT_NAME=human TRANSFORM_X=$(TRANSFORM_X) TRANSFORM_Y=$(TRANSFORM_Y) TRANSFORM_Z=1.0 ROTATE_X=180.0 ROTATE_Y=0.0 ROTATE_Z=-90.0 FOCAL=$(FOCAL) PROJECTION=$(PROJECTION) Z_PERCENT_DROP=0.35 DIMENSION_X=$(DIMENSION_X) DIMENSION_Y=$(DIMENSION_Y) ASPECT_X=$(ASPECT_X) ASPECT_Y=$(ASPECT_Y) CENTER_X=$(CENTER_X) CENTER_Y=$(CENTER_Y) docker compose up --build
+	OBJECT_NAME=$(OBJECT_NAME) TRANSFORM_X=$(TRANSFORM_X) TRANSFORM_Y=$(TRANSFORM_Y) TRANSFORM_Z=$(TRANSFORM_Z) ROTATE_X=$(ROTATE_X) ROTATE_Y=$(ROTATE_Y) ROTATE_Z=$(ROTATE_Z) FOCAL=$(FOCAL) PROJECTION=$(PROJECTION) Z_PERCENT_DROP=$(Z_PERCENT_DROP) DIMENSION_X=$(DIMENSION_X) DIMENSION_Y=$(DIMENSION_Y) ASPECT_X=$(ASPECT_X) ASPECT_Y=$(ASPECT_Y) CENTER_X=$(CENTER_X) CENTER_Y=$(CENTER_Y) docker compose up --build
 else
 	echo "\e[33;1m**** Running app for objectivisation *****\e[0m"
 	./$< objects/$(OBJECT_NAME).off $(OUTPUT_IMAGE) object $(TRANSFORM_X) $(TRANSFORM_Y) $(TRANSFORM_Z) $(ROTATE_X) $(ROTATE_Y) $(ROTATE_Z) $(DIMENSION_X) $(DIMENSION_Y) $(ASPECT_X) $(ASPECT_Y) $(CENTER_X) $(CENTER_Y) $(FOCAL) $(PROJECTION) $(Z_PERCENT_DROP)
@@ -65,7 +65,7 @@ object_human:
 reobject: clean object_human
 
 object_cube:
-	make --no-print-directory -s object OBJECT_NAME=frameCube 1>/dev/null 2>&1
+	make --no-print-directory -s object OBJECT_NAME=frameCube
 reobject: clean object_cube
 
 build/main.run: $(OBJECTS) build/Util.o ../viscomp-lab1/Util.h $(HEADERS)
