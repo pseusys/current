@@ -31,7 +31,8 @@ void* thread_routine(void* tqueue_pointer) {
             } else {
                 active_task = pop_task(tqueue);
                 if (tqueue->length > 1) {
-                    PRINT_DEBUG(10, "Tasks %p in queue: %d; waking a helper thread up!\n", (void *) tqueue, tqueue->length);
+                    PRINT_DEBUG(10, "Tasks %p in queue: %d; waking a helper thread up!\n",
+                    (void *) tqueue, tqueue->length);
                     pthread_cond_signal(&sys_state.stealing_condition);
                 }
             }
