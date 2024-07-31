@@ -1,0 +1,12 @@
+<launch>
+	<node name="provide_map" pkg="map_server" type="map_server" args="$(find robotics_project)/map/map.yaml" />
+	<node name="vizualize_world" pkg="rviz" type="rviz" args="-d $(find robotics_project)/rviz_config.rviz" />
+	<node name="complete_action" pkg="robotics_project" type="action_robotics_project_node" />
+	<node name="datmo_detection" pkg="robotics_project" type="datmo_robotics_project_node" />
+	<node name="complete_decision" pkg="robotics_project" type="decision_robotics_project_node" />
+	<node name="localization_detection" pkg="robotics_project" type="localization_robotics_project_node" />
+	<node name="obstacle_detection" pkg="robotics_project" type="obstacle_detection_robotics_project_node" />
+	<node name="movement_detection" pkg="robotics_project" type="robot_moving_robotics_project_node" />
+	<node name="rotation_action" pkg="robotics_project" type="rotation_robotics_project_node" />
+</launch>
+

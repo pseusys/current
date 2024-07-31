@@ -3,12 +3,12 @@ FROM ros:noetic-ros-base-focal AS basic
 SHELL ["/bin/bash", "-c"]
 
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install --no-install-recommends -y gdb python3-dev python3-pip ros-noetic-desktop-full && rm -rf /var/lib/apt/lists/*
+#RUN apt-get update && apt-get install --no-install-recommends -y gdb python3-dev python3-pip ros-noetic-desktop-full && rm -rf /var/lib/apt/lists/*
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
 
 ENV ROS_LANG_DISABLE geneus:genlisp:gennodejs
-RUN mkdir -p /~/catkin_ws/src && cd /~/catkin_ws && source /opt/ros/noetic/setup.bash && catkin_make clean && catkin_make && catkin_make install
+#RUN mkdir -p /~/catkin_ws/src && cd /~/catkin_ws && source /opt/ros/noetic/setup.bash && catkin_make clean && catkin_make && catkin_make install
 WORKDIR /~/catkin_ws
 
 COPY deploy/docker/entrypoint.sh ./
