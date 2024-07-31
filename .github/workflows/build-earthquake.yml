@@ -1,12 +1,16 @@
-name: BUILD
+name: DEPLOY-EARTHQUAKE
 
 on:
   push:
     paths:
       - 'sem5/WEB-earthquake/**'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
-  deploy:
+  deploy-earthquake:
     runs-on: ubuntu-latest
 
     steps:

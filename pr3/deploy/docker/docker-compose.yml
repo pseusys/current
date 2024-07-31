@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  roslaunch:
+    container_name: ros-desktop-follow-the-drow
+    restart: "no"
+    privileged: true
+    image: follow_the_drow
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+      target: ftd
+    volumes:
+      - ../out:/~/catkin_ws/out
+      - ../config:/~/catkin_ws/src/follow_the_drow/config
+      - ../follow_the_drow:/~/catkin_ws/src/follow_the_drow
+      # Some volumes required for RVIZ GUI
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ~/.Xauthority:/root/.Xauthority:ro
+    devices:
+      - /dev/dri:/dev/dri
+    environment:
+      - ROS_MASTER_URI=http://${ROBAIR_IP}:11311
+      - ROS_IP=${CONTAINER_IP}
+      # Output files path
+      - OUTPUT_PATH=/~/catkin_ws/out
+      # Some environment variables required for RVIZ GUI
+      - DISPLAY=${DISPLAY}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - QT_X11_NO_MITSHM=1
+    env_file:
+      ../conf.env
+    network_mode:
+      host
+    command: bash -c "roslaunch src/follow_the_drow/config/follow_the_drow.launch"
