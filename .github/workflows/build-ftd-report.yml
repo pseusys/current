@@ -1,0 +1,35 @@
+name: BUILD-FTD-REPORT
+
+on:
+  push:
+    paths:
+      - 'pr3/report/**'
+      - 'pr3/Makefile'
+      - '.github/workflows/build-ftd-report.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  generate-report:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository 🛎️
+        uses: actions/checkout@v4
+      
+      - name: Pull LaTeX builder image 🖼️
+        run: docker pull arkark/latexmk
+
+      - name: Build Report 📝
+        run: make -C pr3 report
+
+      - name: Update release 📩
+        uses: svenstaro/upload-release-action@v2
+        with:
+          overwrite: true
+          tag: report
+          asset_name: report.pdf
+          file: pr3/report/out/main.pdf

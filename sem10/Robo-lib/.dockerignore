@@ -1,0 +1,17 @@
+.github
+.vscode
+.idea
+venv
+
+docker
+!docker/entrypoint.sh
+!docker/config_*.py
+
+sources_*/CMakeLists.txt
+
+*.env
+.gitattributes
+.gitignore
+.dockerignore
+Makefile
+README.md

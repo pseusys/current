@@ -1,0 +1,15 @@
+bottom_polar_x: 0.15
+bottom_polar_y: 0.0
+bottom_polar_z: 0.0
+
+bottom_cartesian_x: 0.0
+bottom_cartesian_y: 0.0
+bottom_cartesian_z: 0.0
+
+top_polar_x: 0.0
+top_polar_y: 0.0
+top_polar_z: 1.2
+
+top_cartesian_x: 0.0
+top_cartesian_y: 0.05
+top_cartesian_z: 0.0

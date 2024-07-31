@@ -1,0 +1,5 @@
+<node name="follow_me_decision_node" pkg="follow_me" type="decision_node" output="log" />
+<node name="follow_me_robot_moving_node" pkg="follow_me" type="robot_moving_node" output="log" />
+<node name="follow_me_obstacle_detection_node" pkg="follow_me" type="obstacle_detection_node" output="log" />
+<node name="follow_me_action_node" pkg="follow_me" type="action_node" output="log" />
+<node name="follow_me_rotation_node" pkg="follow_me" type="rotation_node" output="log" />
