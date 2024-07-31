@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  roslaunch:
+    extends:
+      file: docker-compose-base.yml
+      service: roslaunch
+
+networks:
+  default-network:
+    external: true  # TODO: check if it's works
+    name: ${NETWORK}  # TODO: check if it's important
+    driver: host
+    ipam:
+      config:
+        - subnet: 192.168.0.0/24
+        - gateway: 192.168.0.1
+        - ip_range: ${CONTAINER_IP}/32

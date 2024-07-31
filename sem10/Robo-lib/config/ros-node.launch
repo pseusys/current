@@ -1,0 +1,4 @@
+<launch>
+	<node name="rosbag_simulation" pkg="rosbag" type="play" args="/~/catkin_ws/data/$(env RECORD)" respawn="true" />
+	<node name="rviz_visualization" pkg="rviz" type="rviz" args="-d /~/catkin_ws/config/$(env CONFIG)" required="true" />
+</launch>

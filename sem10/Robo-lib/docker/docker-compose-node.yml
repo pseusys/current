@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  roslaunch:
+    extends:
+      file: docker-compose-base.yml
+      service: roslaunch
+
+networks:
+  default-network:
+    driver: host

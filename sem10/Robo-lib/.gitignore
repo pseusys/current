@@ -1,0 +1,14 @@
+.vscode
+.idea
+venv
+
+config/*.launch
+!config/ros-node.launch
+!config/ros-phys.launch
+
+*.env
+!example.env
+
+sources_*/CMakeLists.txt
+
+sources_*/**.launch

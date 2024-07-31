@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  roslaunch:
+    container_name: roslaunch-combined-environment
+    restart: "no"
+    privileged: true
+    image: ghcr.io/pseusys/robair-pyified/ros-desktop-settled:master
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ../config:/~/catkin_ws/config
+      - ../assets/data:/~/catkin_ws/data
+      - ../assets/map:/~/catkin_ws/map
+      - ../${SOURCES}:/~/catkin_ws/src
+      # Some volumes required for RVIZ GUI
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ~/.Xauthority:/root/.Xauthority:ro
+    devices:
+      - /dev/dri:/dev/dri
+    environment:
+      - ROS_MASTER_URI=http://${CONTAINER_IP}:11311
+      - ROS_IP=${ROBAIR_IP}
+      - CONFIG
+      - LAUNCH
+      - TARGET
+      - RECORD
+      # Some environment variables required for RVIZ GUI
+      - DISPLAY=${DISPLAY}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - QT_X11_NO_MITSHM=1
+    command: bash -c "catkin_make && python3 config_launch.py -s '$TARGET' -i '$LAUNCH' launch && roslaunch launch" # bash -c "ping $$ROBAIR_IP"  # TODO: remove when tested
+    healthcheck:
+      test: python3 config_check.py -c "$(bash entrypoint.sh rosnode list)" launch || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 10
