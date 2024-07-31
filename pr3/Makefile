@@ -76,7 +76,7 @@ launch-docker-robot:
 
 report:
 	@ # Compile report LaTeX
-	docker run --rm -i -v $(PWD)/report:/workdir arkark/latexmk /bin/bash -c "latexmk -pdf main.tex && chown -R '$(shell id -u):$(shell id -g)' /workdir"
+	docker run --rm -i -v $(CURDIR)/report:/workdir arkark/latexmk /bin/bash -c "latexmk -pdf main.tex && chown -R '$(shell id -u):$(shell id -g)' /workdir"
 .PHONY: report
 
 

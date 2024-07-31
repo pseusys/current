@@ -23,7 +23,7 @@ jobs:
           gradle-version: 7.6
 
       - name: Build with Gradle 🛠
-        run: ./gradlew build clean
+        run: ./sem10/DS-proj/gradlew build clean
 
       - name: Launch RabbitMQ 🐇
         run: |
