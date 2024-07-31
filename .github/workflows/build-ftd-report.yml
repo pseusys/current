@@ -1,4 +1,4 @@
-name: REPORT
+name: BUILD-FTD-REPORT
 
 on:
   push:

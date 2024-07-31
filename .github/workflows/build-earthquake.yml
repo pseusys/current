@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  deploy-earthquake:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:

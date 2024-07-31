@@ -1,4 +1,4 @@
-name: BUILD
+name: BUILD-FTD-IMAGE
 
 on:
   push:
@@ -80,13 +80,3 @@ jobs:
 
       - name: Build and install follow_the_drow C++ static library 📚
         run: sudo make -C pr3 build-lib
-
-  build-ftd-docker-image:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v3
-
-      - name: Build image 🖼️
-        run: make -C pr3 build-image
