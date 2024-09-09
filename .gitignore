@@ -35,3 +35,6 @@ sem5/WEB-earthquake/public/
 # 3D graphics objects and textures
 *.obj
 *.mtl
+
+# CompSec VM image
+*.img
