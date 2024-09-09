@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package>
+  <name>tutorial_ros</name>
+  <version>0.0.0</version>
+  <description>follow me for the course "Robotics and IoT"</description>
+
+  <maintainer email="olivier@todo.todo">olivier</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>std_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>genmsg</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>message_runtime</run_depend>
+
+  <export/>
+</package>

@@ -1,0 +1,3 @@
+<launch>
+	<node name="rviz_visualization" pkg="rviz" type="rviz" args="-d /~/catkin_ws/config/$(env CONFIG)" />
+</launch>
