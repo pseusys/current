@@ -1,0 +1,11 @@
+id_rsa
+id_rsa.pub
+
+targets/target*
+!targets/target*.c
+
+xploits/xploit*
+!xploits/xploit*.c
+xploits/run-shellcode*
+!xploits/run-shellcode*.c
+xploits/shellcode.bin
