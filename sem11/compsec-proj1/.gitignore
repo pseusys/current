@@ -1,11 +1,13 @@
 id_rsa
 id_rsa.pub
 
-targets/target*
-!targets/target*.c
+proj1/targets/target*
+!proj1/targets/target*.c
 
-xploits/xploit*
-!xploits/xploit*.c
-xploits/run-shellcode*
-!xploits/run-shellcode*.c
-xploits/shellcode.bin
+proj1/xploits/xploit*
+!proj1/xploits/xploit*.c
+proj1/xploits/run-shellcode*
+!proj1/xploits/run-shellcode*.c
+proj1/xploits/shellcode.bin
+
+proj1/fuzz/testcases
