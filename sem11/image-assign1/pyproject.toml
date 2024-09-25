@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "cs231n"
+version = "0.0.1"
+description = "Just the first assignment, no description, c'mon"
+authors = ["Aleksandr Sergeev <asergeev@connect.ust.hk>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+jupyter = "1.1.1"
+numpy = "1.26.4"
+matplotlib = "3.7.1"
+imageio = "2.35.1"
+future = "1.0.0"

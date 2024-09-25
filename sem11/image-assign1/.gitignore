@@ -1,0 +1,8 @@
+.vscode
+
+poetry.lock
+
+cs231n/datasets/*
+!cs231n/datasets/get_datasets.sh
+
+**/__pycache/**
