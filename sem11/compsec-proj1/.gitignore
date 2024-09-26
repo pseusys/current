@@ -1,6 +1,8 @@
 id_rsa
 id_rsa.pub
 
+gadgets.txt
+
 proj1/targets/target*
 !proj1/targets/target*.c
 
