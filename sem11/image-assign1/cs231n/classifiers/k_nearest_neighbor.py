@@ -102,7 +102,8 @@ class KNearestNeighbor(object):
             #######################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            vector = X[i] - self.X_train
+            dists[i, :] = np.sqrt(np.sum(vector * vector, axis=1))
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         return dists
@@ -132,7 +133,9 @@ class KNearestNeighbor(object):
         #########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        tesq = np.sum(np.power(self.X_train, 2), axis=1, keepdims=True).T
+        trsq = np.sum(np.power(X, 2), axis=1, keepdims=True)
+        dists = np.sqrt(tesq + trsq - 2 * X.dot(self.X_train.T))
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         return dists
@@ -165,7 +168,7 @@ class KNearestNeighbor(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            closest_y = np.take(self.y_train, np.argsort(dists[i], axis=0)[:k])
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
             #########################################################################
@@ -177,7 +180,8 @@ class KNearestNeighbor(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            unique, counts = np.unique(closest_y, return_counts=True)
+            y_pred[i] = unique[np.argsort(counts)[-1]]
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 

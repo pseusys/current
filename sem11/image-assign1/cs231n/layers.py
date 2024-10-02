@@ -28,7 +28,7 @@ def affine_forward(x, w, b):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    out = np.dot(np.reshape(x, (x.shape[0], -1)), w) + b
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -61,13 +61,32 @@ def affine_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    #print(dout.shape)
+    #m = x.shape[1]
+    #dw = np.dot(dout.T, x) / m
+    #db = np.sum(dout, axis=1, keepdims=True) / m
+    #dx = np.dot(w, dout.T)
+    #dx = np.reshape(dx, x.shape)
+
+    dw = np.dot(np.reshape(x, (x.shape[0], -1)).T, dout)
+    db = np.sum(dout, axis=0)
+    dx = np.reshape(np.dot(dout, w.T), x.shape)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return dx, dw, db
+
+
+def single_layer_backward_propagation(dout, w, b, x):
+    m = x.shape[1]
+
+    dW_curr = np.dot(dout, x.T) / x.shape[1]
+    db_curr = np.sum(dout, axis=1, keepdims=True) / x.shape[1]
+    dA_prev = np.dot(w.T, dout)
+
+    return dA_prev, dW_curr, db_curr
 
 
 def relu_forward(x):
@@ -87,7 +106,7 @@ def relu_forward(x):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    out = x * (x > 0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -114,7 +133,7 @@ def relu_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dx = dout * (x > 0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -773,7 +792,9 @@ def svm_loss(x, y):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    from cs231n.classifiers.linear_svm import svm_loss_vectorized
+
+    loss, dx = svm_loss_vectorized(x, np.eye(x.shape[0]), y, 0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -803,7 +824,9 @@ def softmax_loss(x, y):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    from cs231n.classifiers.softmax import softmax_loss_vectorized
+
+    loss, dx = softmax_loss_vectorized(x, np.eye(x.shape[0]), y, 0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
