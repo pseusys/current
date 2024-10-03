@@ -6,5 +6,6 @@ cs231n/datasets/*
 !cs231n/datasets/get_datasets.sh
 
 *.pkl
+*.zip
 
 **/__pycache/**
