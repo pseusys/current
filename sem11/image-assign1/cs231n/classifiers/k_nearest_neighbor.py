@@ -168,7 +168,7 @@ class KNearestNeighbor(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            closest_y = np.take(self.y_train, np.argsort(dists[i], axis=0)[:k])
+            closest_y = self.y_train[np.argsort(dists[i], axis=0)[:k]]
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
             #########################################################################
