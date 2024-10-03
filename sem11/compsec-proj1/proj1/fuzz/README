@@ -1,3 +1,33 @@
-TODO: Include a stack trace from GDB of bsdtar crashing on an input found by
-afl-fuzz. Briefly describe what the vulnerability is in the libarchive source
-code (2-3 sentences).
+# Checking `bsdtar` with fuzzer
+
+> Include a stack trace from GDB of bsdtar crashing on an input found by `afl-fuzz`.
+> Briefly describe what the vulnerability is in the libarchive source code (2-3 sentences).
+
+During `bsdtar` fuzz check, one vulnerability was found.
+This is the imput file that caused segmentation fault with code 11:
+
+```hex
+1F 9D 30 00 01 00 64
+```
+
+Checking this voulnerability with `gdb` identified the following stack trace:
+
+```txt
+#0  0x00005555555b4aa2 in next_code (self=self@entry=0x5555557ec0a0) at libarchive/archive_read_support_filter_compress.c:386
+#1  0x00005555555b5078 in compress_filter_read (self=0x5555557ec0a0, pblock=0x5555557ec128) at libarchive/archive_read_support_filter_compress.c:287
+#2  0x000055555559a0f2 in __archive_read_filter_ahead (avail=<optimized out>, min=<optimized out>, filter=<optimized out>) at libarchive/archive_read.c:1275
+#3  __archive_read_filter_ahead (filter=0x5555557ec0a0, min=min@entry=14, avail=avail@entry=0x7fffffffe038) at libarchive/archive_read.c:1212
+#4  0x00005555555b30ce in bzip2_reader_bid (self=<optimized out>, filter=<optimized out>) at libarchive/archive_read_support_filter_bzip2.c:134
+#5  0x000055555559c184 in choose_filters (a=0x5555557cfaf0) at libarchive/archive_read.c:562
+#6  archive_read_open1 (_a=_a@entry=0x5555557cfaf0) at libarchive/archive_read.c:506
+#7  0x00005555555afc40 in archive_read_open_filenames (a=a@entry=0x5555557cfaf0, filenames=<optimized out>, filenames@entry=0x7fffffffe090, block_size=<optimized out>) at libarchive/archive_read_open_filename.c:150
+#8  0x00005555555afd61 in archive_read_open_filename (a=a@entry=0x5555557cfaf0, filename=<optimized out>, block_size=<optimized out>) at libarchive/archive_read_open_filename.c:107
+#9  0x0000555555563a83 in read_archive (bsdtar=bsdtar@entry=0x7fffffffe2b0, mode=mode@entry=120 'x', writer=writer@entry=0x5555557ce5f0) at tar/read.c:204
+#10 0x0000555555565b10 in tar_mode_x (bsdtar=0x7fffffffe2b0) at tar/read.c:104
+#11 0x000055555555d93c in main (argc=<optimized out>, argv=<optimized out>) at tar/bsdtar.c:804
+```
+
+On line 385 the value of `code` is 256, and the value of `state->prefix[256]` is also 256.
+This leads to the cycle on lines 385 - 388 being infinite and filling all the `state->stack` array with zeros (value of `state->prefix[256]`).
+Eventually the "stack" pointed by `state->stackp` expands beyond 65300 bytes, leaving actual stack memory region and results in Segmentation Fault.
+In order to fix this, a `for` loop or a cycle loop counter might be used, throwing stack overflow exception whenever `state->stackp` becomes equal to `&stack[65300]`.

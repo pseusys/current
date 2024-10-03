@@ -38,6 +38,17 @@ brun: id_rsa clear_build
 	ssh -i ./id_rsa -p 5555 user@localhost "cd proj1/xploits && make" > /dev/null
 .PHONY: brun
 
+gadgets: brun
+	@ # Find gadgets in VM and copy them to host
+	echo -e "${BLUE}Finding gadgets...${RESET}"
+	ssh -i ./id_rsa -p 5555 user@localhost "python3 proj1/find_gadgets.py /tmp/target5 > gadgets.txt"
+	echo -e "${BLUE}Copying gadgets file to host...${RESET}"
+	scp -i ./id_rsa -rpP 5555 user@localhost:/home/user/gadgets.txt . > /dev/null
+	echo -e "${BLUE}Removing gadgets file from VM...${RESET}"
+	ssh -i ./id_rsa -p 5555 user@localhost "rm -f gadgets.txt" > /dev/null
+	echo -e "\t${GREEN}Gadgets copied (find them in ./gadgets.txt)!!${RESET}"
+.PHONY: gadgets
+
 
 %.xpl: brun
 	@ # Build and run an exploit
@@ -59,6 +70,15 @@ xploit2: xploit2.xpl
 
 xploit3: xploit3.xpl
 .PHONY: xploit3
+
+xploit4: xploit4.xpl
+.PHONY: xploit4
+
+xploit5: xploit5.xpl
+.PHONY: xploit5
+
+xploits: xploit1 xploit2 xploit3 xploit4 xploit5
+.PHONY: xploits
 
 
 clear_build:

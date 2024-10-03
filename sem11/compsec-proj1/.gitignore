@@ -1,6 +1,8 @@
 id_rsa
 id_rsa.pub
 
+gadgets.txt
+
 proj1/targets/target*
 !proj1/targets/target*.c
 
@@ -10,4 +12,6 @@ proj1/xploits/run-shellcode*
 !proj1/xploits/run-shellcode*.c
 proj1/xploits/shellcode.bin
 
+proj1/fuzz/libarchive-3.1.2
+proj1/fuzz/results
 proj1/fuzz/testcases
