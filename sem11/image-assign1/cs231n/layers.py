@@ -61,13 +61,6 @@ def affine_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    #print(dout.shape)
-    #m = x.shape[1]
-    #dw = np.dot(dout.T, x) / m
-    #db = np.sum(dout, axis=1, keepdims=True) / m
-    #dx = np.dot(w, dout.T)
-    #dx = np.reshape(dx, x.shape)
-
     dw = np.dot(np.reshape(x, (x.shape[0], -1)).T, dout)
     db = np.sum(dout, axis=0)
     dx = np.reshape(np.dot(dout, w.T), x.shape)
@@ -794,6 +787,8 @@ def svm_loss(x, y):
 
     from cs231n.classifiers.linear_svm import svm_loss_vectorized
 
+    # Here, W and X are reversed because of internal "svm_loss_vectorized" implementation.
+    # Of course, X is meant to be input and W should be identity matrix.
     loss, dx = svm_loss_vectorized(x, np.eye(x.shape[0]), y, 0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -826,6 +821,8 @@ def softmax_loss(x, y):
 
     from cs231n.classifiers.softmax import softmax_loss_vectorized
 
+    # Here, W and X are reversed because of internal "svm_loss_vectorized" implementation.
+    # Of course, X is meant to be input and W should be identity matrix.
     loss, dx = softmax_loss_vectorized(x, np.eye(x.shape[0]), y, 0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
