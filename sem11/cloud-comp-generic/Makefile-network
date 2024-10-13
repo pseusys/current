@@ -1,0 +1,96 @@
+.ONESHELL:
+.DEFAULT_GOAL := help
+
+SHELL=/bin/bash
+.SHELLFLAGS=-c -e
+
+BLUE=\033[34m
+GREEN=\033[32m
+RED=\033[31m
+RESET=\033[0m
+
+CLIENT_KEY_FILE=some_dumb_key.pem
+SERVER_KEY_FILE=some_dumb_key.pem
+
+WINDOW_SIZE=64K
+ROUND_TRIP_COUNT=32
+
+SERVER_ADDRESS=ec2-44-220-146-223.compute-1.amazonaws.com
+SERVER_TYPE=nvirginia
+CLIENT_ADDRESS=ec2-3-93-165-210.compute-1.amazonaws.com
+CLIENT_TYPE=nvirginia
+
+CLIENT_REPORT="network-report-${CLIENT_TYPE}-to-${SERVER_TYPE}-client-${CLIENT_ADDRESS}.md"
+
+
+server-verify:
+	@  # Verify all the variables used for benchmarking are set
+ifeq ($(SERVER_KEY_FILE),)
+	echo -e "${RED}Server instance key file (SERVER_KEY_FILE variable) is not defined!${RESET}"
+	exit 1
+endif
+ifeq ($(SERVER_ADDRESS),)
+	echo -e "${RED}Server instance address (SERVER_ADDRESS variable) is not defined!${RESET}"
+	exit 1
+endif
+ifeq ($(SERVER_TYPE),)
+	echo -e "${RED}Server instance type (SERVER_TYPE variable) is not defined!${RESET}"
+	exit 1
+endif
+.PHONY: server-verify
+
+server-setup: server-verify
+	@  # Setup network reporting environment on server instance and create report file
+	echo -e "${BLUE}Installing iperf to the server instance...${RESET}"
+	ssh -i "${SERVER_KEY_FILE}" ubuntu@${SERVER_ADDRESS} "sudo apt-get update && sudo apt-get install -y iperf iputils-ping" > /dev/null
+.PHONY: setup
+
+server: server-setup
+	@  # Run benchmarking server
+	echo -e "${BLUE}Running iperf server...${RESET}"
+	ssh -i "${SERVER_KEY_FILE}" ubuntu@${SERVER_ADDRESS} "iperf -w ${WINDOW_SIZE} -s" > /dev/null
+	echo -e "${RED}Server terminated!${RESET}"
+.PHONY: server
+
+
+client-verify:
+	@  # Verify all the variables used for benchmarking are set
+ifeq ($(CLIENT_KEY_FILE),)
+	echo -e "${RED}Client instance key file (CLIENT_KEY_FILE variable) is not defined!${RESET}"
+	exit 1
+endif
+ifeq ($(CLIENT_ADDRESS),)
+	echo -e "${RED}Client instance address (CLIENT_ADDRESS variable) is not defined!${RESET}"
+	exit 1
+endif
+ifeq ($(CLIENT_TYPE),)
+	echo -e "${RED}Client instance type (CLIENT_TYPE variable) is not defined!${RESET}"
+	exit 1
+endif
+.PHONY: client-verify
+
+client-setup: client-verify
+	@  # Setup network reporting environment on client instance and create report file
+	echo -e "# Network performance report for \`${SERVER_ADDRESS}\` <-> \`${CLIENT_ADDRESS}\`" > ${CLIENT_REPORT}
+	echo -e "${BLUE}Installing iperf to the client instance...${RESET}"
+	ssh -i "${CLIENT_KEY_FILE}" ubuntu@${CLIENT_ADDRESS} "sudo apt-get update && sudo apt-get install -y iperf iputils-ping" > /dev/null
+.PHONY: client-setup
+
+throughput: client-setup
+	@  # Run throughput benchmarking
+	echo -e "${BLUE}Running throughput benchmark...${RESET}"
+	echo -e "\n\n## Throughput benchmark\n\n" >> ${CLIENT_REPORT}
+	ssh -i "${CLIENT_KEY_FILE}" ubuntu@${CLIENT_ADDRESS} "iperf -w ${WINDOW_SIZE} -c ${SERVER_ADDRESS}" >> ${CLIENT_REPORT}
+.PHONY: throughput
+
+roundtrip: client-setup
+	@  # Run round trip time benchmarking
+	echo -e "${BLUE}Running ping benchmark...${RESET}"
+	echo -e "\n\n## Roundtrip benchmark\n\n" >> ${CLIENT_REPORT}
+	ssh -i "${CLIENT_KEY_FILE}" ubuntu@${CLIENT_ADDRESS} "ping -c ${ROUND_TRIP_COUNT} ${SERVER_ADDRESS}" >> ${CLIENT_REPORT}
+.PHONY: roundtrip
+
+client: throughput roundtrip
+	@  # Run benchmarking on an AWS client instance
+	echo -e "${GREEN}All benchmarks successful!${RESET}"
+.PHONY: client

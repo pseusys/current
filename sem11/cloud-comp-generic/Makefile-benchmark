@@ -1,0 +1,77 @@
+.ONESHELL:
+.DEFAULT_GOAL := help
+
+SHELL=/bin/bash
+.SHELLFLAGS=-c -e
+
+BLUE=\033[34m
+GREEN=\033[32m
+RED=\033[31m
+RESET=\033[0m
+
+KEY_FILE=
+
+NUM_THREADS=2
+CPU_MAX_PRIME=1000000
+MEMORY_BLOCK=512K
+MEMORY_SIZE=100G
+MEMORY_OPER=write
+FILE_SIZE=3G
+FILE_MODE=rndrw
+
+ADDRESS=
+TYPE=
+
+REPORT="benchmark-report-${TYPE}-${ADDRESS}.md"
+
+
+verify:
+	@  # Verify all the variables used for benchmarking are set
+ifeq ($(KEY_FILE),)
+	echo -e "${RED}Instance key file (KEY_FILE variable) is not defined!${RESET}"
+	exit 1
+endif
+ifeq ($(ADDRESS),)
+	echo -e "${RED}Instance address (ADDRESS variable) is not defined!${RESET}"
+	exit 1
+endif
+ifeq ($(TYPE),)
+	echo -e "${RED}Instance type (TYPE variable) is not defined!${RESET}"
+	exit 1
+endif
+.PHONY: verify
+
+setup: verify
+	@  # Setup benchmarking environment and create report file
+	echo -e "# Benchmark report for \`${ADDRESS}\`" > ${REPORT}
+	echo -e "${BLUE}Installing sysbench to the instance...${RESET}"
+	ssh -i "${KEY_FILE}" ubuntu@${ADDRESS} "sudo apt-get update && sudo apt-get install -y sysbench" > /dev/null
+.PHONY: setup
+
+cpu: setup
+	@  # Run CPU benchmarking
+	echo -e "${BLUE}Running CPU benchmark...${RESET}"
+	echo -e "\n\n## CPU benchmark\n\n" >> ${REPORT}
+	ssh -i "${KEY_FILE}" ubuntu@${ADDRESS} "sysbench cpu --threads=${NUM_THREADS} --cpu-max-prime=${CPU_MAX_PRIME} run" >> ${REPORT}
+.PHONY: cpu
+
+memory: setup
+	@  # Run memory benchmarking
+	echo -e "${BLUE}Running memory benchmark...${RESET}"
+	echo -e "\n\n## Memory benchmark\n\n" >> ${REPORT}
+	ssh -i "${KEY_FILE}" ubuntu@${ADDRESS} "sysbench memory --threads=${NUM_THREADS} --memory-block-size=${MEMORY_BLOCK} --memory-total-size=${MEMORY_SIZE} --memory-oper=${MEMORY_OPER} run" >> ${REPORT}
+.PHONY: memory
+
+file: setup
+	@  # Run file I/O benchmarking
+	echo -e "${BLUE}Running file I/O benchmark...${RESET}"
+	echo -e "\n\n## File I/O benchmark\n\n" >> ${REPORT}
+	ssh -i "${KEY_FILE}" ubuntu@${ADDRESS} "sysbench fileio --file-total-size=${FILE_SIZE} prepare" > /dev/null
+	ssh -i "${KEY_FILE}" ubuntu@${ADDRESS} "sysbench fileio --file-total-size=${FILE_SIZE} --file-test-mode=${FILE_MODE} --threads=${NUM_THREADS} run" >> ${REPORT}
+	ssh -i "${KEY_FILE}" ubuntu@${ADDRESS} "sysbench fileio cleanup" > /dev/null
+.PHONY: file
+
+benchmark: cpu memory file
+	@  # Run benchmarking on an AWS instance
+	echo -e "${GREEN}All benchmarks successful!${RESET}"
+.PHONY: benchmark
