@@ -48,7 +48,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  build-python-library:
+  build-and-test-compiler:
     runs-on: ubuntu-latest
 
     steps:
@@ -70,7 +70,7 @@ jobs:
         working-directory: ./sem9/comp-proj
         run: gradle wrapper --gradle-version=8.5 --distribution-type=bin
     
-      - name: Build compiler 🌯
+      - name: Build compiler 🏗️
         working-directory: ./sem9/comp-proj
         run: |
           ./gradlew assemble

@@ -2,7 +2,7 @@ plugins {
 	id("java")
 	id("application")
 	id("cup.gradle.cup-gradle-plugin") version "2.0"
-	id("org.xbib.gradle.plugin.jflex") version "3.0.2"
+	id("org.xbib.gradle.plugin.jflex") version "1.7.0"
 	id("com.diffplug.spotless") version "6.23.3"
 }
 
