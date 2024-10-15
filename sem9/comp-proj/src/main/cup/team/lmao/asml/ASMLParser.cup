@@ -1,0 +1,94 @@
+package team.lmao.asml;
+
+import team.lmao.asml.structures.*;
+import team.lmao.asml.expressions.*;
+import team.lmao.utils.Pair;
+
+import java_cup.runtime.*;
+import java.io.Reader;
+import java.util.*;
+
+
+class ASMLParser;
+
+parser code {:
+    private ASMLLexer lexer;
+
+    public ASMLParser(Reader reader) {
+        super(new ComplexSymbolFactory());
+	    this.lexer = new ASMLLexer(reader, (ComplexSymbolFactory) this.symbolFactory);
+    }
+ :}
+
+init with {:  :};
+scan with {: return lexer.next_token(); :};
+
+terminal ASMLIntegerLiteral INT;
+terminal ASMLFloatLiteral FLOAT;
+terminal ASMLIdentifier IDENT;
+terminal ASMLLabel LABEL;
+terminal LPAREN, RPAREN, PLUS, EQUAL, FEQUAL, LE, FLE, GE, FGE, IF, THEN, ELSE, LET, IN, DOT, NEG, FNEG, MEM, FMUL, FDIV, FSUB, FADD, ASSIGN, ADD, SUB, CALL, NEW, NOP, CALCLO, UNDERSC;
+terminal prec_let, prec_if, prec_unary_minus, prec_app;
+
+non terminal ASMLIdentifierOrImmediate ident_or_imm;
+non terminal ASMLExpression exp;
+non terminal ASMLBlock asmt;
+non terminal List<ASMLIdentifier> formal_args;
+non terminal ASMLProgram fundefs;
+
+precedence right prec_let;
+precedence right prec_if;
+precedence left EQUAL, FEQUAL, LE, FLE, FGE, GE;
+precedence right prec_unary_minus;
+precedence left prec_app;
+precedence left DOT;
+precedence nonassoc INT, FLOAT, IDENT, LPAREN;
+
+start with fundefs;
+
+ident_or_imm ::= INT:i    {: RESULT = i; :}
+               | IDENT:id {: RESULT = id; :}
+;
+
+exp ::= NOP
+      | LPAREN exp:e RPAREN                                              {: RESULT = e; :}
+      | INT:i                                                            {: RESULT = i; :}
+      | IDENT:id                                                         {: RESULT = id; :}
+      | LABEL:l                                                          {: RESULT = l; :}
+      | NEG IDENT:id                                                     {: RESULT = new ASMLNegativeIdentifier(id); :} %prec prec_unary_minus
+      | FNEG IDENT:id                                                    {: RESULT = new ASMLNegativeFloat(id); :} %prec prec_unary_minus
+      | FADD IDENT:id1 IDENT:id2                                         {: RESULT = new ASMLAddFloat(id1, id2); :}
+      | FSUB IDENT:id1 IDENT:id2                                         {: RESULT = new ASMLSubtractFloat(id1, id2); :}
+      | FMUL IDENT:id1 IDENT:id2                                         {: RESULT = new ASMLMultiplyFloat(id1, id2); :}
+      | FDIV IDENT:id1 IDENT:id2                                         {: RESULT = new ASMLDivideFloat(id1, id2); :}
+      | NEW ident_or_imm:ii                                              {: RESULT = new ASMLNewPlacement(ii); :}
+      | ADD IDENT:id ident_or_imm:ii                                     {: RESULT = new ASMLAddIdentifierOrImmediate(id, ii); :}
+      | SUB IDENT:id ident_or_imm:ii                                     {: RESULT = new ASMLSubtractIdentifierOrImmediate(id, ii); :}
+      | MEM LPAREN IDENT:id PLUS ident_or_imm:ii RPAREN                  {: RESULT = new ASMLMemoryRetrieval(id, ii); :}
+      | MEM LPAREN IDENT:id PLUS ident_or_imm:ii RPAREN ASSIGN IDENT:res {: RESULT = new ASMLMemoryAssignment(id, ii, res); :}
+      | IF IDENT:id EQUAL ident_or_imm:ii THEN asmt:ifa ELSE asmt:ela    {: RESULT = new ASMLIfIdentifierOrImmediateEqualElse(id, ii, ifa, ela); :} %prec prec_if
+      | IF IDENT:id LE ident_or_imm:ii THEN asmt:ifa ELSE asmt:ela       {: RESULT = new ASMLIfIdentifierOrImmediateLessOrEqualElse(id, ii, ifa, ela); :} %prec prec_if
+      | IF IDENT:id GE ident_or_imm:ii THEN asmt:ifa ELSE asmt:ela       {: RESULT = new ASMLIfIdentifierOrImmediateGreaterOrEqualElse(id, ii, ifa, ela); :} %prec prec_if
+      | IF IDENT:id1 FEQUAL IDENT:id2 THEN asmt:ifa ELSE asmt:ela        {: RESULT = new ASMLIfFloatEqualElse(id1, id2, ifa, ela); :} %prec prec_if
+      | IF IDENT:id1 FLE IDENT:id2 THEN asmt:ifa ELSE asmt:ela           {: RESULT = new ASMLIfFloatLessOrEqualElse(id1, id2, ifa, ela); :} %prec prec_if
+      | IF IDENT:id1 FGE IDENT:id2 THEN asmt:ifa ELSE asmt:ela           {: RESULT = new ASMLIfFloatGreaterOrEqualElse(id1, id2, ifa, ela); :} %prec prec_if
+      | CALL LABEL:l formal_args:fa                                      {: RESULT = new ASMLCallLabel(l, fa); :}
+      | CALL LABEL:l                                                     {: RESULT = new ASMLCallLabel(l, new LinkedList()); :}
+      | CALCLO IDENT:id formal_args:fa                                   {: RESULT = new ASMLCallClosureWithIdentifier(id, fa); :}
+      | CALCLO IDENT:id                                                  {: RESULT = new ASMLCallClosureWithIdentifier(id, new LinkedList()); :}
+;
+
+asmt ::= LPAREN asmt:a RPAREN               {: RESULT = a; :}
+       | LET IDENT:id EQUAL exp:e IN asmt:a {: a.assignments.add(0, new ASMLAssignment(id, e)); RESULT = a; :} %prec prec_let
+       | exp:e                              {: RESULT = new ASMLBlock(e); :}
+;
+
+formal_args ::= IDENT:id formal_args:fa {: fa.add(0, id); RESULT = fa; :} %prec prec_app
+              | IDENT:id                {: RESULT = new LinkedList(Arrays.asList(id)); :} %prec prec_app
+;
+
+fundefs ::= LET UNDERSC EQUAL asmt:a                           {: RESULT = new ASMLProgram(a); :} %prec prec_let
+          | LET LABEL:l EQUAL FLOAT:f fundefs:fd               {: fd.globals.add(0, new Pair(l, f)); RESULT = fd; :} %prec prec_let
+          | LET LABEL:l EQUAL asmt:a fundefs:fd                {: fd.functions.add(0, new Pair(new ASMLProgram.ASMLFunction(l, new LinkedList()), a)); RESULT = fd; :} %prec prec_let
+          | LET LABEL:l formal_args:fa EQUAL asmt:a fundefs:fd {: fd.functions.add(0, new Pair(new ASMLProgram.ASMLFunction(l, fa), a)); RESULT = fd; :} %prec prec_let
+;

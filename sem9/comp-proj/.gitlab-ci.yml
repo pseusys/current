@@ -1,0 +1,36 @@
+image: gradle:8.5-jdk11-alpine
+
+stages:
+  - build
+  - evaluate
+  - test
+
+before_script:
+  - gradle wrapper --gradle-version=8.5 --distribution-type=bin
+
+build-check:
+  stage: build
+  script:
+    - ./gradlew assemble
+    - ./gradlew spotlessCheck
+
+build-jar:
+  stage: evaluate
+  script:
+    - ./gradlew uber
+    - java -jar build/libs/LMAO_Compiler.jar -v
+    - java -jar build/libs/LMAO_Compiler.jar -h
+    - java -jar build/libs/LMAO_Compiler.jar -asml --my-opt verbose=DEBUG buildSrc/src/main/resources/examples/ack.ml
+
+exec-sample:
+  stage: evaluate
+  script:
+    - ./gradlew exec --args="-v"
+    - ./gradlew exec --args="-h"
+    - ./gradlew exec --args="--my-opt verbose=DEBUG closure.asml"
+
+smoke-test:
+  stage: test
+  script:
+    - ./gradlew smoke
+    - ./gradlew test

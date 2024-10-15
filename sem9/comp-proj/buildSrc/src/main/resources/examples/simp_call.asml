@@ -1,0 +1,8 @@
+let _k k l =
+    let x = call _min_caml_print_int k in
+    call _min_caml_print_int l
+
+let _ =
+  let y = 54321 in
+  let z = 12345 in
+  call _k y z

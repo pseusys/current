@@ -1,0 +1,14 @@
+let _ =
+    let x = 1 in
+    let y = 2 in
+    let z = new 8 in
+    let u2 = call _min_caml_print_int z in
+    let u3 = call _min_caml_print_newline in
+    let u4 = mem(z + 0) <- x in
+    let u5 = mem(z + 4) <- y in
+    let nx = mem(z + 0) in
+    let u6 = call _min_caml_print_int x in
+    let u7 = call _min_caml_print_newline in
+    let ny = mem(z + 4) in
+    let u8 = call _min_caml_print_int y in
+    z

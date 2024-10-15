@@ -1,0 +1,98 @@
+name: BUILD-AND-TEST-LMAO
+
+on:
+  push:
+    paths:
+      - 'sem9/comp-proj/**'
+      - '.github/workflows/build-and-test-lmao.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  build-and-publish-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+
+      - name: Log in to the Container registry 🚪
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker 🏋️
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}/lmao_compiler
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push Docker image 🏗️
+        uses: docker/build-push-action@v4
+        with:
+          context: sem9/comp-proj
+          file: sem9/comp-proj/Dockerfile
+          push: ${{ github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/releases') }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  build-python-library:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+
+      - name: Setup Java ☕
+        uses: actions/setup-java@v4
+        with:
+          distribution: "adopt"
+          java-version: 11
+
+      - name: Setup Gradle 🐘
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.5"
+
+      - name: Prepare Gradle wrapper 🌯
+        working-directory: ./sem9/comp-proj
+        run: gradle wrapper --gradle-version=8.5 --distribution-type=bin
+    
+      - name: Build compiler 🌯
+        working-directory: ./sem9/comp-proj
+        run: |
+          ./gradlew assemble
+          ./gradlew spotlessCheck
+        
+      - name: Build JAR 🗃️
+        working-directory: ./sem9/comp-proj
+        run: |
+          ./gradlew uber
+          java -jar build/libs/LMAO_Compiler.jar -v
+          java -jar build/libs/LMAO_Compiler.jar -h
+          java -jar build/libs/LMAO_Compiler.jar -asml --my-opt verbose=DEBUG buildSrc/src/main/resources/examples/ack.ml
+
+      - name: Test with sample 🧪
+        working-directory: ./sem9/comp-proj
+        run: |
+          ./gradlew exec --args="-v"
+          ./gradlew exec --args="-h"
+          ./gradlew exec --args="--my-opt verbose=DEBUG closure.asml"
+
+      - name: Test smoke 😮‍💨
+        working-directory: ./sem9/comp-proj
+        run: |
+          ./gradlew smoke
+          ./gradlew test

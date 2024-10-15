@@ -1,0 +1,38 @@
+.gradle
+build/
+gradlew
+gradlew.bat
+.gitignore
+.gitlab-ci.yml
+README.md
+!**/src/main/**/build/
+!**/src/test/**/build/
+**/*.s
+
+### IDEA ###
+.idea
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
