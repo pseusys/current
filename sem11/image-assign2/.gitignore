@@ -1,0 +1,11 @@
+.vscode
+
+poetry.lock
+
+cs231n/datasets/*
+!cs231n/datasets/*.sh
+
+*.pkl
+*.zip
+
+**/__pycache/**
