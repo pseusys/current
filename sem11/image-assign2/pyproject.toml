@@ -5,7 +5,7 @@ description = "Just the second assignment, no description, c'mon"
 authors = ["Aleksandr Sergeev <asergeev@connect.ust.hk>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "3.9.20"
 numpy = "1.26.4"
 attrs = "19.2.0"
 backcall = "0.1.0"

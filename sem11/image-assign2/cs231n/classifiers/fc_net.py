@@ -74,7 +74,12 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        layer_dims = [input_dim] + hidden_dims
+        for i in range(self.num_layers - 1):
+            self.params[f"W{i + 1}"] = np.random.normal(0.0, weight_scale, (layer_dims[i], layer_dims[i + 1]))
+            self.params[f"b{i + 1}"] = np.zeros(layer_dims[i + 1])
+        self.params[f"W{self.num_layers}"] = np.random.normal(0.0, weight_scale, (layer_dims[-1], num_classes))
+        self.params[f"b{self.num_layers}"] = np.zeros(num_classes)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -148,7 +153,12 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        scores = X
+        caches = dict()
+        for i in range(self.num_layers - 1):
+            scores, caches[f"A{i + 1}"] = affine_forward(scores, self.params[f"W{i + 1}"], self.params[f"b{i + 1}"])
+            scores, caches[f"r{i + 1}"] = relu_forward(scores)
+        scores, caches[f"A{self.num_layers}"] = affine_forward(scores, self.params[f"W{self.num_layers}"], self.params[f"b{self.num_layers}"])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -175,7 +185,16 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, dx = softmax_loss(scores, y)
+        dx, grads[f"W{self.num_layers}"], grads[f"b{self.num_layers}"] = affine_backward(dx, caches[f"A{self.num_layers}"])
+        grads[f"W{self.num_layers}"] += self.reg * self.params[f"W{self.num_layers}"]
+        for i in range(self.num_layers - 1, 0, -1):
+            dx = relu_backward(dx, caches[f"r{i}"])
+            dx, grads[f"W{i}"], grads[f"b{i}"] = affine_backward(dx, caches[f"A{i}"])
+            grads[f"W{i}"] += self.reg * self.params[f"W{i}"]
+
+        squares = [self.params[f"W{sqw + 1}"] ** 2 for sqw in range(0, self.num_layers)]
+        loss += 0.5 * self.reg * sum(np.sum(sq) for sq in squares)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
