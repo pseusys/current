@@ -28,12 +28,54 @@ def affine_relu_backward(dout, cache):
 
 # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-pass
+def generic_forward(x, params, stepnum, norm=None, bn_params=None, dropout=False):
+    """Convenience layer that performs fully-connected network forward step.
+
+    Inputs:
+    - x: Input to the affine layer
+    - params: Step parameters
+    - stepnum: Number of the step
+    - norm: Normalization layer type (should be either "batchnorm", "layernorm" or None)
+    - dropout: Whether the dropout layer is enabled
+
+    Returns a tuple of:
+    - out: Output from the layer
+    - cache: Object to give to the backward pass
+    """
+    out, fc_cache = affine_forward(x, params[f"W{stepnum}"], params[f"b{stepnum}"])
+    if norm == "batchnorm":
+        out, bn_cache = batchnorm_forward(out, params[f"gamma{stepnum}"], params[f"beta{stepnum}"], bn_params[stepnum - 1])
+    elif norm == "layernorm":
+        out, bn_cache = layernorm_forward(out, params[f"gamma{stepnum}"], params[f"beta{stepnum}"], bn_params[stepnum - 1])
+    else:
+        bn_cache = None
+    out, relu_cache = relu_forward(out)
+    if dropout:
+        dropout_cache = None
+    else:
+        dropout_cache = None
+    cache = (fc_cache, bn_cache, relu_cache, dropout_cache)
+    return out, cache
+
+def generic_backward(dout, cache, stepnum, norm=None, dropout=False):
+    """Backward pass for the fully-connected network.
+    """
+    grads = dict()
+    fc_cache, bn_cache, relu_cache, dropout_cache = cache
+    if dropout:
+        pass
+    dout = relu_backward(dout, relu_cache)
+    if norm == "batchnorm":
+        dout, grads[f"gamma{stepnum}"], grads[f"beta{stepnum}"] = batchnorm_backward_alt(dout, bn_cache)
+    elif norm == "layernorm":
+        dout, grads[f"gamma{stepnum}"], grads[f"beta{stepnum}"] = layernorm_backward(dout, bn_cache)
+    dx, grads[f"W{stepnum}"], grads[f"b{stepnum}"] = affine_backward(dout, fc_cache)
+    return dx, grads
 
 # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
 def conv_relu_forward(x, w, b, conv_param):
-    """A convenience layer that performs a convolution followed by a ReLU.
+    """A convenience layer that performs a convolution followed by batch normalization and ReLU.
 
     Inputs:
     - x: Input to the convolutional layer
