@@ -28,7 +28,7 @@ def affine_relu_backward(dout, cache):
 
 # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-def generic_forward(x, params, stepnum, norm=None, bn_params=None, dropout=False):
+def generic_forward(x, params, stepnum, norm=None, bn_params=None, dropout=False, dropout_param=None):
     """Convenience layer that performs fully-connected network forward step.
 
     Inputs:
@@ -51,7 +51,7 @@ def generic_forward(x, params, stepnum, norm=None, bn_params=None, dropout=False
         bn_cache = None
     out, relu_cache = relu_forward(out)
     if dropout:
-        dropout_cache = None
+        out, dropout_cache = dropout_forward(out, dropout_param)
     else:
         dropout_cache = None
     cache = (fc_cache, bn_cache, relu_cache, dropout_cache)
@@ -63,7 +63,7 @@ def generic_backward(dout, cache, stepnum, norm=None, dropout=False):
     grads = dict()
     fc_cache, bn_cache, relu_cache, dropout_cache = cache
     if dropout:
-        pass
+        dout = dropout_backward(dout, dropout_cache)
     dout = relu_backward(dout, relu_cache)
     if norm == "batchnorm":
         dout, grads[f"gamma{stepnum}"], grads[f"beta{stepnum}"] = batchnorm_backward_alt(dout, bn_cache)

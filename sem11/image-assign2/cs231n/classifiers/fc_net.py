@@ -159,7 +159,7 @@ class FullyConnectedNet(object):
         scores = X
         caches = dict()
         for i in range(self.num_layers - 1):
-            scores, caches[i + 1] = generic_forward(scores, self.params, i + 1, self.normalization, self.bn_params, self.use_dropout)
+            scores, caches[i + 1] = generic_forward(scores, self.params, i + 1, self.normalization, self.bn_params, self.use_dropout, self.dropout_param)
         scores, caches[self.num_layers] = affine_forward(scores, self.params[f"W{self.num_layers}"], self.params[f"b{self.num_layers}"])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
