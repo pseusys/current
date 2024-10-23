@@ -63,7 +63,15 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        conv_input_dim = (num_filters, input_dim[0], filter_size, filter_size)
+        hidden_input_mul = num_filters * (input_dim[1] // 2) * (input_dim[2] // 2)
+
+        self.params["W1"] = np.random.normal(0.0, weight_scale, conv_input_dim)
+        self.params["b1"] = np.zeros(num_filters)
+        self.params["W2"] = np.random.normal(0.0, weight_scale, (hidden_input_mul, hidden_dim))
+        self.params["b2"] = np.zeros(hidden_dim)
+        self.params["W3"] = np.random.normal(0.0, weight_scale, (hidden_dim, num_classes))
+        self.params["b3"] = np.zeros(num_classes)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -102,7 +110,9 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        scores, crp_cache = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
+        scores, ar_cache = affine_relu_forward(scores, W2, b2)
+        scores, a_cache = affine_forward(scores, W3, b3)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -125,7 +135,16 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, dx = softmax_loss(scores, y)
+        dx, grads["W3"], grads["b3"] = affine_backward(dx, a_cache)
+        grads["W3"] += self.reg * self.params["W3"]
+        dx, grads["W2"], grads["b2"] = affine_relu_backward(dx, ar_cache)
+        grads["W2"] += self.reg * self.params["W2"]
+        dx, grads["W1"], grads["b1"] = conv_relu_pool_backward(dx, crp_cache)
+        grads["W1"] += self.reg * self.params["W1"]
+
+        squares = [self.params[f"W{sqw}"] ** 2 for sqw in range(1, 4)]
+        loss += 0.5 * self.reg * sum(np.sum(sq) for sq in squares)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################

@@ -5,6 +5,9 @@ poetry.lock
 cs231n/datasets/*
 !cs231n/datasets/*.sh
 
+cs231n/*.c
+cs231n/*.so
+
 *.pkl
 *.zip
 
