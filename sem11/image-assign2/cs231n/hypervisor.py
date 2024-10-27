@@ -1,5 +1,5 @@
 from itertools import product
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional
 
 
 class Hypervisor:
@@ -30,7 +30,7 @@ class Hypervisor:
                 model_conf = dict(zip(self.model_params.keys(), model_vals))
                 solver = self._check_one(data, solver_conf, model_conf)
                 if solver.best_val_acc > best_val_accuracy:
-                    print(f"Better accuracy {best_val_accuracy} found for model: {model_conf}, solver: {solver_conf}")
+                    print(f"Better accuracy {solver.best_val_acc} found for model: {model_conf}, solver: {solver_conf}")
                     best_model, best_val_accuracy = solver.model, solver.best_val_acc
         print(f"Best accuracy received is {best_val_accuracy}!")
         return best_model
