@@ -1,0 +1,49 @@
+services:
+  # Includes a bitbar server and a Firefox browser together in a Docker images
+  # The last service is a simple python hosting for the webpage from the exploit 2
+
+  bitbar-server:
+    container_name: bitbar-container
+    image: comp4634-proj2-image
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    volumes:
+      - type: bind
+        source: ./code/router.js
+        target: /home/comp4634/proj2/router.js
+      - type: bind
+        source: ./code/views
+        target: /home/comp4634/proj2/views
+    network_mode: host
+
+  bitbar-client:
+    container_name: client
+    image: jlesage/firefox
+    ports:
+      - 5800:5800
+    volumes:
+      - type: bind
+        source: ./firedata
+        target: /config
+        read_only: false
+        bind:
+          create_host_path: true
+    environment:
+      - FF_OPEN_URL=http://localhost:3000
+    network_mode: host
+
+  malicious-server:
+    container_name: malicious
+    image: python:3-alpine
+    ports:
+      - 8080:8080
+    volumes:
+      - type: bind
+        source: ./attacks/b.html
+        target: /home/comp4634/proj2/b.html
+    network_mode: host
+    entrypoint: sh -c "cd /home/comp4634/proj2/ && python3 -B -m http.server 8080"

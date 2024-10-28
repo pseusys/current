@@ -1,0 +1,4 @@
+const session = document.cookie.split(";").find(v => v.trim().startsWith("session")).split("=")[1].trim();
+const user = JSON.parse(atob(session));
+user.account.username = "user1";
+document.cookie = document.cookie.replace(session, btoa(JSON.stringify(user)));

