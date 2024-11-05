@@ -1,3 +1,5 @@
 firedata
 
 **/*.sqlite
+
+*.zip
