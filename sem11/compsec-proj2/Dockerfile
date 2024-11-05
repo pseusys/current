@@ -2,7 +2,7 @@ FROM node:14-buster
 
 
 # Create app directory
-ADD code/ /home/comp4634/proj2/
+ADD code/package*.json /home/comp4634/proj2/
 WORKDIR /home/comp4634/proj2/
 
 # Install app dependencies
