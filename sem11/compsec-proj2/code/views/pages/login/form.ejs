@@ -1,18 +1,15 @@
 <h3>Login</h3>
 
-<form id=login_form class=pure-form-stacked action=get_login method=get>
+<form id="login_form" class="pure-form-stacked" action="get_login" method="get">
+	<% if(errorMsg) { %>
+	<p class="error"><%= errorMsg %></p>
+	<% } %>
 
-  <% if(errorMsg) { %>
-    <p class='error'> <%= errorMsg %> </p>
-  <% } %>
+	<label for="username">Username</label>
+	<input type="text" name="username" value="<%= account.username %>" />
 
-  <label for=username>Username</label>
-  <input type=text name=username value=<%= account.username %> >
+	<label for="password">Password</label>
+	<input type="password" name="password" />
 
-  <label for=password>Password</label>
-  <input type=password name=password />
-
-  <p><input type=submit id=login class=pure-button value=Login /></p>
+	<p><input type="submit" id="login" class="pure-button" value="Login" /></p>
 </form>
-
-

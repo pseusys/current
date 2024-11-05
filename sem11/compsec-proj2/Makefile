@@ -11,6 +11,10 @@ run:
 	docker compose up --attach bitbar-server
 .PHONY: run
 
-submit:
+submit1:
 	zip -r submission.zip attacks
-.PHONY: submit
+.PHONY: submit1
+
+submit2:
+	echo "TODO"
+.PHONY: submit2
