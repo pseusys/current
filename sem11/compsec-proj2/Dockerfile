@@ -15,7 +15,7 @@ RUN npm install
 RUN apt-get update --fix-missing && apt-get install -y sqlite3
 
 # Bundle app source
-COPY . .
+COPY code/ ./
 
 EXPOSE 3000
 CMD [ "npm", "start" ]

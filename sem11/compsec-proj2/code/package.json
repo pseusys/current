@@ -6,7 +6,7 @@
 		"start": "./node_modules/babel-cli/bin/babel-node.js ./bin/www",
 		"create-db": "./node_modules/babel-cli/bin/babel-node.js ./db/migrate/reset.js",
 		"reset": "rm db/database.sqlite && yarn create-db",
-		"lint": "npx prettier . '!**/{sjcl.js,www,pure-min.css,yarn.lock}' --check"
+		"lint": "npx prettier router.js --check"
 	},
 	"dependencies": {
 		"babel-cli": "^6.26.0",

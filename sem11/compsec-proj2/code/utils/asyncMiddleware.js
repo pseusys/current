@@ -5,6 +5,8 @@ will pass the error to next() and express will handle the error
 by sending the client a 500 code with an explanation of the error;
 */
 
-export const asyncMiddleware = (fn) => (req, res, next) => {
-	Promise.resolve(fn(req, res, next)).catch(next);
+export const asyncMiddleware = fn =>
+  (req, res, next) => {
+    Promise.resolve(fn(req, res, next))
+      .catch(next);
 };
