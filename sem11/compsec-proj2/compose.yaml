@@ -9,8 +9,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - 3000:3000
     volumes:
       - type: bind
         source: ./code/router.js
@@ -23,8 +21,6 @@ services:
   bitbar-client:
     container_name: client
     image: jlesage/firefox
-    ports:
-      - 5800:5800
     volumes:
       - type: bind
         source: ./firedata
@@ -39,8 +35,6 @@ services:
   malicious-server:
     container_name: malicious
     image: python:3-alpine
-    ports:
-      - 8080:8080
     volumes:
       - type: bind
         source: ./attacks/b.html

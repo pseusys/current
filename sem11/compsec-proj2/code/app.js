@@ -33,15 +33,6 @@ app.use(cookieSession({
   httpOnly: false,
 }));
 
-// initialize session if necessary
-app.use((req, res, next) => {
-  if(req.session.loggedIn == undefined) {
-    req.session.loggedIn = false;
-    req.session.account = {};
-  }
-  next();
-});
-
 app.use(router);
 
 // catch 404 and forward to error handler
