@@ -1,5 +1,6 @@
 firedata
 
 **/*.sqlite
+code/yarn.lock
 
 *.zip
