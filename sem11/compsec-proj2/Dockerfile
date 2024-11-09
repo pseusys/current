@@ -1,6 +1,8 @@
 FROM node:14-buster
 
 
+ENV BITBAR_SECRET="00112233deadbaba567887650000deadbeef000056788765deadbaba33221100"
+
 # Create app directory
 ADD code/package*.json /home/comp4634/proj2/
 WORKDIR /home/comp4634/proj2/

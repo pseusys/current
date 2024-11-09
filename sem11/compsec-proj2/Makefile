@@ -16,5 +16,5 @@ submit1:
 .PHONY: submit1
 
 submit2:
-	echo "TODO"
+	zip -r submission.zip code/views code/metarouter.js code/router.js code/app.js Dockerfile
 .PHONY: submit2
