@@ -12,9 +12,9 @@ run:
 .PHONY: run
 
 submit1:
-	zip -r submission.zip attacks
+	zip -r submission1.zip attacks
 .PHONY: submit1
 
 submit2:
-	zip -r submission.zip code/views code/metarouter.js code/router.js code/app.js Dockerfile
+	zip -r submission2.zip code/views code/metarouter.js code/router.js code/app.js Dockerfile README.txt
 .PHONY: submit2
