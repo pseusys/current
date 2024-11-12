@@ -1,3 +1,0 @@
-# Wireshark Lab: Getting Started
-
-
