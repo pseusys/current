@@ -1,0 +1,4 @@
+1. ACK RST
+2. NIL
+3. REQUESTS=<GET>, <OPTIONS>, <POST>, <PROPFIND>
+4. <Sequence Number>, <Options>, <Window>

@@ -1,0 +1,4 @@
+1. nmap -sS -A -T4 -p1-65535 scanme.nmap.org
+2. 45.33.32.156
+3. <22: ssh>, <25: smtp>, <80: http>, <139: netbios-ssn>, <161: snmp>, <162: snmptrap>, <593: http-rpc-epmap>, <1434: ms-sql-m>, <2745: urbisnet>, <3127: ctx-bridge>, <4444: krb524>, <5104: tinymessage>, <5112: pm-cmdsvr>, <5136: minotaur-sa>, <5152: sde-discovery>, <5157: mediat>, <5190: aol>, <5195: ampl-lic>, <6129: unknown>, <7547: cwmp>, <9929: nping-echo>, <10168: unknown>, <31337: tcpwrapped>
+4. SOFTWARE=<Apache httpd>, VERSION=<2.4.7>, PORTS=<80>
