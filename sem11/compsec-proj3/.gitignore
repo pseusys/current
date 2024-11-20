@@ -6,4 +6,4 @@ part3/sample.pcap*
 
 part4/go.sum
 part4/output/*.pcap
-part4/correct_mitm_output.txt
+part4/*mitm_output.txt
