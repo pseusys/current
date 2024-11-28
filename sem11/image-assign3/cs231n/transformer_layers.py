@@ -38,7 +38,11 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, embed_dim, 2).float() * (-math.log(10000.0) / embed_dim))
+
+        pe[0, :, 0::2] = torch.sin(position * div_term)
+        pe[0, :, 1::2] = torch.cos(position * div_term)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -70,7 +74,8 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        x = x + self.pe[:, :x.size(1)]
+        output = self.dropout(x)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -165,7 +170,27 @@ class MultiHeadAttention(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # Linear projections
+        query = self.query(query).view(N, S, self.n_head, self.head_dim).transpose(1, 2)  # (N, H, S, E/H)
+        key = self.key(key).view(N, T, self.n_head, self.head_dim).transpose(1, 2)        # (N, H, T, E/H)
+        value = self.value(value).view(N, T, self.n_head, self.head_dim).transpose(1, 2)  # (N, H, T, E/H)
+        
+        # Scaled dot-product attention
+        attn_weights = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(self.head_dim)  # (N, H, S, T)
+        
+        if attn_mask is not None:
+            attn_weights = attn_weights.masked_fill(attn_mask == 0, float('-inf'))
+        
+        attn_weights = torch.softmax(attn_weights, dim=-1)
+        attn_weights = self.attn_drop(attn_weights)
+        
+        attn_output = torch.matmul(attn_weights, value)  # (N, H, S, E/H)
+        
+        # Concatenate all heads
+        attn_output = attn_output.transpose(1, 2).contiguous().view(N, S, E)  # (N, S, E)
+        
+        # Final linear projection
+        output = self.proj(attn_output)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
