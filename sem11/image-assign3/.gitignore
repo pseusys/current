@@ -1,5 +1,5 @@
 images
-.venv
 
-gan-check.npz
-simclr_samity_check.key
+poetry.lock
+gan-checks.npz
+simclr_sanity_check.key
