@@ -1,5 +1,13 @@
+.vscode
 images
+**/__pycache__
+
+cs231n/datasets/*
+!cs231n/datasets/*.sh
 
 poetry.lock
 gan-checks.npz
 simclr_sanity_check.key
+
+*.pkl
+*.zip
