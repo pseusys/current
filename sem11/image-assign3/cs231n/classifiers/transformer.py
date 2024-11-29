@@ -90,23 +90,14 @@ class CaptioningTransformer(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        # Project image features to word vector dimension
-        features_proj = self.visual_projection(features)  # (N, W)
-
-        # Embed captions and add positional encoding
-        captions_embed = self.embedding(captions)  # (N, T, W)
-        captions_embed = self.positional_encoding(captions_embed)  # (N, T, W)
-
-        # Prepare mask for the target captions to mask out future timesteps
+        features_proj = self.visual_projection(features)
+        captions_embed = self.embedding(captions)
+        captions_embed = self.positional_encoding(captions_embed)
         tgt_mask = torch.tril(torch.ones(T, T, device=captions.device)).bool()
-
-        # Apply transformer decoder
-        features_proj = features_proj.unsqueeze(1)  # (N, 1, W)
-        features_proj = features_proj.expand(-1, T, -1)  # (N, T, W)
-        decoder_output = self.transformer(captions_embed, features_proj, tgt_mask=tgt_mask)  # (N, T, W)
-        
-        # Compute scores over the vocabulary
-        scores = self.output(decoder_output)  # (N, T, V)
+        features_proj = features_proj.unsqueeze(1)
+        features_proj = features_proj.expand(-1, T, -1)
+        decoder_output = self.transformer(captions_embed, features_proj, tgt_mask=tgt_mask)
+        scores = self.output(decoder_output)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
