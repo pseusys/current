@@ -1,5 +1,7 @@
 .vscode
 images
+data
+pretrained_model
 **/__pycache__
 
 cs231n/datasets/*
