@@ -163,7 +163,7 @@ def generator_loss(logits_fake):
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     return loss
 
-def get_optimizer(model):
+def get_optimizer(model, learning_rate=1e-3):
     """
     Construct and return an Adam optimizer for the model with learning rate 1e-3,
     beta1=0.5, and beta2=0.999.
@@ -177,7 +177,7 @@ def get_optimizer(model):
     optimizer = None
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    optimizer = optim.Adam(model.parameters(), lr=1e-3, betas=(0.5, 0.999))
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, betas=(0.5, 0.999))
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     return optimizer
