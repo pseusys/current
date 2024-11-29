@@ -30,7 +30,10 @@ def sample_noise(batch_size, dim, seed=None):
 
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # Generate uniform random noise in the range (-1, 1)
+    noise = torch.rand(batch_size, dim) * 2 - 1
+    
+    return noise
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -51,7 +54,14 @@ def discriminator(seed=None):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    model = nn.Sequential(
+        nn.Flatten(),
+        nn.Linear(784, 256),  # Assuming input is 28x28 images flattened to 784
+        nn.LeakyReLU(0.2, inplace=True),
+        nn.Linear(256, 256),
+        nn.LeakyReLU(0.2, inplace=True),
+        nn.Linear(256, 1)
+    )
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -76,7 +86,14 @@ def generator(noise_dim=NOISE_DIM, seed=None):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    model = nn.Sequential(
+        nn.Linear(noise_dim, 1024),
+        nn.ReLU(inplace=True),
+        nn.Linear(1024, 1024),
+        nn.ReLU(inplace=True),
+        nn.Linear(1024, 784),  # Assuming output is 28x28 images flattened to 784
+        nn.Tanh()
+    )
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -112,7 +129,16 @@ def discriminator_loss(logits_real, logits_fake):
     loss = None
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # Compute the loss for real data
+    labels_real = torch.ones_like(logits_real)
+    loss_real = -(labels_real * torch.log(torch.sigmoid(logits_real)) + (1 - labels_real) * torch.log(1 - torch.sigmoid(logits_real))).mean()
+
+    # Compute the loss for fake data
+    labels_fake = torch.zeros_like(logits_fake)
+    loss_fake = -(labels_fake * torch.log(torch.sigmoid(logits_fake)) + (1 - labels_fake) * torch.log(1 - torch.sigmoid(logits_fake))).mean()
+
+    # Combine the two losses
+    loss = loss_real + loss_fake
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     return loss
@@ -130,7 +156,9 @@ def generator_loss(logits_fake):
     loss = None
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # Compute the loss for fake data
+    labels_real = torch.ones_like(logits_fake)
+    loss = -(labels_real * torch.log(torch.sigmoid(logits_fake)) + (1 - labels_real) * torch.log(1 - torch.sigmoid(logits_fake))).mean()
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     return loss
@@ -149,7 +177,7 @@ def get_optimizer(model):
     optimizer = None
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    optimizer = optim.Adam(model.parameters(), lr=1e-3, betas=(0.5, 0.999))
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     return optimizer
@@ -168,7 +196,14 @@ def ls_discriminator_loss(scores_real, scores_fake):
     loss = None
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # Compute the loss for real data
+    loss_real = 0.5 * torch.mean((scores_real - 1) ** 2)
+    
+    # Compute the loss for fake data
+    loss_fake = 0.5 * torch.mean(scores_fake ** 2)
+    
+    # Combine the two losses
+    loss = loss_real + loss_fake
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     return loss
@@ -186,7 +221,8 @@ def ls_generator_loss(scores_fake):
     loss = None
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # Compute the loss for fake data
+    loss = 0.5 * torch.mean((scores_fake - 1) ** 2)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     return loss
@@ -204,7 +240,23 @@ def build_dc_classifier(batch_size):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    model = nn.Sequential(
+        # Input is (batch_size, 1, 28, 28)
+        nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2),  # (batch_size, 32, 28, 28)
+        nn.LeakyReLU(0.01, inplace=True),
+        nn.MaxPool2d(kernel_size=2, stride=2),  # (batch_size, 32, 14, 14)
+
+        nn.Conv2d(32, 64, kernel_size=5, stride=1, padding=2),  # (batch_size, 64, 14, 14)
+        nn.LeakyReLU(0.01, inplace=True),
+        nn.MaxPool2d(kernel_size=2, stride=2),  # (batch_size, 64, 7, 7)
+
+        nn.Flatten(),
+        nn.Linear(64 * 7 * 7, 4 * 4 * 64),
+        nn.LeakyReLU(0.01, inplace=True),
+        nn.Linear(4 * 4 * 64, 1)
+    )
+
+    return model
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -225,7 +277,29 @@ def build_dc_generator(noise_dim=NOISE_DIM):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    model = nn.Sequential(
+        # Input is (batch_size, noise_dim)
+        nn.Linear(noise_dim, 1024),
+        nn.ReLU(inplace=True),
+        nn.BatchNorm1d(1024),
+
+        nn.Linear(1024, 7 * 7 * 128),
+        nn.ReLU(inplace=True),
+        nn.BatchNorm1d(7 * 7 * 128),
+
+        nn.Unflatten(1, (128, 7, 7)),  # Unflatten to (batch_size, 128, 7, 7)
+
+        nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),  # (batch_size, 64, 14, 14)
+        nn.ReLU(inplace=True),
+        nn.BatchNorm2d(64),
+
+        nn.ConvTranspose2d(64, 1, kernel_size=4, stride=2, padding=1),  # (batch_size, 1, 28, 28)
+        nn.Tanh(),
+
+        nn.Flatten()  # Flatten to (batch_size, 28*28*1) -> (batch_size, 784)
+    )
+    
+    return model
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
