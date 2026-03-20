@@ -6,7 +6,7 @@ The utility functions present here can be found in paper's GitHub:
 https://github.com/VisualComputingInstitute/DROW/blob/master/v2/utils/__init__.py
 """
 
-from numpy import max, clip, where, argmin, abs
+from numpy import max, clip, where, argmin, abs, isnan, argsort
 
 from sklearn.metrics import auc
 
@@ -44,6 +44,18 @@ def _fatlegend(ax=None, *args, **kwargs):
 
 
 
+def _safe_pr(recs, precs):
+    """Return (recs, precs) with NaNs removed and recall sorted ascending.
+
+    sklearn.metrics.auc requires a monotone x-axis. NaN values are produced
+    by _prec_rec_2d when tp+fp==0 or tp+fn==0 at a threshold boundary.
+    """
+    mask = ~isnan(recs) & ~isnan(precs)
+    r, p = recs[mask], precs[mask]
+    order = argsort(r)
+    return r[order], p[order]
+
+
 def _peakf1(recs, precs):
     return max(2*precs*recs/clip(precs+recs, 1e-16, 2+1e-16))
 
@@ -59,10 +71,10 @@ def _eer(recs, precs):
 def plot_prec_rec(wds, wcs, was, wps, figsize=(15,10), title=None):
     fig, ax = subplots(figsize=figsize)
 
-    ax.plot(*wds[:2], label='agn (AUC: {:.1%}, F1: {:.1%}, EER: {:.1%})'.format(auc(*wds[:2]), _peakf1(*wds[:2]), _eer(*wds[:2])), c='#E24A33')
-    ax.plot(*wcs[:2], label='wcs (AUC: {:.1%}, F1: {:.1%}, EER: {:.1%})'.format(auc(*wcs[:2]), _peakf1(*wcs[:2]), _eer(*wcs[:2])), c='#348ABD')
-    ax.plot(*was[:2], label='was (AUC: {:.1%}, F1: {:.1%}, EER: {:.1%})'.format(auc(*was[:2]), _peakf1(*was[:2]), _eer(*was[:2])), c='#988ED5')
-    ax.plot(*wps[:2], label='wps (AUC: {:.1%}, F1: {:.1%}, EER: {:.1%})'.format(auc(*wps[:2]), _peakf1(*wps[:2]), _eer(*wps[:2])), c='#8EBA42')
+    ax.plot(*wds[:2], label='agn (AUC: {:.1%}, F1: {:.1%}, EER: {:.1%})'.format(auc(*_safe_pr(*wds[:2])), _peakf1(*wds[:2]), _eer(*wds[:2])), c='#E24A33')
+    ax.plot(*wcs[:2], label='wcs (AUC: {:.1%}, F1: {:.1%}, EER: {:.1%})'.format(auc(*_safe_pr(*wcs[:2])), _peakf1(*wcs[:2]), _eer(*wcs[:2])), c='#348ABD')
+    ax.plot(*was[:2], label='was (AUC: {:.1%}, F1: {:.1%}, EER: {:.1%})'.format(auc(*_safe_pr(*was[:2])), _peakf1(*was[:2]), _eer(*was[:2])), c='#988ED5')
+    ax.plot(*wps[:2], label='wps (AUC: {:.1%}, F1: {:.1%}, EER: {:.1%})'.format(auc(*_safe_pr(*wps[:2])), _peakf1(*wps[:2]), _eer(*wps[:2])), c='#8EBA42')
 
     if title is not None:
         fig.suptitle(title, fontsize=16, y=0.91)

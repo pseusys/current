@@ -20,5 +20,7 @@ report/*
 !report/*.bst
 !report/images
 
+utils/plots
+
 *.py[cod]
 *.egg-info

@@ -15,7 +15,7 @@ PythonDetectorFactory::PythonDetectorFactory(float minAng, float incAng, int fre
 const std::vector<Point> PythonDetectorFactory::toPointVector(std::vector<float>& measures) {
     std::vector<Point> points(measures.size());
     float measureAngle = minAngle;
-    for (int measure = 0; measure < measures.size(); measure++, measureAngle += incAngle) points[measure] = Point::polarToCartesian(measures[measure], measureAngle);
+    for (int measure = 0; measure < (int)measures.size(); measure++, measureAngle += incAngle) points[measure] = Point::polarToCartesian(measures[measure], measureAngle);
     return points;
 }
 
@@ -38,7 +38,7 @@ const py::array_t<float> PythonDetectorFactory::forwardOne(const py::array_t<flo
     std::vector<float> odometry(latestOdometry.data(), latestOdometry.data() + latestOdometry.size());
     std::vector<Point> result = detector.forward(toPointVector(bottomScan), toPoint(odometry));
     float* raw_dump = toRawFloats(result);
-    return py::array_t<float>(std::vector<int>{result.size(), 2}, std::vector<int>{2 * sizeof(float), sizeof(float)}, raw_dump);
+    return py::array_t<float>(std::vector<py::ssize_t>{(py::ssize_t)result.size(), 2}, std::vector<py::ssize_t>{2 * (py::ssize_t)sizeof(float), (py::ssize_t)sizeof(float)}, raw_dump);
 }
 
 const py::array_t<float> PythonDetectorFactory::forwardBoth(const py::array_t<float>& latestBottomScan, const py::array_t<float>& latestTopScan, const py::array_t<float>& latestOdometry) {
@@ -47,7 +47,7 @@ const py::array_t<float> PythonDetectorFactory::forwardBoth(const py::array_t<fl
     std::vector<float> odometry(latestOdometry.data(), latestOdometry.data() + latestOdometry.size());
     std::vector<Point> result = detector.forward(toPointVector(bottomScan), toPointVector(topScan), toPoint(odometry));
     float* raw_dump = toRawFloats(result);
-    return py::array_t<float>(std::vector<int>{result.size(), 2}, std::vector<int>{2 * sizeof(float), sizeof(float)}, raw_dump);
+    return py::array_t<float>(std::vector<py::ssize_t>{(py::ssize_t)result.size(), 2}, std::vector<py::ssize_t>{2 * (py::ssize_t)sizeof(float), (py::ssize_t)sizeof(float)}, raw_dump);
 }
 
 

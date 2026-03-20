@@ -10,7 +10,7 @@ from json import loads
 from pathlib import Path
 from typing import Union, List, Dict, Tuple
 
-from numpy import genfromtxt, fromregex, where, array, full, array_equal, vectorize, float32, uint32
+from numpy import genfromtxt, fromregex, where, array, full, array_equal, vectorize, concatenate, tile, float32, uint32
 from numpy.typing import NDArray
 
 from ..utils.file_utils import DROW_DATA_PATH, DROW_TEST_SET
@@ -63,7 +63,7 @@ class DROW_Dataset(Logging):
 
     @classmethod
     def _load_det(cls, fname: Union[Path, str]) -> Tuple[NDArray, NDArray]:
-        data = fromregex(fname, r"(\d+),(\S+)", dtype=[("id", uint32), ("json", object)])
+        data = fromregex(fname, r"(\d+),([^\n]+)", dtype=[("id", uint32), ("json", object)])
         return data["id"], cls._LOAD_JSON_VECTOR(data["json"])
 
     @staticmethod
@@ -73,8 +73,10 @@ class DROW_Dataset(Logging):
     def get_scan(self, sequence_id: int, scan_id: int, time_window: int) -> Tuple[NDArray, NDArray]:
         start_time = scan_id - time_window + 1
         if start_time < 0:
-            scans = full(abs(start_time), self.scans[sequence_id][0]) + self.scans[sequence_id][:scan_id+1]
-            odoms = full(abs(start_time), self.odoms[sequence_id][0]) + self.odoms[sequence_id][:scan_id+1]
+            # Not enough history yet: pad the beginning with copies of the first scan/odom.
+            pad = abs(start_time)
+            scans = concatenate([tile(self.scans[sequence_id][0], (pad, 1)), self.scans[sequence_id][:scan_id+1]])
+            odoms = concatenate([array([self.odoms[sequence_id][0]] * pad), self.odoms[sequence_id][:scan_id+1]])
         else:
             scans = self.scans[sequence_id][start_time:scan_id+1]
             odoms = self.odoms[sequence_id][start_time:scan_id+1]

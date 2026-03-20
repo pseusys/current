@@ -1,0 +1,2 @@
+# Install the follow_the_drow library (downloads dataset + weights on first install)
+-e ../library

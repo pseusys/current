@@ -47,7 +47,11 @@ def cutout(scans, odoms, number, win_sz=1.66, thresh_dist=1, nsamp=48, UNK=29.99
         SCANBUF = full(N + 1, UNK, float32)  # Pad by UNK for the border-padding by UNK.
         for t in range(T):
             # If necessary, compute the odometry of the current time relative to the "key" one.
+            # Only the rotation component (odom_a) is used below: this model variant is "odom.rot"
+            # (rotation-only correction). Translational offsets (odom_x, odom_y) are intentionally
+            # ignored — passing them to the network directly is left as future work.
             odom_x, odom_y, odom_a = map(float, odoms[t]["xya"] - odoms[-1]["xya"])
+            del odom_x, odom_y  # unused by design; suppress linter warnings
 
             # Compute the start and end indices of points in the scan to be considered.
             start = int(round(ipoint - half_alpha/laserIncrement - odom_a/laserIncrement))
