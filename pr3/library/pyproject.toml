@@ -17,7 +17,6 @@ dependencies = [
     "numpy~=1.24",
     "torch~=2.0",
     "pytorch-lightning~=2.0",
-    "torch-directml~=0.2.5.dev240913",
     "tqdm~=4.64",
     "scipy~=1.10",
     "opencv-python~=4.8",

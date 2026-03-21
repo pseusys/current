@@ -151,14 +151,15 @@ class LidarFrameDataset(Dataset):
 # ---------------------------------------------------------------------------
 
 class LidarDataModule(pl.LightningDataModule):
-    def __init__(self, args, cfg, train_ds, val_ds):
+    def __init__(self, args, cfg, train_ds, val_ds, pin_memory: bool = False):
         super().__init__()
-        self.args     = args
-        self.cfg      = cfg
-        self.train_ds = train_ds
-        self.val_ds   = val_ds
-        self._train   = None
-        self._val     = None
+        self.args       = args
+        self.cfg        = cfg
+        self.train_ds   = train_ds
+        self.val_ds     = val_ds
+        self.pin_memory = pin_memory
+        self._train     = None
+        self._val       = None
 
     def setup(self, stage=None):
         full_train = LidarFrameDataset(
@@ -188,7 +189,7 @@ class LidarDataModule(pl.LightningDataModule):
             batch_size=self.args.batch_size,
             shuffle=True,
             num_workers=self.args.num_workers,
-            pin_memory=False,
+            pin_memory=self.pin_memory,
         )
 
     def val_dataloader(self):
@@ -199,7 +200,7 @@ class LidarDataModule(pl.LightningDataModule):
             batch_size=self.args.batch_size,
             shuffle=False,
             num_workers=self.args.num_workers,
-            pin_memory=False,
+            pin_memory=self.pin_memory,
         )
 
 
@@ -397,7 +398,8 @@ def main():
         return
 
     # ── DataModule ────────────────────────────────────────────────────────────
-    data = LidarDataModule(args, cfg, train_ds, val_ds)
+    data = LidarDataModule(args, cfg, train_ds, val_ds,
+                           pin_memory=(accelerator == "gpu"))
 
     # ── Callbacks ─────────────────────────────────────────────────────────────
     ckpt_cb = ModelCheckpoint(
