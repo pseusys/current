@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
 """
-DROW dataset verification script.
+DROW / FROG dataset verification script.
 
 Answers two questions:
   1. Are the GT annotations correctly aligned with the laser scan data?
      (mis-alignment = parsing bug; random scatter = genuine mis-annotation)
   2. What AUC does the DROW detector achieve on the test set so we can compare
      it with the numbers reported in the original paper?
+     (DROW dataset only — a trained model is required)
 
 Usage
 -----
-  # Fast: only alignment stats + one scan plot per sequence
+  # DROW — fast: alignment stats + one scan plot per sequence
   python verify_dataset.py
 
-  # Slow: also run detector and print AUC numbers
+  # DROW — also compute AUC (slow, ~1 s/frame on CPU)
   python verify_dataset.py --auc
+
+  # FROG test set
+  python verify_dataset.py --dataset frog
+
+  # FROG train split
+  python verify_dataset.py --dataset frog --split train
 
   # Plot a specific frame
   python verify_dataset.py --seq 0 --det 42
@@ -29,6 +36,7 @@ Reference AUC numbers (original DROW paper, WNet3xLF2p T=5 odom=rot trainval):
 
 import argparse
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import matplotlib
@@ -40,9 +48,38 @@ from sklearn.metrics import auc
 
 from follow_the_drow.datasets import DROW_Dataset
 from follow_the_drow.utils.drow_utils import (
-    rphi_to_xy, laser_angles, laser_minimum, laser_maximum,
+    rphi_to_xy, laser_angles, laser_minimum, laser_maximum, laser_increment,
     linearize, comp_prec_rec_softmax,
 )
+
+
+# ---------------------------------------------------------------------------
+# Dataset setup
+# ---------------------------------------------------------------------------
+
+def _setup(args) -> tuple:
+    """Load the requested dataset and return (dataset, cfg)."""
+    if args.dataset == "frog":
+        from follow_the_drow.datasets import FROG_Dataset, frog_laser_angles
+        print(f"Loading FROG dataset (split='{args.split}') …")
+        dataset = FROG_Dataset(split=args.split)
+        cfg = SimpleNamespace(
+            name="frog",
+            angles_fn=frog_laser_angles,
+            fov_min=FROG_Dataset.LASER_MIN_ANGLE,
+            fov_max=FROG_Dataset.LASER_MAX_ANGLE,
+        )
+    else:
+        print("Loading DROW test set …")
+        dataset = DROW_Dataset()
+        cfg = SimpleNamespace(
+            name="drow",
+            angles_fn=laser_angles,
+            fov_min=laser_minimum,
+            fov_max=laser_maximum,
+        )
+    print(f"  {len(dataset.scan_id)} sequence(s) loaded\n")
+    return dataset, cfg
 
 
 # ---------------------------------------------------------------------------
@@ -71,7 +108,8 @@ def _ann_to_xy(anns):
 # 1. Visual alignment check
 # ---------------------------------------------------------------------------
 
-def plot_scan_with_annotations(dataset: DROW_Dataset, seq_idx: int, det_idx: int):
+def plot_scan_with_annotations(dataset, seq_idx: int, det_idx: int,
+                                angles_fn=laser_angles):
     """
     Plot one laser scan with its ground-truth annotations overlaid.
 
@@ -82,9 +120,8 @@ def plot_scan_with_annotations(dataset: DROW_Dataset, seq_idx: int, det_idx: int
     """
     iscan = dataset.idet2iscan[seq_idx][det_idx]
     scan  = dataset.scans[seq_idx][iscan]
-    angles = laser_angles(len(scan))
+    angles = angles_fn(len(scan))
 
-    # LiDAR points in Cartesian (same convention as rphi_to_xy)
     scan_x = scan * -np.sin(angles)
     scan_y = scan *  np.cos(angles)
 
@@ -117,7 +154,7 @@ def plot_scan_with_annotations(dataset: DROW_Dataset, seq_idx: int, det_idx: int
     return fig
 
 
-def _first_annotated(dataset: DROW_Dataset, seq_idx: int):
+def _first_annotated(dataset, seq_idx: int):
     """Return the first detection index in a sequence that has at least one label."""
     for i in range(len(dataset.det_id[seq_idx])):
         total = (len(dataset.det_wc[seq_idx][i])
@@ -132,19 +169,13 @@ def _first_annotated(dataset: DROW_Dataset, seq_idx: int):
 # 2. Quantitative alignment statistics
 # ---------------------------------------------------------------------------
 
-def fov_coverage_stats(dataset: DROW_Dataset) -> dict:
+def fov_coverage_stats(dataset, fov_min=laser_minimum, fov_max=laser_maximum) -> dict:
     """
     Count what fraction of annotations fall inside the laser's field of view.
 
-    The Sick LMS covers ±112.25° (1.959 rad) centred on the robot's forward axis.
-    Annotations whose |phi| > laser_maximum were made from camera data and point
-    to a direction the laser physically cannot scan.  These annotations will always
-    be counted as missed detections, silently hurting recall.
-
-    This is a DATASET QUALITY issue (not a parsing bug): the DROW annotators used
-    the RGB camera to track people even when they walked outside the laser's FoV.
-    The original paper has the same issue — but knowing the fraction helps calibrate
-    how much of the recall penalty is "fair" vs unavoidable.
+    Annotations whose |phi| > fov_max were made from camera data and point
+    to a direction the laser physically cannot scan.  These annotations will
+    always be counted as missed detections, silently hurting recall.
     """
     results = {k: {"total": 0, "in_fov": 0} for k in ("wc", "wa", "wp")}
     for seq in range(len(dataset.det_id)):
@@ -154,16 +185,16 @@ def fov_coverage_stats(dataset: DROW_Dataset) -> dict:
                                  ("wp", dataset.det_wp[seq][det])]:
                 for r, phi in anns:
                     results[label]["total"] += 1
-                    if laser_minimum <= phi <= laser_maximum:
+                    if fov_min <= phi <= fov_max:
                         results[label]["in_fov"] += 1
     return results
 
 
-def print_fov_report(stats: dict):
+def print_fov_report(stats: dict, fov_min=laser_minimum, fov_max=laser_maximum):
     print()
     print("=== Annotation field-of-view coverage ===")
-    print(f"  Laser FoV: {np.degrees(laser_minimum):.1f}° … {np.degrees(laser_maximum):.1f}°"
-          f"  ({np.degrees(laser_maximum - laser_minimum):.1f}° total)")
+    print(f"  Laser FoV: {np.degrees(fov_min):.1f}° … {np.degrees(fov_max):.1f}°"
+          f"  ({np.degrees(fov_max - fov_min):.1f}° total)")
     print()
     print(f"{'Class':<8} {'Total':>6}  {'In-FoV':>8}  {'Out-of-FoV':>12}")
     print("-" * 44)
@@ -176,11 +207,10 @@ def print_fov_report(stats: dict):
     print()
     print("  Out-of-FoV annotations cannot be detected by the laser.")
     print("  They count as permanent missed detections and suppress recall.")
-    print("  The original DROW paper has the same issue — both AUCs are comparable.")
     print()
 
 
-def annotation_alignment_stats(dataset: DROW_Dataset) -> dict:
+def annotation_alignment_stats(dataset, angles_fn=laser_angles) -> dict:
     """
     For every GT annotation compute the distance to the nearest LiDAR point.
 
@@ -189,13 +219,13 @@ def annotation_alignment_stats(dataset: DROW_Dataset) -> dict:
       median 0.15–0.5 m →  small but consistent offset  (check coordinate signs)
       median > 0.5 m   →  severe mis-alignment; likely parsing bug OR bad labels
     """
-    angles = laser_angles(dataset.scans[0].shape[-1])
     results = {"wc": [], "wa": [], "wp": []}
 
     for seq in range(len(dataset.det_id)):
         for det in range(len(dataset.det_id[seq])):
             iscan = dataset.idet2iscan[seq][det]
             scan  = dataset.scans[seq][iscan]
+            angles = angles_fn(len(scan))
 
             scan_pts = np.stack([scan * -np.sin(angles),
                                  scan *  np.cos(angles)], axis=1)  # (N, 2)
@@ -233,11 +263,9 @@ def print_alignment_report(stats: dict):
 
 
 # ---------------------------------------------------------------------------
-# 3. AUC computation
+# 3. AUC computation (DROW only)
 # ---------------------------------------------------------------------------
 
-# Hyperparameters from the original notebook (kept identical so results are
-# directly comparable to what was reported in the paper repository).
 _RESULT_CONF = {
     "blur_sigma":          2.23409276092903,
     "blur_win":            11,
@@ -251,8 +279,7 @@ _RESULT_CONF = {
 def compute_auc(dataset: DROW_Dataset, eval_r: float = 0.5):
     """
     Run the DROW detector on the full dataset and return per-class AUC.
-
-    eval_r : evaluation radius in metres (paper default = 0.5 m).
+    Only meaningful when dataset is a DROW_Dataset with its native test split.
     """
     from follow_the_drow.detectors import DrowDetector
 
@@ -299,10 +326,14 @@ def print_auc_report(wd, wc, wa, wp, eval_r: float = 0.5):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Verify DROW dataset parsing and optionally compute AUC.",
+        description="Verify dataset parsing and optionally compute AUC.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
+    parser.add_argument("--dataset",   choices=["drow", "frog"], default="drow",
+                        help="Dataset to load (default: drow)")
+    parser.add_argument("--split",     choices=["test", "train", "val"], default="test",
+                        help="FROG split to load (default: test; ignored for DROW)")
     parser.add_argument("--seq",       type=int,  default=0,
                         help="Sequence index for the scan plot (default: 0)")
     parser.add_argument("--det",       type=int,  default=None,
@@ -311,26 +342,23 @@ def main():
                         help="Save one plot per sequence instead of just --seq")
     parser.add_argument("--auc",       action="store_true",
                         help="Run the DROW detector and print AUC numbers "
-                             "(slow — ~1 s/frame on CPU)")
+                             "(DROW only; slow — ~1 s/frame on CPU)")
     parser.add_argument("--eval-r",    type=float, default=0.5,
                         help="Evaluation radius in metres for AUC (default: 0.5)")
     parser.add_argument("--outdir",    type=Path,  default=Path("."),
                         help="Directory for saved plot PNGs (default: current dir)")
     args = parser.parse_args()
 
-    # --- Load dataset ---
-    print("Loading DROW test set …")
-    dataset = DROW_Dataset()
-    print(f"  {len(dataset.scan_id)} sequence(s) loaded\n")
+    dataset, cfg = _setup(args)
 
-    # --- FoV coverage (fast, explains "random" annotations outside the scan) ---
+    # --- FoV coverage (fast) ---
     print("Checking annotation field-of-view coverage …")
-    fov_stats = fov_coverage_stats(dataset)
-    print_fov_report(fov_stats)
+    fov_stats = fov_coverage_stats(dataset, fov_min=cfg.fov_min, fov_max=cfg.fov_max)
+    print_fov_report(fov_stats, fov_min=cfg.fov_min, fov_max=cfg.fov_max)
 
     # --- Alignment stats (fast, no detector needed) ---
     print("Computing annotation alignment statistics …")
-    stats = annotation_alignment_stats(dataset)
+    stats = annotation_alignment_stats(dataset, angles_fn=cfg.angles_fn)
     print_alignment_report(stats)
 
     # --- Scan plots ---
@@ -345,17 +373,22 @@ def main():
             print(f"Sequence {seq}: no annotated frames found, skipping plot.")
             continue
 
-        fig = plot_scan_with_annotations(dataset, seq, det)
+        fig = plot_scan_with_annotations(dataset, seq, det, angles_fn=cfg.angles_fn)
         out = args.outdir / f"scan_seq{seq}_det{det}.png"
         fig.savefig(out, dpi=150, bbox_inches="tight")
         plt.close(fig)
         print(f"Saved plot → {out}")
 
-    # --- AUC (optional, slow) ---
+    # --- AUC (optional, slow, DROW only) ---
     if args.auc:
-        print()
-        wd, wc, wa, wp = compute_auc(dataset, eval_r=args.eval_r)
-        print_auc_report(wd, wc, wa, wp, eval_r=args.eval_r)
+        if cfg.name != "drow":
+            print("\n[AUC] Skipped: AUC evaluation with pre-trained DROW weights is only")
+            print("  meaningful on the DROW test set.  Train a model with train.py first,")
+            print("  then use train.py --eval to evaluate on FROG.")
+        else:
+            print()
+            wd, wc, wa, wp = compute_auc(dataset, eval_r=args.eval_r)
+            print_auc_report(wd, wc, wa, wp, eval_r=args.eval_r)
 
 
 if __name__ == "__main__":

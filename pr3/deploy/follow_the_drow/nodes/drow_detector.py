@@ -55,8 +55,9 @@ class DROWDetector:
                 detections = [det for det in detections if argmax(det[2][1:]) == 2 and det[2][3] > self.threshold]
             else:
                 detections = [det for det in detections if any(det[2][1:] > self.threshold)]
-            # WARNING! Here, with points 'x' and 'y' are swapped!
-            points = [Point(x=detect[1], y=detect[0]) for detect in detections]
+            # DROW frame: detect[0]=x=-r·sin(φ) (lateral), detect[1]=y=r·cos(φ) (forward)
+            # ROS base_link: x=forward=r·cos(φ), y=left=r·sin(φ)=-detect[0]
+            points = [Point(x=detect[1], y=-detect[0]) for detect in detections]
             self.drow_data.publish(detection(detection=points))
 
     def __call__(self) -> None:

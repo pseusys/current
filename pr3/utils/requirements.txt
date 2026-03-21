@@ -1,2 +1,5 @@
 # Install the follow_the_drow library (downloads dataset + weights on first install)
 -e ../library
+tqdm
+pytorch-lightning>=2.0
+scikit-learn

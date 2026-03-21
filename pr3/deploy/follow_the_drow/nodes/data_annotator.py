@@ -27,7 +27,7 @@ class Frame:
     def _copy(self, dataset: Optional[DROW_Dataset] = None, file_index: Optional[int] = None, current_scan: Optional[int] = None):
         dataset = self.dataset if dataset is None else dataset
         file_index = self.file_index if file_index is None else file_index
-        current_scan = self.current_scan if current_scan is None else current_scan
+        current_scan = self.current if current_scan is None else current_scan
         return Frame(dataset, file_index, current_scan)
 
     @property
@@ -104,7 +104,7 @@ class DataAnnotator:
     def move_frame(self, new_frame, update):
         if update:
             self.dump_annotations(self.frame.filename)
-            self.annotations = [self.frame.empty_annotation]
+            self.annotations = []          # clear — new file starts fresh at index 0
         if new_frame is not None:
             self.frame = new_frame
             self.annotations.append(self.frame.empty_annotation)
@@ -112,7 +112,7 @@ class DataAnnotator:
     def dump_annotations(self, filename: str):
         output = str()
         for id, annotation in self.annotations:
-            points = [f"[{x},{y}]" for x, y in annotation]
+            points = [f"[{p.x},{p.y}]" for p in annotation]
             output += f"{id},[{','.join(points)}]\n"
         if self.output_path is not None:
             name = self.output_path / self.annotation_file.replace("*", filename)

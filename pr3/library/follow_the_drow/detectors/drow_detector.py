@@ -33,6 +33,7 @@ _DETECTOR_WEIGHTS_PATH = Path(__file__).parent.parent / DROW_WEIGHTS_PATH
 
 
 class DrowDetector(Module, Detector):
+    INPUT_MODE = "cutout"
     N_SAMP = 48
     GPU = False  # This is the GPU index, use 0 for first GPU.
 

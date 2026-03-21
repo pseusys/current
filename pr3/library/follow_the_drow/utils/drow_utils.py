@@ -12,7 +12,7 @@ from scipy.ndimage import maximum_filter
 from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
 
-from numpy import zeros, arctan, arctan2, square, add, sin, cos, logical_not, concatenate, linspace, sum, mean, argmin, argsort, array, where, full, full_like, arange, clip, unique, radians, float32, int64, uint32, nan, c_, r_
+from numpy import zeros, arctan, arctan2, square, add, sin, cos, logical_not, concatenate, linspace, sum, mean, argmin, argsort, array, where, full, full_like, arange, clip, unique, radians, float32, int64, uint32, nan, c_, r_, roll
 from numpy.typing import NDArray
 
 from cv2 import resize, GaussianBlur, INTER_AREA, INTER_LINEAR
@@ -357,3 +357,39 @@ def calc_prec_rec_softmax(wcs, was, wps, predictions, eval_r=0.5):
     deep = [[(p[:, 0][i], p[:, 1][i], std_prob.copy()) for i in range(len(p))] for p in predictions]
     det_x, det_y, det_p, det_f = _deep2flat(deep)
     return _process_detections(det_x, det_y, det_p, det_f, wcs, was, wps, eval_r)
+
+
+def aligned_scan_xyz(scans_hist, odoms_hist, angles, laser_inc=laser_increment):
+    """
+    Align a temporal window of scans to the current robot frame using odometry
+    rotation and convert to (r, x, y) feature triplets per beam per timestep.
+
+    Uses the same rotation-only odometry correction as cutout(): translational
+    offsets are intentionally ignored (same design choice as the original DROW).
+
+    Parameters
+    ----------
+    scans_hist : array-like (T, N)  range scans; index -1 = current scan
+    odoms_hist : sequence (T,)      odometry dicts with 'xya' field; index -1 = current
+    angles     : array-like (N,)    beam angles in radians
+    laser_inc  : float              angular resolution (radians/beam)
+
+    Returns
+    -------
+    xyz : ndarray (T, N, 3) float32
+        Channel 0: r     — raw range measurement (metres)
+        Channel 1: x = -r·sin(φ)  — Cartesian left-of-robot
+        Channel 2: y =  r·cos(φ)  — Cartesian forward-of-robot
+    """
+    scans = array(scans_hist, dtype=float32)   # (T, N)
+    T, N  = scans.shape
+    ang   = array(angles,     dtype=float32)   # (N,)
+    out   = zeros((T, N, 3),  dtype=float32)
+    for t in range(T):
+        odom_a = float(odoms_hist[t]["xya"][2] - odoms_hist[-1]["xya"][2])
+        shift  = int(round(-odom_a / laser_inc))
+        r = roll(scans[t], shift)               # align beam indices to current frame
+        out[t, :, 0] = r
+        out[t, :, 1] = r * -sin(ang)            # x = -r·sin(φ)
+        out[t, :, 2] = r *  cos(ang)            # y =  r·cos(φ)
+    return out

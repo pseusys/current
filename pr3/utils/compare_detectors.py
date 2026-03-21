@@ -16,8 +16,11 @@ This makes it easy to see:
 
 Usage
 -----
-  # One frame (seq 1, det 3 — the mis-annotated frame from the paper)
+  # DROW — one frame (seq 1, det 3 — the mis-annotated frame from the paper)
   python compare_detectors.py --seq 1 --det 3
+
+  # FROG — test set
+  python compare_detectors.py --dataset frog
 
   # All frames for all sequences
   python compare_detectors.py --all-seqs --all-frames
@@ -31,6 +34,7 @@ Usage
 
 import argparse
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import matplotlib
@@ -42,8 +46,8 @@ plt.style.use("ggplot")
 from follow_the_drow.datasets import DROW_Dataset
 from follow_the_drow.detectors import AlgorithmicDetector, DrowDetector
 from follow_the_drow.utils.drow_utils import (
-    laser_angles, laser_minimum, laser_maximum, rphi_to_xy, cutout,
-    _win2global, votes_to_detections,
+    laser_angles, laser_minimum, laser_maximum, laser_increment,
+    rphi_to_xy, cutout, _win2global, votes_to_detections,
 )
 
 
@@ -59,6 +63,37 @@ _RESULT_CONF = {
 
 
 # ---------------------------------------------------------------------------
+# Dataset setup
+# ---------------------------------------------------------------------------
+
+def _setup(args) -> tuple:
+    """Load the requested dataset and return (dataset, cfg)."""
+    if args.dataset == "frog":
+        from follow_the_drow.datasets import FROG_Dataset, frog_laser_angles
+        print(f"Loading FROG dataset (split='{args.split}') …")
+        dataset = FROG_Dataset(split=args.split)
+        cfg = SimpleNamespace(
+            name="frog",
+            angles_fn=frog_laser_angles,
+            fov_min=FROG_Dataset.LASER_MIN_ANGLE,
+            fov_max=FROG_Dataset.LASER_MAX_ANGLE,
+            laser_inc=FROG_Dataset.LASER_INCREMENT,
+        )
+    else:
+        print("Loading DROW test set …")
+        dataset = DROW_Dataset()
+        cfg = SimpleNamespace(
+            name="drow",
+            angles_fn=laser_angles,
+            fov_min=laser_minimum,
+            fov_max=laser_maximum,
+            laser_inc=laser_increment,
+        )
+    print(f"  {len(dataset.scan_id)} sequence(s) loaded\n")
+    return dataset, cfg
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -69,15 +104,15 @@ def _ann_to_xy(anns):
     return xy[:, 0], xy[:, 1]
 
 
-def _split_fov(anns):
+def _split_fov(anns, fov_min, fov_max):
     in_, out_ = [], []
     for r, phi in anns:
-        (in_ if laser_minimum <= phi <= laser_maximum else out_).append((r, phi))
+        (in_ if fov_min <= phi <= fov_max else out_).append((r, phi))
     return in_, out_
 
 
-def _draw_fov_blind_spot(ax, r_max=12):
-    theta = np.linspace(laser_maximum, 2 * np.pi + laser_minimum, 120)
+def _draw_fov_blind_spot(ax, fov_min, fov_max, r_max=12):
+    theta = np.linspace(fov_max, 2 * np.pi + fov_min, 120)
     xs = np.concatenate([[0], r_max * -np.sin(theta), [0]])
     ys = np.concatenate([[0], r_max *  np.cos(theta), [0]])
     ax.fill(xs, ys, color="gray", alpha=0.13, zorder=0, label="laser blind spot")
@@ -96,7 +131,7 @@ def _first_annotated(dataset, seq):
 # Per-frame runner functions
 # ---------------------------------------------------------------------------
 
-def run_drow_frame(drow: DrowDetector, dataset: DROW_Dataset, seq: int, det: int):
+def run_drow_frame(drow: DrowDetector, dataset, seq: int, det: int, cfg=None):
     """
     Run DROW on a single annotated frame.
 
@@ -104,26 +139,30 @@ def run_drow_frame(drow: DrowDetector, dataset: DROW_Dataset, seq: int, det: int
     [agnostic, wc, wa, wp].  Returns an empty list if no detection passes the
     threshold.
     """
+    angles_fn  = cfg.angles_fn  if cfg else laser_angles
+    laser_inc  = cfg.laser_inc  if cfg else laser_increment
+
     iscan  = dataset.idet2iscan[seq][det]
     scan   = dataset.scans[seq][iscan]
     scans_hist, odoms_hist = dataset.get_scan(seq, iscan, drow.time_frame)
 
-    cut = cutout(scans_hist, odoms_hist, len(scan), nsamp=drow.N_SAMP)
-    confs, votes = drow.forward_one(cut)      # (450, 4), (450, 2)
+    cut = cutout(scans_hist, odoms_hist, len(scan),
+                 nsamp=drow.N_SAMP, laserIncrement=laser_inc)
+    confs, votes = drow.forward_one(cut)   # (N_beams, 4), (N_beams, 2)
 
-    angles = laser_angles(len(scan))
+    angles = angles_fn(len(scan))
     r_new, phi_new = _win2global(
         scan[None], angles[None],
         votes[None, :, 0], votes[None, :, 1],
     )
-    x_votes = r_new * -np.sin(phi_new)       # shape (1, 450)
+    x_votes = r_new * -np.sin(phi_new)
     y_votes = r_new *  np.cos(phi_new)
 
     dets = votes_to_detections(x_votes, y_votes, confs[None], **_RESULT_CONF)
     return dets[0]   # list of (x, y, probs) for this frame
 
 
-def run_algo_frame(algo: AlgorithmicDetector, dataset: DROW_Dataset, seq: int, det: int):
+def run_algo_frame(algo: AlgorithmicDetector, dataset, seq: int, det: int):
     """
     Run AlgorithmicDetector on a single annotated frame.
 
@@ -141,7 +180,7 @@ def run_algo_frame(algo: AlgorithmicDetector, dataset: DROW_Dataset, seq: int, d
 # Pre-run everything (saves repeated forward passes when plotting many frames)
 # ---------------------------------------------------------------------------
 
-def run_all(dataset: DROW_Dataset, use_drow: bool = True, verbose: bool = True):
+def run_all(dataset, cfg=None, use_drow: bool = True, verbose: bool = True):
     """
     Returns:
       drow_dets[seq][det] = list of (x, y, probs)   or None if use_drow=False
@@ -173,7 +212,7 @@ def run_all(dataset: DROW_Dataset, use_drow: bool = True, verbose: bool = True):
         for seq in range(len(dataset.det_id)):
             seq_drow = []
             for det in range(len(dataset.det_id[seq])):
-                seq_drow.append(run_drow_frame(drow, dataset, seq, det))
+                seq_drow.append(run_drow_frame(drow, dataset, seq, det, cfg=cfg))
             drow_dets.append(seq_drow)
             if verbose:
                 print(f"  Sequence {seq} done")
@@ -185,7 +224,7 @@ def run_all(dataset: DROW_Dataset, use_drow: bool = True, verbose: bool = True):
 # Agreement statistics
 # ---------------------------------------------------------------------------
 
-def agreement_stats(dataset: DROW_Dataset, drow_dets, algo_dets, eval_r: float = 0.5):
+def agreement_stats(dataset, drow_dets, algo_dets, eval_r: float = 0.5):
     """
     Count how often DROW and algorithmic detections agree (both fire within
     eval_r of each other), disagree, or one is silent.
@@ -201,13 +240,12 @@ def agreement_stats(dataset: DROW_Dataset, drow_dets, algo_dets, eval_r: float =
             gt_xy = np.array([rphi_to_xy(r, phi)
                                for r, phi in all_ann]) if all_ann else np.empty((0, 2))
 
-            algo = algo_dets[seq][det]       # (N, 2)
+            algo = algo_dets[seq][det]
             drow = (np.array([[d[0], d[1]] for d in drow_dets[seq][det]])
                     if drow_dets and drow_dets[seq][det]
                     else np.empty((0, 2)))
 
             def _near(src, tgt, r):
-                """How many rows of src are within r of any row in tgt."""
                 if len(src) == 0 or len(tgt) == 0:
                     return 0
                 from scipy.spatial.distance import cdist
@@ -218,10 +256,8 @@ def agreement_stats(dataset: DROW_Dataset, drow_dets, algo_dets, eval_r: float =
                 "n_gt":   len(gt_xy),
                 "n_algo": len(algo),
                 "n_drow": len(drow),
-                # Agreement between detectors
                 "algo_near_drow": _near(algo, drow, eval_r),
                 "drow_near_algo": _near(drow, algo, eval_r),
-                # Each vs GT
                 "algo_near_gt":   _near(algo, gt_xy, eval_r),
                 "drow_near_gt":   _near(drow, gt_xy, eval_r),
                 "gt_near_algo":   _near(gt_xy, algo, eval_r),
@@ -274,11 +310,14 @@ def print_agreement(rows, eval_r: float = 0.5):
 # Visualisation
 # ---------------------------------------------------------------------------
 
-def plot_frame(dataset: DROW_Dataset, drow_dets, algo_dets,
-               seq: int, det: int):
+def plot_frame(dataset, drow_dets, algo_dets, seq: int, det: int, cfg=None):
+    angles_fn = cfg.angles_fn if cfg else laser_angles
+    fov_min   = cfg.fov_min   if cfg else laser_minimum
+    fov_max   = cfg.fov_max   if cfg else laser_maximum
+
     iscan  = dataset.idet2iscan[seq][det]
     scan   = dataset.scans[seq][iscan]
-    angles = laser_angles(len(scan))
+    angles = angles_fn(len(scan))
     scan_x = scan * -np.sin(angles)
     scan_y = scan *  np.cos(angles)
 
@@ -286,11 +325,11 @@ def plot_frame(dataset: DROW_Dataset, drow_dets, algo_dets,
     wa_x, wa_y = _ann_to_xy(dataset.det_wa[seq][det])
     wp_x, wp_y = _ann_to_xy(dataset.det_wp[seq][det])
 
-    algo = algo_dets[seq][det]  # (N, 2)
-    drow = drow_dets[seq][det] if drow_dets else []  # list of (x, y, probs)
+    algo = algo_dets[seq][det]
+    drow = drow_dets[seq][det] if drow_dets else []
 
     fig, ax = plt.subplots(figsize=(10, 10))
-    _draw_fov_blind_spot(ax)
+    _draw_fov_blind_spot(ax, fov_min, fov_max)
     ax.scatter(scan_x, scan_y, s=4, c="steelblue", zorder=2, label="LiDAR points")
 
     # GT annotations — distinguish in-FoV from out-of-FoV
@@ -299,7 +338,7 @@ def plot_frame(dataset: DROW_Dataset, drow_dets, algo_dets,
             ("wa", dataset.det_wa[seq][det], "purple"),
             ("wp", dataset.det_wp[seq][det], "red"),
     ]:
-        in_fov, out_fov = _split_fov(anns)
+        in_fov, out_fov = _split_fov(anns, fov_min, fov_max)
         if in_fov:
             xs, ys = zip(*[rphi_to_xy(r, p) for r, p in in_fov])
             ax.scatter(xs, ys, s=220, c=colour, marker="x",
@@ -356,10 +395,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
+    parser.add_argument("--dataset",    choices=["drow", "frog"], default="drow",
+                        help="Dataset to use (default: drow)")
+    parser.add_argument("--split",      choices=["test", "train", "val"], default="test",
+                        help="FROG split (default: test; ignored for DROW)")
     parser.add_argument("--seq",        type=int,  default=1,
                         help="Sequence index to visualise (default: 1)")
     parser.add_argument("--det",        type=int,  default=3,
-                        help="Detection index to visualise (default: 3, the mis-annotated frame)")
+                        help="Detection index to visualise (default: 3)")
     parser.add_argument("--all-frames", action="store_true",
                         help="Save every frame of the chosen sequence")
     parser.add_argument("--all-seqs",   action="store_true",
@@ -374,11 +417,10 @@ def main():
                         help="Output directory for PNG files (default: plots/)")
     args = parser.parse_args()
 
-    print("Loading DROW test set …")
-    dataset = DROW_Dataset()
-    print(f"  {len(dataset.scan_id)} sequence(s) loaded\n")
+    dataset, cfg = _setup(args)
 
-    drow_dets, algo_dets = run_all(dataset, use_drow=not args.no_drow, verbose=True)
+    drow_dets, algo_dets = run_all(dataset, cfg=cfg,
+                                   use_drow=not args.no_drow, verbose=True)
 
     if args.stats:
         rows = agreement_stats(dataset, drow_dets, algo_dets, eval_r=args.eval_r)
@@ -399,7 +441,7 @@ def main():
                 print(f"  Sequence {seq} has only {len(dataset.det_id[seq])} frames, "
                       f"skipping det={det}")
                 continue
-            fig = plot_frame(dataset, drow_dets, algo_dets, seq, det)
+            fig = plot_frame(dataset, drow_dets, algo_dets, seq, det, cfg=cfg)
             out = args.outdir / f"cmp_seq{seq}_det{det}.png"
             fig.savefig(out, dpi=150, bbox_inches="tight")
             plt.close(fig)

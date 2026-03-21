@@ -12,6 +12,8 @@ DROW_VALIDATION_SET = Path("val")
 DROW_TEST_SET = Path("test")
 DROW_WEIGHTS_PATH = Path("include/weights.pth.tar")
 
+FROG_DATA_PATH = Path("include/FROG-data")
+
 CACHE_DIR = Path.cwd() / Path("cache")
 
 

@@ -72,7 +72,7 @@ class Params:
     DATA_ANNOTATOR_DATASET_PATH = _property("DATA_ANNOTATOR_DATASET_PATH")
     _DATA_ANNOTATOR_DATASET_PATH_NAME = "dataset_path"
     BACKGROUND_COLOR = _property("BACKGROUND_COLOR")
-    _BACKGROUND_COLOR_NAME = "backgorund_color"
+    _BACKGROUND_COLOR_NAME = "background_color"
     ANNOTATED_COLOR = _property("ANNOTATED_COLOR")
     _ANNOTATED_COLOR_NAME = "annotated_color"
     VISUALIZATION_TOPIC = _property("VISUALIZATION_TOPIC")

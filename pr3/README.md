@@ -348,6 +348,110 @@ make redrow-detector-test
 The `redrow_detector.ipynb` is an improved and optimized version of the [DROW paper final notebook](https://github.com/VisualComputingInstitute/DROW/blob/master/v2/Clean%20Final*%20%5BT%3D5%2Cnet%3Ddrow3xLF2p%2Codom%3Drot%2Ctrainval%5D.ipynb).
 The `algorithmic_detector.ipynb` uses the same metrics and tests for exploring algorithmic detector.
 
+## Research utilities
+
+Research and training scripts are located in the `utils/` directory.
+Install their dependencies first:
+
+```bash
+pip install -r utils/requirements.txt
+```
+
+### GPU support
+
+Device selection is automatic (in order of priority):
+
+1. **CUDA / ROCm** — NVIDIA or AMD GPU (native or WSL2), detected automatically.
+2. **DirectML** — any DX12-capable GPU on Windows (e.g. integrated Intel/AMD, discrete GPU without CUDA). Install with:
+
+   ```bash
+   pip install torch-directml
+   ```
+
+3. **CPU** — fallback when no GPU is available.
+
+### `train.py` — unified training and evaluation
+
+Trains and evaluates any of the six person detectors on DROW or FROG data.
+
+**Supported detectors:**
+
+| `--detector` key | Architecture |
+| --- | --- |
+| `algorithmic` | Rule-based AlgorithmicDetector (eval only) |
+| `drow` | Original DROW WNet3xLF2p |
+| `drspaam` | DR-SPAAM: local beam attention + attention-weighted temporal sum (+7.7 pp AUC over DROW) |
+| `fullscan_cnn` | Dilated 1D CNN over full scan + GRU over time |
+| `spacetime_cnn` | 2D convolution over the (beams × time) space-time grid |
+| `fullscan_transformer` | Dilated 1D CNN + global beam self-attention + GRU |
+
+**Usage examples:**
+
+```bash
+# Train DR-SPAAM on FROG for 10 epochs
+python train.py --detector drspaam --dataset frog --epochs 10
+
+# Train on DROW trainval, check AUC every 5 epochs
+python train.py --detector fullscan_cnn --dataset drow --epochs 20 --auc-every 5
+
+# Quick development run (5 % of frames)
+python train.py --detector drspaam --dataset frog --subsample 0.05 --epochs 2
+
+# Evaluate a saved checkpoint (no training)
+python train.py --detector drspaam --dataset frog --weights out.pth --eval-only
+
+# Resume training from a checkpoint
+python train.py --detector drspaam --resume out.pth --epochs 10
+```
+
+**Full CLI reference:**
+
+```text
+--detector       Detector to train/evaluate (default: drspaam)
+                 choices: algorithmic, drow, drspaam,
+                          fullscan_cnn, spacetime_cnn, fullscan_transformer
+
+--dataset        Dataset to use: drow or frog (default: frog)
+--train-split    Training split name (default: train)
+--val-split      Validation split name; pass '' to disable (default: val)
+
+--epochs         Number of training epochs (default: 10)
+--lr             Adam learning rate (default: 1e-3)
+--weight-decay   Adam weight decay (default: 1e-4)
+--dropout        Dropout probability for drow / drspaam (default: 0.5)
+--time-frame     Number of scans in the temporal window T (default: 5)
+--vote-radius    GT association radius in metres (default: 0.6)
+--vote-weight    Weight of the vote-offset MSE loss (default: 0.02)
+--subsample      Fraction of annotated frames to use per epoch (default: 1.0)
+--batch-size     Frames per optimizer step; effective beam batch =
+                 batch_size × N_beams — e.g. 4 × 450 = 1 800 beams/step (default: 4)
+
+--out            Output checkpoint path (default: weights_trained.pth)
+--resume         Resume training from this checkpoint
+--weights        Load weights (for --eval-only mode)
+
+--eval-only      Skip training; run AUC evaluation only
+--eval-r         Detection matching radius in metres (default: 0.5)
+--auc-every      Compute full AUC every N epochs (0 = end of training only)
+```
+
+The saved checkpoint can be reloaded with the respective detector's `.load()` class method for deployment.
+
+### `compare_detectors.py` — side-by-side visualisation
+
+Compares any two detectors frame by frame and prints inter-detector agreement statistics.
+
+```bash
+# Visualise one frame (DROW dataset, seq 1, detection frame 3)
+python compare_detectors.py --seq 1 --det 3
+
+# Print agreement statistics on the FROG test set
+python compare_detectors.py --dataset frog --stats --no-drow
+
+# Save plots for all frames in all sequences
+python compare_detectors.py --all-seqs --outdir plots/
+```
+
 ## Other
 
 The repository also contains some github actions in `.github/workflows` directory for testing both python and C++ libraries build and for ROS environment Docker image publishing.

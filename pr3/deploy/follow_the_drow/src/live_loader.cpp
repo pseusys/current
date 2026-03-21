@@ -12,7 +12,7 @@
 
 
 std::vector<geometry_msgs::Point> LiveLoader::lidarCallback(const sensor_msgs::LaserScan::ConstPtr& scan, std::array<geometry_msgs::Point, 2>& transform) const {
-    int nbBeams = ((-1 * scan->angle_min) + scan->angle_max) / scan->angle_increment;
+    int nbBeams = static_cast<int>(scan->ranges.size());
     std::vector<geometry_msgs::Point> latestScan(nbBeams);
 
     float beamAngle = scan->angle_min;
