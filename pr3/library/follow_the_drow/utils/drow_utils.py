@@ -12,10 +12,10 @@ from scipy.ndimage import maximum_filter
 from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
 
-from numpy import zeros, arctan, arctan2, square, add, sin, cos, logical_not, concatenate, linspace, sum, mean, argmin, argsort, array, where, full, full_like, arange, clip, unique, radians, float32, int64, uint32, nan, c_, r_, roll
+from numpy import zeros, arctan, arctan2, square, add, sin, cos, logical_not, concatenate, linspace, sum, mean, argmin, argsort, array, where, full_like, arange, clip, unique, radians, float32, int64, uint32, nan, c_, r_, roll
 from numpy.typing import NDArray
 
-from cv2 import resize, GaussianBlur, INTER_AREA, INTER_LINEAR
+from cv2 import GaussianBlur
 
 laser_measures = 450
 laser_increment = radians(0.5)
@@ -23,64 +23,59 @@ laser_FoV = (laser_measures - 1) * laser_increment
 laser_minimum = -laser_FoV * 0.5
 laser_maximum = laser_FoV * 0.5
 
+# Module-level cache for sin/cos of beam-angle arrays.
+# Keyed by len(angles) — sufficient because each dataset has a unique beam
+# count (DROW=450, FROG=720) with a fixed angular distribution.
+_sincos_cache: dict = {}
+
 
 def cutout(scans, odoms, number, win_sz=1.66, thresh_dist=1, nsamp=48, UNK=29.99, laserIncrement=laser_increment):
-    """ TODO: Probably we can still try to clean this up more.
-    This function here only creates a single cut-out; for training,
-    we'd want to get a batch of cutouts from each seq (can vectorize) and for testing
-    we'd want all cutouts for one scan, which we can vectorize too.
-    But ain't got time for this shit!
+    """
+    Build cutout features for all beams in a single vectorised pass.
 
     Args:
-    - scans: (T,N) the T scans (of scansize N) to cut out from, `T=-1` being the "current time".
-    - out: None or a (T,nsamp) buffer where to store the cutouts.
+    - scans: (T, N) range scans; index -1 is the current time.
+    - odoms: sequence of T odometry dicts with an 'xya' field.
+    - number: number of beams (N_beams) to process.
+
+    Returns: (number, T, nsamp) float32 array.
     """
     T, N = scans.shape
     out = zeros((number, T, nsamp), float32)
 
-    for ipoint in range(number):
-        # Compute the size (width) of the window at the last time index:
-        z = scans[-1,ipoint]
-        half_alpha = float(arctan(0.5*win_sz/z))
+    # Per-beam depth from the current scan and angular half-width in beam indices.
+    z  = scans[-1, :number].astype(float32)           # (number,)
+    hw = arctan(0.5 * win_sz / z) / laserIncrement    # (number,)
 
-        # Pre-allocate some buffers
-        SCANBUF = full(N + 1, UNK, float32)  # Pad by UNK for the border-padding by UNK.
-        for t in range(T):
-            # If necessary, compute the odometry of the current time relative to the "key" one.
-            # Only the rotation component (odom_a) is used below: this model variant is "odom.rot"
-            # (rotation-only correction). Translational offsets (odom_x, odom_y) are intentionally
-            # ignored — passing them to the network directly is left as future work.
-            odom_x, odom_y, odom_a = map(float, odoms[t]["xya"] - odoms[-1]["xya"])
-            del odom_x, odom_y  # unused by design; suppress linter warnings
+    ibeam  = arange(number, dtype=float32)             # (number,)
+    t_samp = linspace(0.0, 1.0, nsamp, dtype=float32)  # (nsamp,) interpolation knots
 
-            # Compute the start and end indices of points in the scan to be considered.
-            start = int(round(ipoint - half_alpha/laserIncrement - odom_a/laserIncrement))
-            end = int(round(ipoint + half_alpha/laserIncrement - odom_a/laserIncrement))
+    for t in range(T):
+        # Rotation-only odometry correction (same design choice as original DROW).
+        odom_a = float(odoms[t]["xya"][2] - odoms[-1]["xya"][2])
+        shift  = odom_a / laserIncrement
 
-            # Now compute the list of indices at which to take the points,
-            # using -1/end to access out-of-bounds which has been set to UNK.
-            support_points = arange(start, end+1)
-            support_points.clip(-1, len(SCANBUF)-1, out=support_points)
+        # Window [start, end] for every beam simultaneously.       (number,)
+        start = (ibeam - hw - shift).round().astype(int)
+        end   = (ibeam + hw - shift).round().astype(int)
 
-            # Write the scan into the buffer which has UNK at the end and then sample from it.
-            SCANBUF[:-1] = scans[t]
-            cutout = SCANBUF[support_points]
+        # Linearly interpolate nsamp positions inside each beam's window.  (number, nsamp)
+        frac = start[:, None] + (end - start)[:, None] * t_samp[None, :]
 
-            # Now we do the resampling of the cutout to a fixed number of points. We can do it two ways:
-            # In the other case, we have a somewhat distorted world-view as the x-indices
-            # correspond to angles and the values to z-distances (radii) as in original DROW.
-            # The advantage here is we can use the much faster OpenCV resizing functions.
-            interp = INTER_AREA if nsamp < len(cutout) else INTER_LINEAR
-            resized = resize(cutout[None], (nsamp,1), interpolation=interp)
+        # Nearest-neighbour gather; indices outside [0, N) map to UNK.
+        idx = frac.round().astype(int)
+        oob = (idx < 0) | (idx >= N)
+        idx = clip(idx, 0, N - 1)
 
-            # Clip things too close and too far to create the "focus tunnel" since they are likely irrelevant.
-            clipped = clip(resized, z - thresh_dist, z + thresh_dist)
-            #fastclip_(cutouts[i], z - thresh_dist, z + thresh_dist)
+        windows      = scans[t].astype(float32)[idx]  # (number, nsamp)
+        windows[oob] = UNK
 
-            # And finally, possibly re-align according to a few different choices.
-            clipped -= z
+        # Clip to depth tunnel and centre around each beam's own range.
+        z_col         = z[:, None]
+        windows       = clip(windows, z_col - thresh_dist, z_col + thresh_dist)
+        windows      -= z_col
 
-            out[ipoint][t] = clipped
+        out[:, t, :] = windows
 
     return out
 
@@ -383,13 +378,21 @@ def aligned_scan_xyz(scans_hist, odoms_hist, angles, laser_inc=laser_increment):
     """
     scans = array(scans_hist, dtype=float32)   # (T, N)
     T, N  = scans.shape
-    ang   = array(angles,     dtype=float32)   # (N,)
-    out   = zeros((T, N, 3),  dtype=float32)
+
+    # sin/cos of the beam angles are identical for every call within a dataset.
+    # Cache by array length (unique per sensor: DROW=450, FROG=720).
+    key = len(angles)
+    if key not in _sincos_cache:
+        ang = array(angles, dtype=float32)
+        _sincos_cache[key] = (-sin(ang), cos(ang))
+    neg_sin_ang, cos_ang = _sincos_cache[key]
+
+    out = zeros((T, N, 3), dtype=float32)
     for t in range(T):
         odom_a = float(odoms_hist[t]["xya"][2] - odoms_hist[-1]["xya"][2])
         shift  = int(round(-odom_a / laser_inc))
         r = roll(scans[t], shift)               # align beam indices to current frame
         out[t, :, 0] = r
-        out[t, :, 1] = r * -sin(ang)            # x = -r·sin(φ)
-        out[t, :, 2] = r *  cos(ang)            # y =  r·cos(φ)
+        out[t, :, 1] = r * neg_sin_ang          # x = -r·sin(φ)
+        out[t, :, 2] = r * cos_ang              # y =  r·cos(φ)
     return out

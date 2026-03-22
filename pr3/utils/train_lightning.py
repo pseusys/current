@@ -105,6 +105,14 @@ class LidarFrameDataset(Dataset):
       cutout      : (N_beams, T, N_samp)
       labels      : (N_beams,)
       vote_targets: (N_beams, 2)
+
+    Performance notes
+    -----------------
+    * ``_angles`` is computed once at construction (scan length is fixed within
+      a dataset) and reused for every __getitem__ call.
+    * ``_cache`` stores the fully-processed tensors after the first access so
+      that subsequent epochs are pure dict lookups with zero preprocessing.
+      Memory: ~675 KB/frame for FROG (720 beams) or ~430 KB/frame for DROW.
     """
 
     def __init__(self, dataset, cfg, time_frame: int, vote_radius: float = 0.6):
@@ -118,32 +126,45 @@ class LidarFrameDataset(Dataset):
             for det_idx in range(len(dataset.det_id[seq]))
         ]
 
+        # Beam angles are identical for every frame — compute once.
+        n_beams = dataset.scans[0].shape[1]
+        self._angles = cfg.angles_fn(n_beams)
+
+        # In-memory result cache: populated lazily on first access.
+        # Each worker in a multi-worker DataLoader has its own copy, so no
+        # locking is required.
+        self._cache: dict = {}
+
     def __len__(self) -> int:
         return len(self.indices)
 
     def __getitem__(self, idx: int):
+        if idx in self._cache:
+            return self._cache[idx]
+
         seq, det_idx = self.indices[idx]
         iscan = self.dataset.idet2iscan[seq][det_idx]
         scan  = self.dataset.scans[seq][iscan]
         scans_hist, odoms_hist = self.dataset.get_scan(seq, iscan, self.time_frame)
 
-        angles = self.cfg.angles_fn(len(scan))
         gt_per_class = {
             1: self.dataset.det_wc[seq][det_idx],
             2: self.dataset.det_wa[seq][det_idx],
             3: self.dataset.det_wp[seq][det_idx],
         }
-        labels, vote_targets = make_targets(scan, angles, gt_per_class,
+        labels, vote_targets = make_targets(scan, self._angles, gt_per_class,
                                             self.vote_radius)
         cut = cutout(scans_hist, odoms_hist, len(scan),
                      nsamp=PersonDetector.N_SAMP,
                      laserIncrement=self.cfg.laser_inc)
 
-        return (
+        result = (
             torch.from_numpy(np.asarray(cut,          dtype=np.float32)),
             torch.from_numpy(labels),
             torch.from_numpy(vote_targets),
         )
+        self._cache[idx] = result
+        return result
 
 
 # ---------------------------------------------------------------------------
@@ -421,7 +442,7 @@ def main():
         devices=devices,
         callbacks=callbacks,
         enable_progress_bar=True,
-        log_every_n_steps=1,
+        log_every_n_steps=50,
     )
 
     trainer.fit(

@@ -40,6 +40,12 @@ Usage
 
   # Resume training
   python train.py --detector drspaam --resume out.pth --epochs 5
+
+  # Train with early stopping and cosine LR schedule
+  python train.py --detector drspaam --epochs 50 --patience 10 --lr-schedule cosine
+
+  # Tune FullScanTransformer architecture
+  python train.py --detector fullscan_transformer --backbone-channels 128 --hidden 256 --n-heads 4
 """
 
 import argparse
@@ -238,19 +244,36 @@ def _setup_datasets(args):
 
 
 def _build_model(args):
-    """Instantiate the requested detector."""
+    """
+    Instantiate the requested detector with all hyperparameters.
+
+    Supports architecture tuning for the three full-scan models:
+      --dropout           applied to all models (default 0.5)
+      --backbone-channels DilatedScanBackbone output channels (FullScanCNN/Transformer)
+      --hidden            GRU hidden size (FullScanCNN/Transformer)
+      --n-heads           BeamSelfAttention heads (FullScanTransformer)
+      --out-channels      final channels (SpaceTimeCNN)
+    """
     det = args.detector
+    dr  = getattr(args, "dropout",           0.5)
+    bc  = getattr(args, "backbone_channels", 64)
+    hid = getattr(args, "hidden",            128)
+    nh  = getattr(args, "n_heads",           8)
+    oc  = getattr(args, "out_channels",      128)
+    tf  = getattr(args, "time_frame",        5)
+
     if det == "drow":
-        return DrowDetector(dropout=args.dropout,
-                            time_frame_size=args.time_frame, verbose=False)
+        return DrowDetector(dropout=dr, time_frame_size=tf, verbose=False)
     if det == "drspaam":
-        return DrSpaamDetector(n_time=args.time_frame, dropout=args.dropout)
+        return DrSpaamDetector(n_time=tf, dropout=dr)
     if det == "fullscan_cnn":
-        return FullScanCNNDetector(n_time=args.time_frame)
+        return FullScanCNNDetector(n_time=tf, backbone_channels=bc,
+                                   hidden=hid, dropout=dr)
     if det == "spacetime_cnn":
-        return SpaceTimeCNNDetector(n_time=args.time_frame)
+        return SpaceTimeCNNDetector(n_time=tf, out_channels=oc, dropout=dr)
     if det == "fullscan_transformer":
-        return FullScanTransformerDetector(n_time=args.time_frame)
+        return FullScanTransformerDetector(n_time=tf, backbone_channels=bc,
+                                           n_heads=nh, hidden=hid, dropout=dr)
     raise ValueError(f"'{det}' cannot be trained (algorithmic is eval-only)")
 
 
@@ -431,9 +454,12 @@ def train_epoch(net, dataset, cfg, optimizer,
         pbar.set_postfix(loss=f"{total_loss / n_steps:.4f}", refresh=False)
         buf_x.clear(); buf_labels.clear(); buf_votes.clear()
 
+    # Beam angles are fixed for the entire dataset — compute once.
+    _angles = cfg.angles_fn(dataset.scans[0].shape[1])
+
     for _, _, scan, scans_hist, odoms_hist, gt_per_class in iter_frames(
             dataset, cfg, subsample=subsample, shuffle=True):
-        angles = cfg.angles_fn(len(scan))
+        angles = _angles
         labels, vote_targets = make_targets(scan, angles, gt_per_class,
                                             vote_collect_radius=vote_radius)
         buf_x.append(_extract_input(net, scan, scans_hist, odoms_hist,
@@ -486,10 +512,12 @@ def evaluate_loss(net, dataset, cfg,
         pbar.set_postfix(loss=f"{total_loss / n_steps:.4f}", refresh=False)
         buf_x.clear(); buf_labels.clear(); buf_votes.clear()
 
+    _angles = cfg.angles_fn(dataset.scans[0].shape[1])
+
     with torch.no_grad():
         for _, _, scan, scans_hist, odoms_hist, gt_per_class in iter_frames(
                 dataset, cfg, subsample=subsample, shuffle=False):
-            angles = cfg.angles_fn(len(scan))
+            angles = _angles
             labels, vote_targets = make_targets(scan, angles, gt_per_class,
                                                 vote_collect_radius=vote_radius)
             buf_x.append(_extract_input(net, scan, scans_hist, odoms_hist,
@@ -550,6 +578,8 @@ def evaluate_auc(net, dataset, cfg, eval_r: float = 0.5,
         for det_idx in range(len(dataset.det_id[seq]))
     ]
 
+    _angles = cfg.angles_fn(dataset.scans[0].shape[1])
+
     with torch.no_grad():
         pbar = tqdm(total=n_frames, desc="    AUC", unit="fr",
                     leave=False, dynamic_ncols=True)
@@ -576,7 +606,7 @@ def evaluate_auc(net, dataset, cfg, eval_r: float = 0.5,
             iscan = dataset.idet2iscan[seq][det_idx]
             scan  = dataset.scans[seq][iscan]
             scans_hist, odoms_hist = dataset.get_scan(seq, iscan, dataset.time_frame)
-            angles = cfg.angles_fn(len(scan))
+            angles = _angles
 
             buf_x.append(_extract_input(net, scan, scans_hist, odoms_hist,
                                         angles, cfg, device))
@@ -593,7 +623,7 @@ def evaluate_auc(net, dataset, cfg, eval_r: float = 0.5,
 
         pbar.close()
 
-    angles = cfg.angles_fn(len(all_scans_for_pr[0]))
+    angles = _angles
     all_x_votes, all_y_votes = [], []
     for scan, vots in zip(all_scans_for_pr, all_votes_raw):
         r_new, phi_new = _win2global(
@@ -635,7 +665,7 @@ def save_checkpoint(path: Path, net, optimizer, epoch: int,
         "epoch":     epoch,
         "dataset":   dataset_name,
     }, path)
-    print(f"  Checkpoint saved → {path}")
+    print(f"  Checkpoint saved -> {path}")
 
 
 def load_checkpoint(path: Path, net, optimizer=None):
@@ -646,6 +676,391 @@ def load_checkpoint(path: Path, net, optimizer=None):
     epoch = ckpt.get("epoch", 0)
     print(f"  Loaded checkpoint from {path}  (epoch {epoch})")
     return epoch
+
+
+# ---------------------------------------------------------------------------
+# Defaults helper (for programmatic / notebook use)
+# ---------------------------------------------------------------------------
+
+def _default_args(**overrides) -> SimpleNamespace:
+    """
+    Return a SimpleNamespace with all training defaults.
+
+    Useful for notebook cells or scripts that call train_model() directly
+    without going through argparse.  Keyword arguments override defaults.
+
+    Example
+    -------
+    >>> args = _default_args(detector="drspaam", epochs=20, patience=10)
+    >>> history = train_model(args)
+
+    Notes
+    -----
+    GRU-based models (fullscan_cnn, fullscan_transformer) are not compatible
+    with DirectML.  Pass force_cpu=True for those models when DirectML is
+    active.
+    """
+    defaults = dict(
+        detector="drspaam",
+        dataset="frog",
+        train_split="train",
+        val_split="val",
+        epochs=20,
+        lr=1e-3,
+        weight_decay=1e-4,
+        dropout=0.5,
+        time_frame=5,
+        vote_radius=0.6,
+        vote_weight=0.02,
+        subsample=1.0,
+        batch_size=4,
+        # full-scan architecture hyperparams
+        backbone_channels=64,
+        hidden=128,
+        n_heads=8,
+        out_channels=128,
+        # regularisation / scheduling
+        patience=5,
+        lr_schedule="plateau",
+        # checkpoint
+        out=Path("weights_trained.pth"),
+        resume=None,
+        weights=None,
+        # evaluation
+        eval_only=False,
+        eval_r=0.5,
+        auc_every=5,
+        # device override: set True for GRU models when DirectML is active
+        force_cpu=False,
+    )
+    defaults.update(overrides)
+    return SimpleNamespace(**defaults)
+
+
+# ---------------------------------------------------------------------------
+# Main training routine
+# ---------------------------------------------------------------------------
+
+def train_model(args) -> dict:
+    """
+    Run the full training pipeline for args.epochs epochs.
+
+    Parameters
+    ----------
+    args : argparse.Namespace or SimpleNamespace
+        All training options.  Call _default_args(**overrides) to get a
+        fully-populated namespace for programmatic use.
+
+    Returns
+    -------
+    dict with keys:
+        epochs            list[int]    epoch numbers recorded
+        train_loss        list[float]
+        train_class_loss  list[float]
+        train_vote_loss   list[float]
+        val_loss          list[float]  (empty when no val split)
+        val_class_loss    list[float]
+        val_vote_loss     list[float]
+        auc_epochs        list[int]    epochs at which AUC was evaluated
+        val_auc_agnostic  list[float]
+        val_auc_wc        list[float]
+        val_auc_wa        list[float]
+        val_auc_wp        list[float]
+        stopped_epoch     int          last epoch trained
+
+    Notes
+    -----
+    Early stopping
+        Requires a val split (--val-split / args.val_split).  When patience>0
+        and val_loss does not improve for <patience> epochs, training stops and
+        the best checkpoint is loaded before saving the final weights.
+        Best checkpoint is written to <out>.best.pth.
+
+    LR scheduling
+        "cosine"  — CosineAnnealingLR over args.epochs, eta_min = lr/100
+        "plateau" — ReduceLROnPlateau on val_loss (requires val split)
+        "none"    — constant learning rate
+    """
+    # Device
+    force_cpu = getattr(args, "force_cpu", False)
+    if force_cpu:
+        device, using_dml = "cpu", False
+        print("  [INFO] force_cpu=True — using CPU regardless of GPU availability.\n")
+    else:
+        device, using_dml = detect_device()
+        if using_dml:
+            print("  Note: DirectML — tensors moved to DML device via .to().\n")
+        else:
+            print(f"  Device: {device}\n")
+
+    train_ds, val_ds, cfg = _setup_datasets(args)
+
+    net = _build_model(args).to(device)
+    optimizer = _make_optimizer(net.parameters(), lr=args.lr,
+                                weight_decay=args.weight_decay,
+                                using_dml=using_dml)
+
+    start_epoch = 0
+    if args.resume:
+        start_epoch = load_checkpoint(args.resume, net, optimizer)
+
+    n_params = sum(p.numel() for p in net.parameters())
+    print(f"Model: {args.detector}  —  {n_params:,} parameters\n")
+
+    # LR scheduler
+    schedule = getattr(args, "lr_schedule", "none")
+    if schedule == "cosine":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=args.epochs, eta_min=args.lr * 1e-2)
+    elif schedule == "plateau":
+        if val_ds is None:
+            print("  [WARN] lr_schedule=plateau requires a val split; "
+                  "scheduler disabled.\n")
+            scheduler = None
+        else:
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer, patience=max(3, args.epochs // 10),
+                factor=0.5, verbose=True)
+    else:
+        scheduler = None
+
+    # Early stopping
+    patience = getattr(args, "patience", 0)
+    if patience > 0 and val_ds is None:
+        print("  [WARN] patience>0 requires a val split; early stopping disabled.\n")
+        patience = 0
+
+    best_val_loss    = float("inf")
+    patience_counter = 0
+    best_path = args.out.with_suffix(".best.pth") if patience > 0 else None
+
+    history = dict(
+        epochs=[],
+        train_loss=[], train_class_loss=[], train_vote_loss=[],
+        val_loss=[], val_class_loss=[], val_vote_loss=[],
+        auc_epochs=[],
+        val_auc_agnostic=[], val_auc_wc=[], val_auc_wa=[], val_auc_wp=[],
+        stopped_epoch=start_epoch,
+    )
+
+    print(f"Training {args.detector} for {args.epochs} epoch(s), "
+          f"subsample={args.subsample:.0%} …\n")
+
+    epoch_bar = tqdm(range(start_epoch + 1, start_epoch + args.epochs + 1),
+                     desc="Epochs", unit="ep", dynamic_ncols=True)
+
+    final_epoch = start_epoch
+    for epoch in epoch_bar:
+        tl, tc, tv = train_epoch(
+            net, train_ds, cfg, optimizer,
+            vote_radius=args.vote_radius, vote_weight=args.vote_weight,
+            subsample=args.subsample, device=device, batch_size=args.batch_size,
+        )
+        history["epochs"].append(epoch)
+        history["train_loss"].append(tl)
+        history["train_class_loss"].append(tc)
+        history["train_vote_loss"].append(tv)
+
+        msg = (f"Epoch {epoch:3d}/{start_epoch + args.epochs}  "
+               f"train_loss={tl:.4f}  (class={tc:.4f}, vote={tv:.4f})")
+
+        stop = False
+        if val_ds is not None:
+            vl, vc, vv = evaluate_loss(
+                net, val_ds, cfg,
+                vote_radius=args.vote_radius, vote_weight=args.vote_weight,
+                subsample=min(args.subsample * 2, 1.0), device=device,
+                batch_size=args.batch_size,
+            )
+            history["val_loss"].append(vl)
+            history["val_class_loss"].append(vc)
+            history["val_vote_loss"].append(vv)
+            msg += f"  |  val_loss={vl:.4f}  (class={vc:.4f}, vote={vv:.4f})"
+
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(vl)
+
+            # Early stopping
+            if patience > 0:
+                if vl < best_val_loss:
+                    best_val_loss = vl
+                    patience_counter = 0
+                    save_checkpoint(best_path, net, optimizer, epoch,
+                                    args.detector, cfg.name)
+                else:
+                    patience_counter += 1
+                    msg += f"  patience={patience_counter}/{patience}"
+                    if patience_counter >= patience:
+                        tqdm.write(msg)
+                        tqdm.write(
+                            f"  Early stopping at epoch {epoch} "
+                            f"(no val improvement for {patience} epochs)."
+                        )
+                        final_epoch = epoch
+                        stop = True
+
+        if scheduler is not None and not isinstance(
+                scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+            scheduler.step()
+
+        tqdm.write(msg)
+
+        # AUC evaluation
+        auc_every = getattr(args, "auc_every", 0)
+        if auc_every > 0 and epoch % auc_every == 0:
+            auc_ds = val_ds or train_ds
+            aucs = evaluate_auc(net, auc_ds, cfg, eval_r=args.eval_r,
+                                device=device, batch_size=args.batch_size)
+            history["auc_epochs"].append(epoch)
+            history["val_auc_agnostic"].append(aucs["agnostic"])
+            history["val_auc_wc"].append(aucs["wc"])
+            history["val_auc_wa"].append(aucs["wa"])
+            history["val_auc_wp"].append(aucs["wp"])
+            tqdm.write(f"  AUC  agnostic={aucs['agnostic']:.1%}  "
+                       f"wc={aucs['wc']:.1%}  wa={aucs['wa']:.1%}  "
+                       f"wp={aucs['wp']:.1%}")
+
+        final_epoch = epoch
+        if stop:
+            epoch_bar.close()
+            break
+
+    history["stopped_epoch"] = final_epoch
+
+    # Final AUC (skip if already computed for this epoch)
+    print()
+    if val_ds is not None:
+        last_auc_epoch = history["auc_epochs"][-1] if history["auc_epochs"] else -1
+        if last_auc_epoch != final_epoch:
+            print("Computing final AUC on val set …")
+            aucs = evaluate_auc(net, val_ds, cfg, eval_r=args.eval_r,
+                                device=device, batch_size=args.batch_size)
+            history["auc_epochs"].append(final_epoch)
+            history["val_auc_agnostic"].append(aucs["agnostic"])
+            history["val_auc_wc"].append(aucs["wc"])
+            history["val_auc_wa"].append(aucs["wa"])
+            history["val_auc_wp"].append(aucs["wp"])
+            print(f"  Agnostic (any) : {aucs['agnostic']:.1%}")
+            print(f"  Wheelchair(wc) : {aucs['wc']:.1%}")
+            print(f"  Walker    (wa) : {aucs['wa']:.1%}")
+            print(f"  Person    (wp) : {aucs['wp']:.1%}")
+            print()
+
+    # Load best weights before saving final checkpoint
+    if best_path is not None and best_path.exists():
+        print(f"  Loading best checkpoint (val_loss={best_val_loss:.4f}) …")
+        load_checkpoint(best_path, net)
+
+    save_checkpoint(args.out, net, optimizer, epoch=final_epoch,
+                    detector_name=args.detector, dataset_name=cfg.name)
+
+    return history
+
+
+# ---------------------------------------------------------------------------
+# Hyperparameter tuning (Optuna)
+# ---------------------------------------------------------------------------
+
+def tune_model(args) -> dict:
+    """
+    Run an Optuna study to find the best hyperparameters for args.detector.
+
+    Parameters
+    ----------
+    args : Namespace
+        Base training args.  ``args.tune_trials`` and ``args.tune_epochs``
+        control the study; all other args serve as defaults that are partially
+        overridden inside each trial.
+
+    Returns
+    -------
+    dict  Best hyperparameters found by Optuna.
+
+    Notes
+    -----
+    Objective  — minimise the lowest val_loss reached in the trial.
+                 Falls back to train_loss when no val split is available.
+    Parameters tuned for every model:
+        lr, weight_decay, dropout
+    Additional parameters for full-scan models:
+        backbone_channels, hidden          (fullscan_cnn / fullscan_transformer)
+        out_channels                       (spacetime_cnn)
+        n_heads                            (fullscan_transformer)
+    """
+    try:
+        import optuna
+    except ImportError:
+        raise ImportError(
+            "optuna is required for hyperparameter tuning.  "
+            "Install it with: pip install optuna"
+        )
+
+    import tempfile
+
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    det          = args.detector
+    tune_epochs  = getattr(args, "tune_epochs",  10)
+    tune_trials  = getattr(args, "tune_trials",  30)
+
+    def objective(trial: "optuna.Trial") -> float:
+        # Copy base args, then override with trial suggestions
+        t = SimpleNamespace(**vars(args))
+        t.lr           = trial.suggest_float("lr",           1e-5, 1e-2, log=True)
+        t.weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-2, log=True)
+        t.dropout      = trial.suggest_float("dropout",      0.0,  0.6,  step=0.1)
+
+        if det in ("fullscan_cnn", "fullscan_transformer"):
+            t.backbone_channels = trial.suggest_categorical(
+                "backbone_channels", [32, 64, 128])
+            t.hidden = trial.suggest_categorical(
+                "hidden", [64, 128, 256])
+        if det == "spacetime_cnn":
+            t.out_channels = trial.suggest_categorical(
+                "out_channels", [64, 128, 256])
+        if det == "fullscan_transformer":
+            t.n_heads = trial.suggest_categorical("n_heads", [4, 8])
+
+        # GRU-based models cannot run on DirectML — force CPU inside trials
+        t.force_cpu = det in ("fullscan_cnn", "fullscan_transformer")
+
+        # Shorter run; skip AUC inside trials (expensive)
+        t.epochs    = tune_epochs
+        t.auc_every = 0
+        t.patience  = max(3, tune_epochs // 3)
+
+        # Temporary checkpoint files — cleaned up after the trial
+        tmp = Path(tempfile.mktemp(suffix=".pth"))
+        t.out = tmp
+
+        try:
+            history = train_model(t)
+        finally:
+            tmp.unlink(missing_ok=True)
+            tmp.with_suffix(".best.pth").unlink(missing_ok=True)
+
+        if history["val_loss"]:
+            return min(history["val_loss"])
+        return min(history["train_loss"])
+
+    study = optuna.create_study(
+        direction="minimize",
+        study_name=f"tune_{det}",
+        sampler=optuna.samplers.TPESampler(seed=42),
+    )
+    print(f"\nStarting Optuna study: {tune_trials} trials × {tune_epochs} epochs "
+          f"each for '{det}' …\n")
+    study.optimize(objective, n_trials=tune_trials, show_progress_bar=True)
+
+    best = study.best_params
+    print(f"\n{'='*60}")
+    print(f"  Best val_loss : {study.best_value:.4f}")
+    print(f"  Best params   :")
+    for k, v in best.items():
+        print(f"    {k} = {v}")
+    print(f"{'='*60}\n")
+
+    return best
 
 
 # ---------------------------------------------------------------------------
@@ -676,7 +1091,7 @@ def main():
     parser.add_argument("--lr",          type=float, default=1e-3)
     parser.add_argument("--weight-decay",type=float, default=1e-4)
     parser.add_argument("--dropout",     type=float, default=0.5,
-                        help="Dropout (used by drow/drspaam; default: 0.5)")
+                        help="Dropout for all models (default: 0.5)")
     parser.add_argument("--time-frame",  type=int,   default=5,
                         help="Number of scans in the temporal window (default: 5)")
     parser.add_argument("--vote-radius", type=float, default=0.6)
@@ -686,6 +1101,23 @@ def main():
     parser.add_argument("--batch-size",  type=int,   default=4,
                         help="Frames per optimizer step; effective beam batch = "
                              "batch_size × N_beams (default: 4)")
+    # Architecture hyperparams (full-scan models only)
+    parser.add_argument("--backbone-channels", type=int, default=64,
+                        help="Conv channels in DilatedScanBackbone "
+                             "(FullScanCNN/Transformer; default: 64)")
+    parser.add_argument("--hidden",      type=int,   default=128,
+                        help="GRU hidden size (FullScanCNN/Transformer; default: 128)")
+    parser.add_argument("--n-heads",     type=int,   default=8,
+                        help="Attention heads (FullScanTransformer; default: 8)")
+    parser.add_argument("--out-channels",type=int,   default=128,
+                        help="Output channels (SpaceTimeCNN; default: 128)")
+    # Regularisation / scheduling
+    parser.add_argument("--patience",    type=int,   default=0,
+                        help="Early-stopping patience in epochs (0=disabled). "
+                             "Saves best checkpoint to <out>.best.pth.")
+    parser.add_argument("--lr-schedule", choices=["none", "cosine", "plateau"],
+                        default="none",
+                        help="LR schedule: none | cosine | plateau (default: none)")
     # Checkpointing
     parser.add_argument("--out",    type=Path, default=Path("weights_trained.pth"))
     parser.add_argument("--resume", type=Path, default=None,
@@ -697,6 +1129,14 @@ def main():
     parser.add_argument("--eval-r",     type=float, default=0.5)
     parser.add_argument("--auc-every",  type=int,   default=0,
                         help="Compute full AUC every N epochs (0 = end only)")
+    # Hyperparameter tuning (Optuna)
+    parser.add_argument("--tune",        action="store_true",
+                        help="Run Optuna hyperparameter search instead of training. "
+                             "Requires: pip install optuna")
+    parser.add_argument("--tune-trials", type=int, default=30,
+                        help="Number of Optuna trials (default: 30)")
+    parser.add_argument("--tune-epochs", type=int, default=10,
+                        help="Epochs per trial — keep short (default: 10)")
     args = parser.parse_args()
     args.val_split = args.val_split.strip() or None
 
@@ -716,34 +1156,16 @@ def main():
         return
 
     # ------------------------------------------------------------------
-    # Setup
-    # ------------------------------------------------------------------
-    device, using_dml = detect_device()
-    if using_dml:
-        print("  Note: DirectML — tensors moved to DML device via .to().\n")
-    else:
-        print(f"  Device: {device}\n")
-
-    train_ds, val_ds, cfg = _setup_datasets(args)
-
-    net = _build_model(args).to(device)
-    optimizer = _make_optimizer(net.parameters(), lr=args.lr,
-                                weight_decay=args.weight_decay,
-                                using_dml=using_dml)
-
-    start_epoch = 0
-    if args.resume:
-        start_epoch = load_checkpoint(args.resume, net, optimizer)
-    elif args.weights:
-        load_checkpoint(args.weights, net)
-
-    n_params = sum(p.numel() for p in net.parameters())
-    print(f"Model: {args.detector}  —  {n_params:,} parameters\n")
-
-    # ------------------------------------------------------------------
     # Eval-only mode
     # ------------------------------------------------------------------
     if args.eval_only:
+        device, using_dml = detect_device()
+        train_ds, val_ds, cfg = _setup_datasets(args)
+        net = _build_model(args).to(device)
+        if args.weights:
+            load_checkpoint(args.weights, net)
+        elif args.resume:
+            load_checkpoint(args.resume, net)
         eval_ds = val_ds or train_ds
         print("=== Evaluation ===")
         aucs = evaluate_auc(net, eval_ds, cfg, eval_r=args.eval_r, device=device,
@@ -755,59 +1177,19 @@ def main():
         return
 
     # ------------------------------------------------------------------
-    # Training loop
+    # Hyperparameter tuning
     # ------------------------------------------------------------------
-    print(f"Training {args.detector} for {args.epochs} epoch(s), "
-          f"subsample={args.subsample:.0%} …\n")
-
-    epoch_bar = tqdm(range(start_epoch + 1, start_epoch + args.epochs + 1),
-                     desc="Epochs", unit="ep", dynamic_ncols=True)
-
-    for epoch in epoch_bar:
-        tl, tc, tv = train_epoch(
-            net, train_ds, cfg, optimizer,
-            vote_radius=args.vote_radius, vote_weight=args.vote_weight,
-            subsample=args.subsample, device=device, batch_size=args.batch_size,
-        )
-        msg = (f"Epoch {epoch:3d}/{start_epoch + args.epochs}  "
-               f"train_loss={tl:.4f}  (class={tc:.4f}, vote={tv:.4f})")
-
-        if val_ds is not None:
-            vl, vc, vv = evaluate_loss(
-                net, val_ds, cfg,
-                vote_radius=args.vote_radius, vote_weight=args.vote_weight,
-                subsample=min(args.subsample * 2, 1.0), device=device,
-                batch_size=args.batch_size,
-            )
-            msg += f"  |  val_loss={vl:.4f}  (class={vc:.4f}, vote={vv:.4f})"
-
-        tqdm.write(msg)
-
-        if args.auc_every > 0 and epoch % args.auc_every == 0:
-            auc_ds = val_ds or train_ds
-            aucs = evaluate_auc(net, auc_ds, cfg, eval_r=args.eval_r, device=device,
-                                batch_size=args.batch_size)
-            tqdm.write(f"  AUC  agnostic={aucs['agnostic']:.1%}  "
-                       f"wc={aucs['wc']:.1%}  wa={aucs['wa']:.1%}  wp={aucs['wp']:.1%}")
+    if args.tune:
+        tune_model(args)
+        return
 
     # ------------------------------------------------------------------
-    # Final AUC + save
+    # Training
     # ------------------------------------------------------------------
-    print()
-    if val_ds is not None:
-        print("Computing final AUC on val set …")
-        aucs = evaluate_auc(net, val_ds, cfg, eval_r=args.eval_r, device=device,
-                            batch_size=args.batch_size)
-        print(f"  Agnostic (any) : {aucs['agnostic']:.1%}")
-        print(f"  Wheelchair(wc) : {aucs['wc']:.1%}")
-        print(f"  Walker    (wa) : {aucs['wa']:.1%}")
-        print(f"  Person    (wp) : {aucs['wp']:.1%}")
-        print()
-
-    save_checkpoint(args.out, net, optimizer,
-                    epoch=start_epoch + args.epochs,
-                    detector_name=args.detector,
-                    dataset_name=cfg.name)
+    # force_cpu is not a CLI flag — it's only used programmatically.
+    # Attach the default so train_model() doesn't choke on getattr.
+    args.force_cpu = False
+    train_model(args)
 
 
 if __name__ == "__main__":

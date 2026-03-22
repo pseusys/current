@@ -2,7 +2,8 @@
 .idea
 
 **/__pycache__
-venv
+.venv*
+utils/.venv*
 
 deploy/out
 deploy/follow_the_drow/config
