@@ -361,8 +361,8 @@ pip install -r utils/requirements.txt
 
 Device selection is automatic (in order of priority):
 
-1. **CUDA / ROCm** — NVIDIA or AMD GPU (native or WSL2), detected automatically.
-2. **DirectML** — any DX12-capable GPU on Windows (e.g. integrated Intel/AMD, discrete GPU without CUDA). Install with:
+1. **CUDA / ROCm** — NVIDIA or AMD GPU with a native Linux driver (bare-metal or VM), detected automatically.
+2. **DirectML** — any DX12-capable GPU on Windows (AMD, NVIDIA, Intel). Install with:
 
    ```bash
    pip install torch-directml
@@ -370,72 +370,204 @@ Device selection is automatic (in order of priority):
 
 3. **CPU** — fallback when no GPU is available.
 
-### `train.py` — unified training and evaluation
+> **DirectML limitations**: GRU-based models (`fullscan_cnn`, `fullscan_transformer`) are not supported on DirectML due to a missing `aten::_thnn_fused_gru_cell` kernel.  Use `force_cpu=True` (notebook) or CPU-only training for those models.
+
+#### Training on WSL2 (NVIDIA GPUs only)
+
+DirectML is significantly slower than native CUDA.  Running inside WSL2 gives full CUDA throughput on NVIDIA GPUs without leaving Windows.
+
+For **AMD GPUs**: WSL2 does not ship the `amdgpu` kernel module, so ROCm is unavailable inside WSL2.  Use DirectML on Windows or native Linux instead.
+
+**One-time setup for NVIDIA** (run from a WSL2 terminal):
+
+```bash
+bash utils/setup_wsl.sh
+```
+
+This creates `utils/.venv_wsl` with a ROCm-enabled PyTorch build targeting your GPU architecture and verifies GPU availability.
+
+**Activate and train:**
+
+```bash
+source utils/.venv_wsl/bin/activate
+cd utils && python train.py --detector drspaam --dataset frog --epochs 10
+```
+
+### Script index
+
+| Script | Purpose |
+| ------ | ------- |
+| [`train.py`](#trainpy--unified-training-evaluation-and-tuning) | Train / eval / hyperparameter-tune any detector |
+| [`train_all.py`](#train_allpy--sequential-training-of-all-models) | Train all five learnable detectors in sequence, print summary table |
+| [`train_lightning.py`](#train_lightningpy--lightning-persondetector-trainer) | Train PersonDetector with alternative temporal architectures (Lightning) |
+| [`benchmark.py`](#benchmarkpy--cpu--directml-speed-benchmark) | Measure throughput of all models on CPU and DirectML |
+| [`compare_detectors.py`](#compare_detectorspy--side-by-side-visualisation) | Side-by-side detector comparison with PR statistics |
+| [`visualize.py`](#visualizepy--interactive-scan-animation) | Interactive animated LiDAR scan + GT + detector overlay |
+| [`verify_dataset.py`](#verify_datasetpy--dataset-sanity-check) | GT alignment check and DROW baseline AUC |
+| [`verify_algorithmic.py`](#verify_algorithmicpy--algorithmic-detector-check) | Visual sanity-check for the algorithmic detector |
+| [`training_notebook.ipynb`](#training_notebookipynb--per-model-training-notebook) | Jupyter notebook: train all models, plot loss + AUC |
+| [`setup_wsl.sh`](#setup_wslsh--wsl2-environment-setup) | One-time WSL2 venv setup (AMD ROCm) |
+
+---
+
+### `train_all.py` — sequential training of all models
+
+Trains all five learnable detectors in order (`drow`, `drspaam`, `fullscan_cnn`,
+`spacetime_cnn`, `fullscan_transformer`) and prints a summary table with final
+val-loss, best AUC and elapsed time per model.  GRU-based models are
+automatically forced to CPU when DirectML is active.
+
+```bash
+# All models, FROG, 30 epochs, early stopping (default)
+python train_all.py
+
+# Override common settings
+python train_all.py --epochs 50 --patience 10 --dataset drow --out-dir runs/
+
+# Quick smoke-test (5 % of data)
+python train_all.py --epochs 3 --subsample 0.05
+
+# Skip specific models
+python train_all.py --skip drow fullscan_cnn
+```
+
+Checkpoints are saved to `checkpoints/<detector>.pth` (configurable via `--out-dir`).
+
+---
+
+### `train.py` — unified training, evaluation and tuning
 
 Trains and evaluates any of the six person detectors on DROW or FROG data.
+Supports early stopping, LR scheduling, architecture hyperparameter tuning
+and Optuna-based hyperparameter search.
 
 **Supported detectors:**
 
-| `--detector` key | Architecture |
-| --- | --- |
-| `algorithmic` | Rule-based AlgorithmicDetector (eval only) |
-| `drow` | Original DROW WNet3xLF2p |
-| `drspaam` | DR-SPAAM: local beam attention + attention-weighted temporal sum (+7.7 pp AUC over DROW) |
-| `fullscan_cnn` | Dilated 1D CNN over full scan + GRU over time |
-| `spacetime_cnn` | 2D convolution over the (beams × time) space-time grid |
-| `fullscan_transformer` | Dilated 1D CNN + global beam self-attention + GRU |
+| `--detector` | Architecture | DirectML |
+| --- | --- | --- |
+| `algorithmic` | Rule-based (eval only) | — |
+| `drow` | DROW WNet3xLF2p | yes |
+| `drspaam` | DR-SPAAM: BeamNeighborConv + AttnSum | yes |
+| `fullscan_cnn` | Dilated 1D CNN over full scan + GRU | no (GRU) |
+| `spacetime_cnn` | 2D conv over (beams × time) space-time grid | yes |
+| `fullscan_transformer` | Dilated CNN + beam self-attention + GRU | no (GRU) |
 
 **Usage examples:**
 
 ```bash
-# Train DR-SPAAM on FROG for 10 epochs
-python train.py --detector drspaam --dataset frog --epochs 10
+# Train DR-SPAAM on FROG for 30 epochs with early stopping
+python train.py --detector drspaam --dataset frog --epochs 30 --patience 5
 
-# Train on DROW trainval, check AUC every 5 epochs
-python train.py --detector fullscan_cnn --dataset drow --epochs 20 --auc-every 5
+# Cosine LR decay, AUC check every 5 epochs
+python train.py --detector drspaam --epochs 50 --lr-schedule cosine --auc-every 5
+
+# Tune FullScanTransformer architecture (30 trials × 10 epochs each)
+python train.py --detector fullscan_transformer --tune --tune-trials 30 --tune-epochs 10
 
 # Quick development run (5 % of frames)
-python train.py --detector drspaam --dataset frog --subsample 0.05 --epochs 2
+python train.py --detector drspaam --subsample 0.05 --epochs 2
 
-# Evaluate a saved checkpoint (no training)
-python train.py --detector drspaam --dataset frog --weights out.pth --eval-only
+# Evaluate a saved checkpoint
+python train.py --detector drspaam --weights out.pth --eval-only
 
-# Resume training from a checkpoint
+# Resume training
 python train.py --detector drspaam --resume out.pth --epochs 10
 ```
 
 **Full CLI reference:**
 
 ```text
---detector       Detector to train/evaluate (default: drspaam)
-                 choices: algorithmic, drow, drspaam,
-                          fullscan_cnn, spacetime_cnn, fullscan_transformer
+-- Detector / dataset --
+--detector            choices: algorithmic, drow, drspaam,
+                               fullscan_cnn, spacetime_cnn, fullscan_transformer
+                               (default: drspaam)
+--dataset             drow or frog (default: frog)
+--train-split         training split name (default: train)
+--val-split           validation split; '' to disable (default: val)
 
---dataset        Dataset to use: drow or frog (default: frog)
---train-split    Training split name (default: train)
---val-split      Validation split name; pass '' to disable (default: val)
+-- Training --
+--epochs              number of epochs (default: 10)
+--lr                  Adam learning rate (default: 1e-3)
+--weight-decay        Adam weight decay (default: 1e-4)
+--dropout             dropout for all models (default: 0.5)
+--time-frame          temporal window size T (default: 5)
+--vote-radius         GT association radius in metres (default: 0.6)
+--vote-weight         MSE vote-loss weight (default: 0.02)
+--subsample           fraction of frames per epoch (default: 1.0)
+--batch-size          frames per optimizer step (default: 4)
 
---epochs         Number of training epochs (default: 10)
---lr             Adam learning rate (default: 1e-3)
---weight-decay   Adam weight decay (default: 1e-4)
---dropout        Dropout probability for drow / drspaam (default: 0.5)
---time-frame     Number of scans in the temporal window T (default: 5)
---vote-radius    GT association radius in metres (default: 0.6)
---vote-weight    Weight of the vote-offset MSE loss (default: 0.02)
---subsample      Fraction of annotated frames to use per epoch (default: 1.0)
---batch-size     Frames per optimizer step; effective beam batch =
-                 batch_size × N_beams — e.g. 4 × 450 = 1 800 beams/step (default: 4)
+-- Full-scan model architecture --
+--backbone-channels   DilatedScanBackbone channels (fullscan_cnn/transformer; default: 64)
+--hidden              GRU hidden size (fullscan_cnn/transformer; default: 128)
+--n-heads             attention heads (fullscan_transformer; default: 8)
+--out-channels        output channels (spacetime_cnn; default: 128)
 
---out            Output checkpoint path (default: weights_trained.pth)
---resume         Resume training from this checkpoint
---weights        Load weights (for --eval-only mode)
+-- Regularisation / scheduling --
+--patience            early-stopping patience in epochs; 0=disabled (default: 0)
+                      saves best checkpoint to <out>.best.pth
+--lr-schedule         none | cosine | plateau (default: none)
 
---eval-only      Skip training; run AUC evaluation only
---eval-r         Detection matching radius in metres (default: 0.5)
---auc-every      Compute full AUC every N epochs (0 = end of training only)
+-- Checkpoints --
+--out                 output checkpoint path (default: weights_trained.pth)
+--resume              resume training from checkpoint
+--weights             load weights for eval-only mode
+
+-- Evaluation --
+--eval-only           skip training, run AUC evaluation only
+--eval-r              detection matching radius in metres (default: 0.5)
+--auc-every           compute AUC every N epochs; 0=end only (default: 0)
+
+-- Hyperparameter tuning (Optuna) --
+--tune                run Optuna study instead of training (requires: pip install optuna)
+--tune-trials         number of Optuna trials (default: 30)
+--tune-epochs         epochs per trial — keep short (default: 10)
 ```
 
-The saved checkpoint can be reloaded with the respective detector's `.load()` class method for deployment.
+---
+
+### `train_lightning.py` — Lightning PersonDetector trainer
+
+Alternative training script using PyTorch Lightning.  Targets the
+**PersonDetector** family, which shares a 1-D CNN spatial encoder with five
+interchangeable temporal aggregation heads:
+
+| `--arch` | Temporal module |
+| --- | --- |
+| `mlp` | Flatten T×C → two linear layers |
+| `tcn` | Causal dilated temporal convolutions |
+| `gru` | GRU, last hidden state |
+| `lstm` | LSTM, last hidden state |
+| `transformer` | Multi-head self-attention + mean pooling |
+
+```bash
+# Train GRU on FROG
+python train_lightning.py --arch gru --dataset frog --epochs 20
+
+# Quick check on 10 % of DROW
+python train_lightning.py --arch transformer --dataset drow --subsample 0.1 --epochs 5
+```
+
+---
+
+### `benchmark.py` — CPU / DirectML speed benchmark
+
+Measures preprocessing throughput and per-step latency (eval + train) for all
+eight models across CPU and DirectML backends.
+
+```bash
+python benchmark.py                 # 450-beam DROW config
+python benchmark.py --n-beams 720   # 720-beam FROG config
+python benchmark.py --no-dml        # CPU only
+python benchmark.py --warmup 10 --iters 50
+```
+
+Key findings on RX 9060 XT (DirectML):
+
+- Cutout-based models (drow, drspaam, PersonDet/attn_sum): **~12× speedup** vs CPU in eval, **~9× in train**
+- GRU-based models (fullscan_cnn, fullscan_transformer): **not supported** on DirectML
+- SpaceTimeCNN: 3.7× speedup in eval; CPU is faster for training (too small for DML overhead)
+
+---
 
 ### `compare_detectors.py` — side-by-side visualisation
 
@@ -451,6 +583,71 @@ python compare_detectors.py --dataset frog --stats --no-drow
 # Save plots for all frames in all sequences
 python compare_detectors.py --all-seqs --outdir plots/
 ```
+
+---
+
+### `visualize.py` — interactive scan animation
+
+Interactive animated visualisation of any DROW or FROG split.  Shows raw scan,
+GT annotations, algorithmic detections and optional NN detections side by side.
+
+```bash
+python visualize.py                          # DROW test, algorithmic only
+python visualize.py --dataset frog           # FROG test set
+python visualize.py --weights out.pth --detector drspaam  # with NN overlay
+```
+
+Keyboard: `Space` play/pause, `→/←` step, `+/-` speed, `r` restart.
+
+---
+
+### `verify_dataset.py` — dataset sanity check
+
+Checks that GT annotations are correctly aligned with the laser scan geometry
+and optionally computes the baseline AUC of the pretrained DROW model.
+
+```bash
+python verify_dataset.py            # alignment stats + one plot per sequence
+python verify_dataset.py --auc      # also compute DROW AUC (slow)
+python verify_dataset.py --dataset frog
+```
+
+---
+
+### `verify_algorithmic.py` — algorithmic detector check
+
+Runs the rule-based `AlgorithmicDetector` on the test set and saves one
+visualisation frame per sequence for visual inspection.
+
+```bash
+python verify_algorithmic.py
+python verify_algorithmic.py --dataset frog
+```
+
+---
+
+### `training_notebook.ipynb` — per-model training notebook
+
+Jupyter notebook that trains all five learnable detectors on FROG (default)
+and produces two plots per model: training/validation loss curve and
+validation AUC-by-class curve.  Models, epochs and hyperparameters are
+configurable per cell.
+
+```bash
+jupyter notebook utils/training_notebook.ipynb
+```
+
+---
+
+### `setup_wsl.sh` — WSL2 environment setup
+
+Creates `utils/.venv_wsl` with a ROCm-enabled PyTorch build for AMD GPUs
+inside WSL2.  Checks for `rocm-smi` and exits with instructions if ROCm is
+not installed.
+
+> Note: only relevant for NVIDIA GPUs or AMD on native Linux.  AMD GPUs
+> inside WSL2 require the `amdgpu` kernel module which is absent from
+> Microsoft's WSL2 kernel — see GPU support notes above.
 
 ## Other
 
