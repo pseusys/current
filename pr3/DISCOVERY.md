@@ -202,7 +202,7 @@ A 1D CNN with kernel `[-1, +1]` can compute first differences internally; provid
 
 #### Cutout extraction (current pipeline)
 
-The cutout approach (used by DROW, DR-SPAAM, and the current `PersonDetector`) replaces the 3-channel full-scan input with a **48-sample polar window** extracted around each beam:
+The cutout approach (used by DROW and DR-SPAAM) replaces the 3-channel full-scan input with a **48-sample polar window** extracted around each beam:
 
 ```
 cutout[i] = [r_{i-24}, r_{i-23}, …, r_i, …, r_{i+23}]   ← raw range values only
@@ -219,78 +219,7 @@ The cutout is kept in the current implementation for compatibility with the exis
 
 ## Architectures
 
-### 1. Modular PersonDetector (current implementation)
-
-The `PersonDetector` class in `library/follow_the_drow/detectors/architectures.py` provides a modular framework built on the cutout pipeline. It consists of three stacked components:
-
-```
-Input: (N_beams, T, 48)   ← cutout-based, raw range values
-
-SpatialEncoder             per-timestep 1D CNN over the 48-sample cutout
-  ↓ (N_beams, T, C)
-
-[BeamNeighborConv]   OR    optional beam spatial attention — enable with beam_attn=True
-[BeamSelfAttention]        choose type with beam_attn_type="conv"|"transformer"
-  ↓ (N_beams, T, C)
-
-Temporal aggregator        "attn_sum"  or  "gru"
-  ↓ (N_beams, C)
-
-Detection heads            Linear(C, 4) for logits, Linear(C, 2) for votes
-  ↓ (N_beams, 4), (N_beams, 2)
-```
-
-#### SpatialEncoder
-
-Identical to the first two blocks of `DrowDetector`:
-- Block 1: Conv1d(1→64→64→128) + MaxPool/2
-- Block 2: Conv1d(128→128→128→C) + MaxPool/2
-- Global average pool over the spatial (sample) dimension → `(B*T, C)`
-- Reshape to `(N_beams, T, C)`
-
-#### Beam spatial attention
-
-After the SpatialEncoder, an optional module introduces cross-beam communication. Both variants apply the operation **at each timestep independently** (T acts as the batch dimension) and return the same `(N_beams, T, C)` shape with a residual connection.
-
-| Module | `beam_attn_type` | Receptive field | Cost |
-|---|---|---|---|
-| `BeamNeighborConv` | `"conv"` (default) | ±5 beams (kernel=11) | O(N_beams · K · C) — fast on CPU |
-| `BeamSelfAttention` | `"transformer"` | All N_beams (global) | O(N_beams² · C) — requires GPU |
-
-`BeamNeighborConv` replicates the DR-SPAAM spatial attention and contributes +4 pp AUC in published ablations. `BeamSelfAttention` lifts the locality constraint: every beam can attend to every other beam, weighted by learned content similarity. It is strictly more expressive and the primary novel contribution of this framework.
-
-#### Temporal aggregators
-
-Two options are retained, both proven effective for short sequences (T=5):
-
-| Arch key | Description | Best combined with |
-|---|---|---|
-| `attn_sum` | Learned scalar weight per timestep (DR-SPAAM temporal head). +2 pp AUC. | `BeamNeighborConv` → DR-SPAAM replica |
-| `gru` | GRU, returns last hidden state. Sequential, causal. | `BeamSelfAttention` → strongest overall |
-
-Other temporal approaches (MLP, TCN, LSTM, Transformer-over-T) were evaluated and discarded: at T=5, MLP and TCN offer no advantage over `attn_sum` with far greater complexity; LSTM is parameter-equivalent to GRU but adds 33 % weights for no measurable gain; a Transformer over 5 tokens reduces to a learned 5×5 weight matrix, matching MLP expressiveness at higher cost.
-
-#### Configurations
-
-```bash
-# DR-SPAAM temporal only — lightweight starting point
-python train_lightning.py --arch attn_sum
-
-# Full DR-SPAAM replica (+7.7 pp over DROW, published)
-python train_lightning.py --arch attn_sum --beam-attn
-
-# Global beam Transformer + GRU — strongest in framework (new)
-python train_lightning.py --arch gru --beam-attn --beam-attn-type transformer
-
-# Global beam Transformer + attn_sum — leaner alternative
-python train_lightning.py --arch attn_sum --beam-attn --beam-attn-type transformer
-```
-
----
-
-### 2. Proposed: Full-Scan 1D Dilated CNN (Option A)
-
-**Status:** Designed, not yet implemented as a standalone class.
+### 1. Full-Scan 1D Dilated CNN (FullScanCNNDetector)
 
 The core idea is to eliminate the cutout entirely and process the **full scan** as a 1D signal, using dilated convolutions to build up a multi-scale receptive field.
 
@@ -331,9 +260,7 @@ Eliminates the simple per-beam parallelism of the cutout approach. The training 
 
 ---
 
-### 3. Proposed: 2D Space-Time CNN (Option B)
-
-**Status:** Conceptual.
+### 2. 2D Space-Time CNN (SpaceTimeCNNDetector)
 
 Stack all T aligned scans into a 2D array treating beam index as one axis and time as the other:
 
@@ -350,11 +277,9 @@ A 2D kernel `(beam_width, time_width)` jointly encodes "what does a person look 
 
 ---
 
-### 4. Proposed: Full-Scan Dilated CNN + Beam Transformer (Option C)
+### 3. Full-Scan Dilated CNN + Beam Transformer (FullScanTransformerDetector)
 
-**Status:** Partially implemented via `BeamSelfAttention` in `PersonDetector`; full-scan backbone not yet implemented.
-
-Replaces the local `BeamNeighborConv` with global multi-head self-attention over all N_beams simultaneously, after a dilated CNN backbone:
+Uses global multi-head self-attention over all N_beams simultaneously, after a dilated CNN backbone:
 
 ```
 Full-scan dilated CNN backbone  → (N_beams, T, C)
@@ -365,29 +290,22 @@ Detection heads
 
 This is the most expressive beam-level architecture in the family: the Transformer gives content-adaptive, global beam-to-beam attention. The GRU provides sequential temporal reasoning.
 
-**Cost:** The Transformer attention matrix is `N_beams × N_beams = 450 × 450 = 202,500` entries per layer. This is feasible on GPU but ~18× more expensive than `BeamNeighborConv` (which operates on an 11×N_beams neighbourhood).
-
-Within the current `PersonDetector` cutout framework, this is available today:
-
-```bash
---arch gru --beam-attn --beam-attn-type transformer
-```
+**Cost:** The Transformer attention matrix is `N_beams × N_beams = 450 × 450 = 202,500` entries per layer. Feasible on GPU; ~1.5 s/scan on CPU.
 
 ---
 
 ### Architecture comparison
 
-| Architecture | Beam communication | Temporal | Scale-aware input | Needs full-scan redesign |
-|---|---|---|---|---|
-| DrowDetector (original) | None | Fixed sum | No (polar only) | No |
-| PersonDetector attn_sum | None | Learned scalar | No | No |
-| + BeamNeighborConv | Local (±5 beams) | Learned scalar | No | No |
-| + BeamSelfAttention | **Global** | GRU / attn_sum | No | No |
-| Option A (dilated CNN) | Local → grows | GRU | **(r, x, y)** | Yes |
-| Option B (2D CNN) | Local (spatial + temporal jointly) | Implicit | **(r, x, y)** | Yes |
-| Option C (dilated + Transformer) | **Global** | GRU | **(r, x, y)** | Yes |
+| Architecture | Beam communication | Temporal | Scale-aware input |
+|---|---|---|---|
+| DrowDetector | None | Fixed sum | No (polar only) |
+| DrSpaamDetector | Local (±3 beams, auto-regressive) | Learned scalar | No |
+| FullScanCNNDetector | Local → grows (dilated, ±15 beams) | GRU | **(r, x, y)** |
+| SpaceTimeCNNDetector | Local (spatial + temporal jointly) | Implicit | **(r, x, y)** |
+| FullScanTransformerDetector | **Global** | GRU | **(r, x, y)** |
 
-The recommended experimental progression:
-1. `PersonDetector(arch="attn_sum", beam_attn=True, beam_attn_type="conv")` — DR-SPAAM baseline, proven +7.7 pp
-2. `PersonDetector(arch="gru", beam_attn=True, beam_attn_type="transformer")` — global beam attention, expected improvement
-3. Option A (full-scan dilated CNN + GRU with (r,x,y) input) — next major step
+All five detectors are implemented in `follow_the_drow.detectors` and trainable via `train.py`:
+
+```bash
+python train.py --detector drow|drspaam|fullscan_cnn|spacetime_cnn|fullscan_transformer
+```

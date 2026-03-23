@@ -436,7 +436,7 @@ and Optuna-based hyperparameter search.
 | --- | --- | --- |
 | `algorithmic` | Rule-based (eval only) | — |
 | `drow` | DROW WNet3xLF2p | yes |
-| `drspaam` | DR-SPAAM: BeamNeighborConv + AttnSum | yes |
+| `drspaam` | DR-SPAAM: SpatialAttention + TemporalAttention | yes |
 | `fullscan_cnn` | Dilated 1D CNN over full scan + GRU | no (GRU) |
 | `spacetime_cnn` | 2D conv over (beams × time) space-time grid | yes |
 | `fullscan_transformer` | Dilated CNN + beam self-attention + GRU | no (GRU) |

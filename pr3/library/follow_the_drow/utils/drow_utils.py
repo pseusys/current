@@ -89,22 +89,6 @@ def cutout(scans, odoms, number, win_sz=1.66, thresh_dist=1, nsamp=48, UNK=29.99
     return out
 
 
-def linearize(all_seqs, all_scans, all_detseqs, all_wcs, all_was, all_wps):
-    lin_seqs, lin_scans, lin_wcs, lin_was, lin_wps = [], [], [], [], []
-    # Loop through the "sessions" (correspond to files)
-    for seqs, scans, detseqs, wcs, was, wps in zip(all_seqs, all_scans, all_detseqs, all_wcs, all_was, all_wps):
-        # Note that sequence IDs may overlap between sessions!
-        s2s = dict(zip(seqs, scans))
-        # Go over the individual measurements/annotations of a session.
-        for ds, wc, wa, wp in zip(detseqs, wcs, was, wps):
-            lin_seqs.append(ds)
-            lin_scans.append(s2s[ds])
-            lin_wcs.append(wc)
-            lin_was.append(wa)
-            lin_wps.append(wp)
-    return lin_seqs, array(lin_scans), lin_wcs, lin_was, lin_wps
-
-
 # Convert it to flat `x`, `y`, `probs` arrays and an extra `frame` array,
 # which is the index they had in the first place.
 def _deep2flat(dets):
@@ -138,7 +122,6 @@ def _prec_rec_2d(det_scores, det_coords, det_frames, gt_coords, gt_frames, gt_ra
     """
     # This means that all reported detection frames which are not in ground-truth frames
     # will be counted as false-positives.
-    # TODO: do some sanity-checks in the "linearization" functions before calling `prec_rec_2d`.
     frames = unique(r_[det_frames, gt_frames])
 
     det_accepted_idxs = defaultdict(list)
@@ -215,8 +198,6 @@ def project_cartesian_from_polar(r, phi):
 
 
 
-
-
 def standard_cartesian_to_project_cartesian(x, y):
     """
     Convert standard math Cartesian coordinates to project's coordinate system.
@@ -288,7 +269,6 @@ def votes_to_detections(xs, ys, probas, weighted_avg=False, min_thresh=1e-5, bin
     all_dets = []
     all_grids = []
 
-    # Iterate over the scans. TODO: We can do most of this outside the looping too, actually.
     for iscan, (x, y, probs) in enumerate(zip(xs, ys, probas)):
         # Clear the grid, for each scan its own.
         grid.fill(0)
@@ -320,8 +300,7 @@ def votes_to_detections(xs, ys, probas, weighted_avg=False, min_thresh=1e-5, bin
         y = y[mask]
         probs = probs[mask]
 
-        # Vote into the grid, including the agnostic vote as sum of class-votes!
-        #TODO Do we need the class grids?
+        # Vote into the grid, including the agnostic vote as sum of class-votes.
         b_array = concatenate([sum(probs[:,1:], axis=-1, keepdims=True), probs[:,1:]], axis=-1)
         add.at(grid, (x_idx, y_idx), b_array)
 
@@ -366,7 +345,6 @@ def _process_detections(det_x, det_y, det_p, det_f, wcs, was, wps, eval_r):
     gts_x, gts_y, gts_r, gts_f = _deep2flat_gt(allgts, radius=eval_r)
     wd_r, wd_p, wd_t = _prec_rec_2d(sum(det_p[:,1:], axis=1), c_[det_x, det_y], det_f, c_[gts_x, gts_y], gts_f, gts_r)
     gts_x, gts_y, gts_r, gts_f = _deep2flat_gt(wcs, radius=eval_r)
-    # TODO possibly speed up the below significantly since a lot of them have 0 probability by design in some cases and can be dropped.
     wc_r, wc_p, wc_t = _prec_rec_2d(det_p[:,1], c_[det_x, det_y], det_f, c_[gts_x, gts_y], gts_f, gts_r)
     gts_x, gts_y, gts_r, gts_f = _deep2flat_gt(was, radius=eval_r)
     wa_r, wa_p, wa_t = _prec_rec_2d(det_p[:,2], c_[det_x, det_y], det_f, c_[gts_x, gts_y], gts_f, gts_r)
@@ -380,13 +358,6 @@ def comp_prec_rec_softmax(scans, wcs, was, wps, pred_conf, pred_offs, eval_r=0.5
     x, y = prepare_prec_rec_softmax(scans, pred_offs)
     detections = votes_to_detections(x, y, pred_conf, **v2d_kw)
     det_x, det_y, det_p, det_f = _deep2flat(detections)
-    return _process_detections(det_x, det_y, det_p, det_f, wcs, was, wps, eval_r)
-
-
-def calc_prec_rec_softmax(wcs, was, wps, predictions, eval_r=0.5):
-    std_prob = array([0, 0, 0, 1], dtype=float32)
-    deep = [[(p[:, 0][i], p[:, 1][i], std_prob.copy()) for i in range(len(p))] for p in predictions]
-    det_x, det_y, det_p, det_f = _deep2flat(deep)
     return _process_detections(det_x, det_y, det_p, det_f, wcs, was, wps, eval_r)
 
 

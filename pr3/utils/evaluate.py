@@ -484,7 +484,7 @@ def main():
 
     # ── Load dataset (only if needed) ─────────────────────────────────────────
     dataset = cfg = None
-    if run_eval and (args.verify or nn_weights or True):  # algo always needs dataset
+    if run_eval:
         dataset, cfg = _load_dataset(args)
 
     algo_stats = None
