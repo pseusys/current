@@ -6,7 +6,7 @@ Supported detectors
 -------------------
   algorithmic          — AlgorithmicDetector (rule-based; eval-only)
   drow                 — DrowDetector         (original DROW WNet3xLF2p)
-  drspaam              — DrSpaamDetector      (DR-SPAAM: BeamNeighborConv + AttnSum)
+  drspaam              — DrSpaamDetector      (DR-SPAAM: SpatialAttention + TemporalAttention)
   fullscan_cnn         — FullScanCNNDetector  (dilated CNN over beams + GRU)
   spacetime_cnn        — SpaceTimeCNNDetector (2-D conv over N_beams×T grid)
   fullscan_transformer — FullScanTransformerDetector (dilated CNN + beam attn + GRU)
@@ -511,12 +511,16 @@ def train_epoch(net, frame_ds: LidarFrameDataset, optimizer,
     n_steps = 0
     pbar = tqdm(loader, desc="  train", unit="fr", leave=False, dynamic_ncols=True)
 
+    _beam_batch = getattr(net, "BEAM_BATCH", False)
     for x, labels, votes in pbar:
         B, N = x.shape[:2]
-        x_flat = x.reshape(B * N, *x.shape[2:]).to(device)
+        # BEAM_BATCH models (DrSpaamDetector) need (B, N, T, S) so that spatial
+        # attention sees all N beams of one scan together.  Other models use the
+        # flattened (B*N, T, S) as before.
+        x_in   = x.to(device) if _beam_batch else x.reshape(B*N, *x.shape[2:]).to(device)
         l_flat  = labels.reshape(B * N).to(device)
         v_flat  = votes.reshape(B * N, 2).to(device)
-        logits, vpred = net(x_flat)
+        logits, vpred = net(x_in)          # always returns (B*N, 4/2)
         loss, lc, lv  = compute_loss(logits, vpred, l_flat, v_flat, vote_weight)
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
@@ -553,13 +557,14 @@ def evaluate_loss(net, frame_ds: LidarFrameDataset, vote_weight: float,
     n_steps = 0
     pbar = tqdm(loader, desc="    val", unit="fr", leave=False, dynamic_ncols=True)
 
+    _beam_batch = getattr(net, "BEAM_BATCH", False)
     with torch.no_grad():
         for x, labels, votes in pbar:
             B, N = x.shape[:2]
-            x_flat = x.reshape(B * N, *x.shape[2:]).to(device)
+            x_in   = x.to(device) if _beam_batch else x.reshape(B*N, *x.shape[2:]).to(device)
             l_flat  = labels.reshape(B * N).to(device)
             v_flat  = votes.reshape(B * N, 2).to(device)
-            logits, vpred = net(x_flat)
+            logits, vpred = net(x_in)
             loss, lc, lv  = compute_loss(logits, vpred, l_flat, v_flat, vote_weight)
             total_loss += loss.item()
             class_loss += lc
@@ -621,9 +626,15 @@ def evaluate_auc(net, dataset, cfg, eval_r: float = 0.5,
 
         buf_x, buf_meta = [], []
 
+        _beam_batch = getattr(net, "BEAM_BATCH", False)
+
         def _flush_auc():
-            x_bat = torch.cat(buf_x, dim=0)         # (B*N_beams, T, S)
-            logits, vpred = net(x_bat)
+            # BEAM_BATCH models need all N beams of each scan together: stack not cat.
+            if _beam_batch:
+                x_bat = torch.stack(buf_x, dim=0)   # (B, N_beams, T, S)
+            else:
+                x_bat = torch.cat(buf_x, dim=0)     # (B*N_beams, T, S)
+            logits, vpred = net(x_bat)              # always (B*N_beams, 4/2)
             confs_np = F.softmax(logits, dim=-1).cpu().numpy()
             votes_np = vpred.cpu().numpy()
             n_beams  = buf_x[0].shape[0]            # beams per frame

@@ -59,16 +59,25 @@ def cutout(scans, odoms, number, win_sz=1.66, thresh_dist=1, nsamp=48, UNK=29.99
         start = (ibeam - hw - shift).round().astype(int)
         end   = (ibeam + hw - shift).round().astype(int)
 
-        # Linearly interpolate nsamp positions inside each beam's window.  (number, nsamp)
-        frac = start[:, None] + (end - start)[:, None] * t_samp[None, :]
+        # Linear interpolation — matches cv2.INTER_LINEAR used in the original
+        # DROW reference implementation (github.com/VisualComputingInstitute/DROW).
+        frac    = start[:, None] + (end - start)[:, None] * t_samp[None, :]  # (number, nsamp)
+        idx_lo  = frac.astype(int)                     # floor
+        idx_hi  = idx_lo + 1
+        alpha   = (frac - idx_lo).astype(float32)      # fractional weight for hi
 
-        # Nearest-neighbour gather; indices outside [0, N) map to UNK.
-        idx = frac.round().astype(int)
-        oob = (idx < 0) | (idx >= N)
-        idx = clip(idx, 0, N - 1)
+        scan_t  = scans[t].astype(float32)
+        lo_oob  = (idx_lo < 0) | (idx_lo >= N)
+        hi_oob  = (idx_hi < 0) | (idx_hi >= N)
+        lo_val  = scan_t[clip(idx_lo, 0, N - 1)]
+        hi_val  = scan_t[clip(idx_hi, 0, N - 1)]
 
-        windows      = scans[t].astype(float32)[idx]  # (number, nsamp)
-        windows[oob] = UNK
+        windows = lo_val * (1.0 - alpha) + hi_val * alpha      # bilinear
+
+        # OOB handling: one valid neighbour → use it; both OOB → UNK.
+        windows[lo_oob & ~hi_oob] = hi_val[lo_oob & ~hi_oob]
+        windows[~lo_oob & hi_oob] = lo_val[~lo_oob & hi_oob]
+        windows[lo_oob & hi_oob]  = UNK
 
         # Clip to depth tunnel and centre around each beam's own range.
         z_col         = z[:, None]
