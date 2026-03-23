@@ -358,36 +358,6 @@ def compute_loss(logits: torch.Tensor, votes: torch.Tensor,
     return loss, l_class.item(), l_vote.item()
 
 
-# ---------------------------------------------------------------------------
-# Frame iterator
-# ---------------------------------------------------------------------------
-
-def iter_frames(dataset, cfg, subsample: float = 1.0, shuffle: bool = True):
-    """
-    Yield (seq, det_idx, scan, scans_hist, odoms_hist, gt_per_class) for
-    every annotated frame.
-    """
-    indices = [
-        (seq, det_idx)
-        for seq in range(len(dataset.det_id))
-        for det_idx in range(len(dataset.det_id[seq]))
-    ]
-    if shuffle:
-        random.shuffle(indices)
-    if subsample < 1.0:
-        indices = indices[: max(1, int(len(indices) * subsample))]
-
-    for seq, det_idx in indices:
-        iscan = dataset.idet2iscan[seq][det_idx]
-        scan  = dataset.scans[seq][iscan]
-        scans_hist, odoms_hist = dataset.get_scan(seq, iscan, dataset.time_frame)
-        gt_per_class = {
-            1: dataset.det_wc[seq][det_idx],
-            2: dataset.det_wa[seq][det_idx],
-            3: dataset.det_wp[seq][det_idx],
-        }
-        yield seq, det_idx, scan, scans_hist, odoms_hist, gt_per_class
-
 
 # ---------------------------------------------------------------------------
 # Input extraction (detector-type aware)
@@ -1248,9 +1218,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# ---------------------------------------------------------------------------
-# Backward-compatibility alias (train_lightning.py imports this name)
-# ---------------------------------------------------------------------------
-_setup_train = _setup_datasets

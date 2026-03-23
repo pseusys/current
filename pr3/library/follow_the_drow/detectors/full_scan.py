@@ -1,9 +1,9 @@
 """
 Full-scan lidar-based person detectors.
 
-Unlike the cutout-based PersonDetector (which extracts a fixed polar window
-around each beam), these detectors process the *entire* scan at once, using the
-full angular context available across all N_beams.
+These detectors process the *entire* scan at once, using the full angular
+context available across all N_beams, in contrast to the per-beam cutout
+approach used by DROW and DR-SPAAM.
 
 All three share the same input/output contract as DrowDetector:
   forward(x)       → (logits (N_beams, 4), votes (N_beams, 2))
@@ -46,7 +46,7 @@ class DilatedScanBackbone(nn.Module):
 
     Processes the full scan with an exponentially growing receptive field
     (dilation = 1, 2, 4, 8).  Each timestep is treated independently as a
-    batch element — identical to how BeamNeighborConv works in architectures.py.
+    batch element.
 
     Input:  (N_beams, T, in_channels)
     Output: (N_beams, T, out_channels)

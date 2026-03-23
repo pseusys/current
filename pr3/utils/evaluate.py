@@ -50,7 +50,6 @@ from follow_the_drow.detectors import (
     SpaceTimeCNNDetector,
     FullScanTransformerDetector,
 )
-from follow_the_drow.detectors.architectures import PersonDetector
 from follow_the_drow.utils.drow_utils import (
     laser_angles, laser_minimum, laser_maximum, laser_increment,
     rphi_to_xy, cutout, aligned_scan_xyz,
@@ -253,7 +252,7 @@ def _fake_scans(n_beams: int, T: int):
 
 def _fake_input(input_mode: str, n_beams: int, T: int) -> torch.Tensor:
     if input_mode == "cutout":
-        return torch.randn(n_beams, T, PersonDetector.N_SAMP)
+        return torch.randn(n_beams, T, 48)
     return torch.randn(n_beams, T, 3)
 
 
@@ -279,7 +278,7 @@ def bench_preprocessing(n_beams: int, T: int,
     scans, odoms = _fake_scans(n_beams, T)
     angles = laser_angles(n_beams)
     c_m, c_s = _time_fn(
-        lambda: cutout(scans, odoms, n_beams, nsamp=PersonDetector.N_SAMP),
+        lambda: cutout(scans, odoms, n_beams, nsamp=48),
         warmup, iters)
     a_m, a_s = _time_fn(
         lambda: aligned_scan_xyz(scans, odoms, angles),
