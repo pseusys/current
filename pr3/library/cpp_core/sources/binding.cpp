@@ -33,12 +33,17 @@ float* PythonDetectorFactory::toRawFloats(std::vector<Point>& points) {
     return dump;
 }
 
+void PythonDetectorFactory::reset() {
+    detector.reset();
+}
+
 const py::array_t<float> PythonDetectorFactory::forwardOne(const py::array_t<float>& latestBottomScan, const py::array_t<float>& latestOdometry) {
     std::vector<float> bottomScan(latestBottomScan.data(), latestBottomScan.data() + latestBottomScan.size());
     std::vector<float> odometry(latestOdometry.data(), latestOdometry.data() + latestOdometry.size());
     std::vector<Point> result = detector.forward(toPointVector(bottomScan), toPoint(odometry));
     float* raw_dump = toRawFloats(result);
-    return py::array_t<float>(std::vector<py::ssize_t>{(py::ssize_t)result.size(), 2}, std::vector<py::ssize_t>{2 * (py::ssize_t)sizeof(float), (py::ssize_t)sizeof(float)}, raw_dump);
+    auto capsule = py::capsule(raw_dump, [](void* p) { delete[] static_cast<float*>(p); });
+    return py::array_t<float>(std::vector<py::ssize_t>{(py::ssize_t)result.size(), 2}, std::vector<py::ssize_t>{2 * (py::ssize_t)sizeof(float), (py::ssize_t)sizeof(float)}, raw_dump, capsule);
 }
 
 const py::array_t<float> PythonDetectorFactory::forwardBoth(const py::array_t<float>& latestBottomScan, const py::array_t<float>& latestTopScan, const py::array_t<float>& latestOdometry) {
@@ -47,7 +52,8 @@ const py::array_t<float> PythonDetectorFactory::forwardBoth(const py::array_t<fl
     std::vector<float> odometry(latestOdometry.data(), latestOdometry.data() + latestOdometry.size());
     std::vector<Point> result = detector.forward(toPointVector(bottomScan), toPointVector(topScan), toPoint(odometry));
     float* raw_dump = toRawFloats(result);
-    return py::array_t<float>(std::vector<py::ssize_t>{(py::ssize_t)result.size(), 2}, std::vector<py::ssize_t>{2 * (py::ssize_t)sizeof(float), (py::ssize_t)sizeof(float)}, raw_dump);
+    auto capsule = py::capsule(raw_dump, [](void* p) { delete[] static_cast<float*>(p); });
+    return py::array_t<float>(std::vector<py::ssize_t>{(py::ssize_t)result.size(), 2}, std::vector<py::ssize_t>{2 * (py::ssize_t)sizeof(float), (py::ssize_t)sizeof(float)}, raw_dump, capsule);
 }
 
 
@@ -61,6 +67,7 @@ PYBIND11_MODULE(cpp_binding, m) {
 
     py::class_<PythonDetectorFactory>(m, "DetectorFactory")
         .def(py::init<float, float, int, int, float, float, float, float, float, float, float, float, float, float, float, bool>())
+        .def("reset", &PythonDetectorFactory::reset)
         .def("forward_one", &PythonDetectorFactory::forwardOne, py::return_value_policy::take_ownership)
         .def("forward_both", &PythonDetectorFactory::forwardBoth, py::return_value_policy::take_ownership)
         .def("__repr__",

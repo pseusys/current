@@ -13,8 +13,8 @@ from .detector import Detector
 class AlgorithmicDetector(Detector):
     _FREQUENCY_INIT=5
     _FREQUENCY_MAX=25
-    _UNCERTAINTY_MAX=1
-    _UNCERTAINTY_MIN=3
+    _UNCERTAINTY_MAX=3
+    _UNCERTAINTY_MIN=1
     _UNCERTAINTY_INC=0.05
     _CLUSTER_THRESHOLD=0.1
     _DISTANCE_LEVEL=0.6
@@ -41,6 +41,7 @@ class AlgorithmicDetector(Detector):
         times = list()
         people = list()
         for iseq in trange(len(va.det_id), desc="Sequences", disable=not self._verbose):
+            self._detector.reset()
             for idet in trange(len(va.det_id[iseq]), desc="Scans", disable=not self._verbose, leave=False):
                 start_time = time()
                 iscan = va.idet2iscan[iseq][idet]

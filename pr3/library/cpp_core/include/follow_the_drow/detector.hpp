@@ -75,6 +75,8 @@ namespace follow_the_drow {
         public:
             AlgorithmicDetector(bool logging, int freqInit = _FREQUENCY_INIT, int freqMax = _FREQUENCY_MAX, float uncertMax = _UNCERTAINTY_MAX, float uncertMin = _UNCERTAINTY_MIN, float uncertInc = _UNCERTAINTY_INC, float clustThresh = _CLUSTER_THRESHOLD, float distLevel = _DISTANCE_LEVEL, float legSizMin = _LEG_SIZE_MIN, float legSizMax = _LEG_SIZE_MAX, float chestSizMin = _CHEST_SIZE_MIN, float chestSizMax = _CHEST_SIZE_MAX, float legsDistMin = _LEGS_DISTANCE_MIN, float legsDistMax = _LEGS_DISTANCE_MAX);
 
+            void reset();
+
             const std::vector<Point> forward(const std::vector<Point>& latestBottomScan);
             const std::vector<Point> forward(const std::vector<Point>& latestBottomScan, const Point& odometry);
             const std::vector<Point> forward(const std::vector<Point>& latestBottomScan, const std::vector<Point>& latestTopScan);

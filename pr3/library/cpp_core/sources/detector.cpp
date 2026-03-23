@@ -24,7 +24,7 @@ const std::vector<Cluster> AlgorithmicDetector::performClustering(const std::vec
             clusters.push_back(Cluster(clusterStart, loop - 1, storage));
             clusterStart = loop;
         }
-    if (clusterStart != storage.size() - 1 && storage.size() > 0)
+    if (storage.size() > 0)
         clusters.push_back(Cluster(clusterStart, storage.size() - 1, storage));
     return clusters;
 }
@@ -141,7 +141,13 @@ const std::vector<Point> AlgorithmicDetector::forward(const std::vector<Point>& 
     }
 
     previousPeople = trackDetectedPeople(detected);
+    if (odometryReceived) previousPosition = odometry;
     return getCurrentlyDetectedPeople();
+}
+
+void AlgorithmicDetector::reset() {
+    previousPeople.clear();
+    previousPosition = Point();
 }
 
 const std::vector<Point> AlgorithmicDetector::forward(const std::vector<Point>& latestBottomScan) {
