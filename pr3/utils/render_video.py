@@ -38,7 +38,10 @@ Usage
   # DROW dataset, single sequence, GIF output
   python render_video.py --dataset drow --seq 0 --format gif
 
-  # Slow down playback, limit to first 200 frames
+  # Default: native dataset annotation rate (real-time speed)
+  python render_video.py --dataset frog
+
+  # Custom FPS, limit to first 200 frames
   python render_video.py --dataset frog --fps 10 --max-frames 200
 
   # Output to a specific path
@@ -104,19 +107,32 @@ def _setup(args):
             fov_min=FROG_Dataset.LASER_MIN_ANGLE,
             fov_max=FROG_Dataset.LASER_MAX_ANGLE,
             laser_inc=FROG_Dataset.LASER_INCREMENT,
+            scan_rate=40,
         )
     else:
         from follow_the_drow.datasets import DROW_Dataset
-        print("Loading DROW dataset …")
-        dataset = DROW_Dataset()
+        _drow_splits = {"train", "val", "test"}
+        if args.split not in _drow_splits:
+            raise ValueError(f"DROW split must be train/val/test, got '{args.split}'")
+        print(f"Loading DROW dataset (split='{args.split}') …")
+        dataset = DROW_Dataset(dataset=args.split)
         cfg = SimpleNamespace(
             name="drow",
             angles_fn=laser_angles,
             fov_min=laser_minimum,
             fov_max=laser_maximum,
             laser_inc=laser_increment,
+            scan_rate=25,
         )
-    print(f"  {len(dataset.scan_id)} sequence(s) loaded")
+
+    # Derive native annotation FPS from actual annotation density in the data
+    n_scans = sum(len(s) for s in dataset.scan_id)
+    n_anns  = sum(len(d) for d in dataset.det_id)
+    ann_density = n_anns / max(1, n_scans)
+    cfg.native_fps = max(1, round(cfg.scan_rate * ann_density))
+    print(f"  {len(dataset.scan_id)} sequence(s), {n_anns} annotated frames")
+    print(f"  Scan rate: {cfg.scan_rate} Hz  |  annotation density: "
+          f"{ann_density:.1%}  ->  native ~{cfg.native_fps} fps")
     return dataset, cfg
 
 
@@ -391,8 +407,8 @@ def _parse():
     p.add_argument("--out",    type=Path, default=None,
                    help="Output path (default: render_<dataset>_<split>.mp4/gif)")
     p.add_argument("--format", choices=["mp4", "gif"], default="mp4")
-    p.add_argument("--fps",    type=int, default=20,
-                   help="Frames per second (default: 20)")
+    p.add_argument("--fps",    type=int, default=None,
+                   help="Output FPS (default: native dataset annotation rate)")
     p.add_argument("--dpi",    type=int, default=100,
                    help="Figure DPI — controls resolution (default: 100)")
     return p.parse_args()
@@ -459,10 +475,16 @@ def main():
     if not detectors:
         print("  [WARN] No detectors enabled. Use --no-algo only with a --<model> flag.")
 
+    # Resolve FPS
+    if args.fps is not None:
+        fps = args.fps
+    else:
+        fps = cfg.native_fps
+
     # Output path
     suffix = f".{args.format}"
     out_path = args.out or Path(f"render_{cfg.name}_{args.split}{suffix}")
-    print(f"\n  Output : {out_path}  ({args.fps} fps, {args.dpi} dpi)")
+    print(f"\n  Output : {out_path}  ({fps} fps, {args.dpi} dpi)")
     print(f"  Format : {args.format}\n")
 
     # Figure setup (Agg backend — no display needed)
@@ -477,10 +499,10 @@ def main():
 
     # Open video writer
     if args.format == "mp4":
-        writer   = _open_mp4_writer(out_path, w, h, args.fps)
+        writer   = _open_mp4_writer(out_path, w, h, fps)
         write_fn = _write_mp4_frame
     else:
-        writer   = _open_gif_writer(out_path, args.fps)
+        writer   = _open_gif_writer(out_path, fps)
         write_fn = _write_gif_frame
 
     # Write frames

@@ -583,9 +583,15 @@ Renders a full dataset sequence to an **MP4** (default) or **GIF** file.
 Every frame shows the LiDAR scan, GT annotations per class, and any
 combination of detector outputs enabled via CLI flags.
 
+The default playback speed is the **native dataset annotation rate** (real-time).
+Use `--fps N` to override.
+
 ```bash
-# FROG test set, algorithmic detector only
+# FROG test set, default real-time speed (40 fps)
 python render_video.py --dataset frog
+
+# DROW training split, single sequence, custom FPS
+python render_video.py --dataset drow --split train --seq 0 --fps 5
 
 # Add a trained DR-SPAAM detector
 python render_video.py --dataset frog --drspaam weights_drspaam_frog.pth
@@ -596,9 +602,6 @@ python render_video.py --dataset frog \
     --spacetime-cnn weights_spacetime_cnn_frog.pth \
     --format gif
 
-# DROW dataset, single sequence, 10 fps
-python render_video.py --dataset drow --seq 0 --fps 10
-
 # No algorithmic detector, NN only, first 300 frames
 python render_video.py --no-algo --drow weights_drow.pth --max-frames 300
 ```
@@ -606,6 +609,11 @@ python render_video.py --no-algo --drow weights_drow.pth --max-frames 300
 **Available detector flags:** `--algo` (on by default, disable with `--no-algo`),
 `--drow`, `--drspaam`, `--fullscan-cnn`, `--spacetime-cnn`, `--fullscan-transformer`
 — each takes a path to a trained checkpoint.
+
+**Speed:** default is native annotation rate (40 fps FROG, ~2 fps DROW test);
+override with `--fps N`.
+
+**Split support:** `--split train|val|test` works for both FROG and DROW.
 
 Color coding: scan=grey, GT person=green, GT wheelchair=orange, GT walker=purple,
 algorithmic=red triangles, each NN detector gets a distinct colour.
