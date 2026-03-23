@@ -192,7 +192,7 @@ from follow_the_drow.detectors import (
 )
 from follow_the_drow.utils.drow_utils import (
     laser_angles, laser_minimum, laser_maximum, laser_increment,
-    cutout, aligned_scan_xyz, rphi_to_xy, _win2global,
+    cutout, aligned_scan_xyz, project_cartesian_from_polar, _win2global,
     votes_to_detections, _deep2flat, _process_detections,
 )
 

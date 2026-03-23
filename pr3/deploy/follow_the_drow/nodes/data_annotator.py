@@ -11,7 +11,7 @@ from visualization_msgs.msg import Marker
 
 from follow_the_drow import Params, load_args_for_node
 from follow_the_drow.datasets import DROW_Dataset
-from follow_the_drow.utils.drow_utils import laser_angles, rphi_to_xy
+from follow_the_drow.utils.drow_utils import laser_angles, project_cartesian_from_polar
 
 _DETECTION_TOPIC = "/clicked_point"
 _FORWARD_TOPIC = "/initialpose"
@@ -64,7 +64,7 @@ class Frame:
         scan = self.dataset.idet2iscan[self.file_index][self.current]
         data = self.dataset.scans[self.file_index][scan]
         angles = laser_angles(data.shape[-1])[None, :]
-        xs, ys = rphi_to_xy(data, angles)
+        xs, ys = project_cartesian_from_polar(data, angles)
         return [Point(x=x, y=y) for x, y in zip(xs[0], ys[0])]
 
 

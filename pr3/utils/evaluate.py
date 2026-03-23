@@ -52,7 +52,7 @@ from follow_the_drow.detectors import (
 )
 from follow_the_drow.utils.drow_utils import (
     laser_angles, laser_minimum, laser_maximum, laser_increment,
-    rphi_to_xy, cutout, aligned_scan_xyz,
+    project_cartesian_from_polar, standard_cartesian_to_project_cartesian, cutout, aligned_scan_xyz,
 )
 from train import (
     _make_optimizer, _build_model, _default_args,
@@ -141,7 +141,7 @@ def verify_dataset(dataset, cfg):
                                  ("wa", dataset.det_wa[seq][det]),
                                  ("wp", dataset.det_wp[seq][det])]:
                 for r, phi in anns:
-                    gx, gy = rphi_to_xy(r, phi)
+                    gx, gy = project_cartesian_from_polar(r, phi)
                     dists[label].append(
                         float(np.min(np.linalg.norm(pts - [[gx, gy]], axis=1))))
 
@@ -179,11 +179,13 @@ def eval_algorithmic(dataset, cfg, eval_r: float = 0.5) -> dict:
             det_xy = np.array(algo.forward_one(scans[-1], odoms[-1]["xya"]))
             if det_xy.ndim == 1:
                 det_xy = det_xy.reshape(-1, 2)
+            if det_xy.size > 0:
+                det_xy = np.column_stack(standard_cartesian_to_project_cartesian(det_xy[:, 0], det_xy[:, 1]))
 
             all_ann = (dataset.det_wc[seq][det]
                        + dataset.det_wa[seq][det]
                        + dataset.det_wp[seq][det])
-            gt_xy = np.array([rphi_to_xy(r, p) for r, p in all_ann]) if all_ann else np.empty((0, 2))
+            gt_xy = np.array([project_cartesian_from_polar(r, p) for r, p in all_ann]) if all_ann else np.empty((0, 2))
 
             n_gt  = len(gt_xy)
             n_det = len(det_xy)

@@ -65,7 +65,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from follow_the_drow.detectors import AlgorithmicDetector
 from follow_the_drow.utils.drow_utils import (
     laser_angles, laser_minimum, laser_maximum, laser_increment,
-    rphi_to_xy, cutout, aligned_scan_xyz, _win2global, votes_to_detections,
+    project_cartesian_from_polar, standard_cartesian_to_project_cartesian, votes_to_detections,
 )
 import torch
 import torch.nn.functional as F
@@ -152,6 +152,8 @@ class _AlgoRunner:
         iscan = dataset.idet2iscan[seq][det]
         scans_hist, odoms_hist = dataset.get_scan(seq, iscan, algo.time_frame)
         result = np.array(algo.forward_one(scans_hist[-1], odoms_hist[-1]["xya"]))
+        if result.size > 0:
+            result = np.column_stack(standard_cartesian_to_project_cartesian(result[:, 0], result[:, 1]))
         return result.reshape(-1, 2) if result.ndim == 1 and result.size > 0 else result
 
 
@@ -260,12 +262,12 @@ def _render_frame(fig, ax, dataset, cfg, seq, det,
         in_fov, out_fov = _split_fov(anns, cfg.fov_min, cfg.fov_max)
         n_gt += len(in_fov) + len(out_fov)
         for r, phi in in_fov:
-            x, y = rphi_to_xy(r, phi)
+            x, y = project_cartesian_from_polar(r, phi)
             ax.add_patch(plt.Circle((x, y), 0.30, fill=False,
                                     edgecolor=color, lw=1.8, zorder=3))
             ax.plot(x, y, "x", color=color, ms=5, mew=1.5, zorder=3)
         for r, phi in out_fov:
-            x, y = rphi_to_xy(r, phi)
+            x, y = project_cartesian_from_polar(r, phi)
             ax.add_patch(plt.Circle((x, y), 0.30, fill=False,
                                     edgecolor=color, lw=1.0,
                                     alpha=0.25, zorder=2))

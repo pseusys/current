@@ -21,7 +21,7 @@ Coordinate conventions
 ----------------------
 FROG uses a standard robotics frame: X = forward, Y = left, angles are CCW from
 the X-axis.  Annotation (x, y) values are converted to (r, phi) pairs compatible
-with the existing ``rphi_to_xy(r, phi)`` helper, which uses the same convention
+with the existing ``project_cartesian_from_polar(r, phi)`` helper, which uses the same convention
 (phi = 0 forward, phi > 0 left).
 
 Laser angles
@@ -320,7 +320,7 @@ class FROG_Dataset(Logging):
         N = len(scans)
         scan_id = np.arange(N, dtype=np.uint32)
 
-        # Per-scan annotation lists → converted to (r, phi) for rphi_to_xy compat.
+        # Per-scan annotation lists → converted to (r, phi) for project_cartesian_from_polar compat.
         wp_per_scan = cls._build_wp_per_scan(circles, circle_idx, circle_num, N)
 
         # Only expose scans that pass the split filter as "detection frames"
@@ -363,7 +363,7 @@ class FROG_Dataset(Logging):
           5 – angular radius (radians)
 
         We derive (r, phi) from the unambiguous Cartesian columns so that the
-        result is directly compatible with ``rphi_to_xy(r, phi)`` used
+        result is directly compatible with ``project_cartesian_from_polar(r, phi)`` used
         throughout the codebase (phi = 0 forward, phi > 0 left).
         """
         wp_per_scan: List[List[Tuple[float, float]]] = []

@@ -188,7 +188,7 @@ def _deep2flat_gt(gts, radius):
     all_x, all_y, all_r, all_frames = [], [], [], []
     for i, gt in enumerate(gts):
         for (r, phi) in gt:
-            x, y = rphi_to_xy(r, phi)
+            x, y = project_cartesian_from_polar(r, phi)
             all_x.append(x)
             all_y.append(y)
             all_r.append(radius)
@@ -200,8 +200,35 @@ def laser_angles(N):
     return linspace(laser_minimum, laser_maximum, N)
 
 
-def rphi_to_xy(r, phi):
+def project_cartesian_from_polar(r, phi):
+    """
+    Convert polar coordinates to project's Cartesian coordinate system.
+    
+    Project coordinate system:
+    - x: left (negative) to right (positive)
+    - y: back (negative) to forward (positive)  
+    - phi=0: forward (positive y), increasing counterclockwise
+    
+    Returns: (x, y)
+    """
     return r * -sin(phi), r * cos(phi)
+
+
+
+
+
+def standard_cartesian_to_project_cartesian(x, y):
+    """
+    Convert standard math Cartesian coordinates to project's coordinate system.
+    
+    Standard math: x = r*cos(phi), y = r*sin(phi) with phi=0 along positive x.
+    Project: x = r*(-sin(phi)), y = r*cos(phi) with phi=0 along positive y.
+    
+    This is equivalent to rotating 90° counterclockwise: (x, y) -> (-y, x)
+    
+    Returns: (x_proj, y_proj)
+    """
+    return -y, x
 
 
 def _win2global(r, phi, dx, dy):
@@ -212,7 +239,7 @@ def _win2global(r, phi, dx, dy):
 
 def prepare_prec_rec_softmax(scans, pred_offs):
     angles = laser_angles(scans.shape[-1])[None,:]
-    return rphi_to_xy(*_win2global(scans, angles, pred_offs[:,:,0], pred_offs[:,:,1]))
+    return project_cartesian_from_polar(*_win2global(scans, angles, pred_offs[:,:,0], pred_offs[:,:,1]))
 
 
 def _vote_avg(vx, vy, p):
