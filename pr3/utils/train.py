@@ -59,6 +59,7 @@ import torch.nn.functional as F
 from torch.optim import Adam, Optimizer
 from tqdm import tqdm
 from sklearn.metrics import auc as sklearn_auc
+from torch.utils.data import Dataset, DataLoader, Subset
 
 
 # ---------------------------------------------------------------------------
@@ -411,40 +412,113 @@ def _extract_input(net, scan, scans_hist, odoms_hist, angles, cfg, device):
 
 
 # ---------------------------------------------------------------------------
+# Cached frame dataset  (speeds up multi-epoch training by ~2–4×)
+# ---------------------------------------------------------------------------
+
+class LidarFrameDataset(Dataset):
+    """
+    One item = one annotated lidar frame, pre-processed and cached in RAM.
+
+    On first access per index the frame is loaded from the raw dataset,
+    preprocessed (cutout or aligned_scan_xyz), and stored in ``_cache``.
+    Subsequent accesses (later epochs) are pure dict lookups — no NumPy
+    preprocessing.  Memory per frame: ~430 KB (DROW) / ~675 KB (FROG).
+
+    Parameters
+    ----------
+    dataset     : DROW_Dataset or FROG_Dataset
+    cfg         : SimpleNamespace with angles_fn and laser_inc
+    input_mode  : "cutout" or "full_scan"
+    vote_radius : positive-beam radius around GT (same as vote_collect_radius)
+    nsamp       : number of cutout samples per beam (ignored for full_scan)
+    """
+
+    def __init__(self, dataset, cfg, input_mode: str,
+                 vote_radius: float, nsamp: int = 48):
+        self._dataset     = dataset
+        self._cfg         = cfg
+        self._input_mode  = input_mode
+        self._vote_radius = vote_radius
+        self._nsamp       = nsamp
+        self._angles      = cfg.angles_fn(dataset.scans[0].shape[1])
+        self.indices      = [
+            (seq, det_idx)
+            for seq in range(len(dataset.det_id))
+            for det_idx in range(len(dataset.det_id[seq]))
+        ]
+        self._cache: dict = {}
+
+    def __len__(self) -> int:
+        return len(self.indices)
+
+    def __getitem__(self, idx: int):
+        if idx in self._cache:
+            return self._cache[idx]
+
+        seq, det_idx = self.indices[idx]
+        ds    = self._dataset
+        iscan = ds.idet2iscan[seq][det_idx]
+        scan  = ds.scans[seq][iscan]
+        scans_hist, odoms_hist = ds.get_scan(seq, iscan, ds.time_frame)
+
+        labels, vote_targets = make_targets(
+            scan, self._angles,
+            {1: ds.det_wc[seq][det_idx],
+             2: ds.det_wa[seq][det_idx],
+             3: ds.det_wp[seq][det_idx]},
+            self._vote_radius,
+        )
+
+        if self._input_mode == "full_scan":
+            arr = aligned_scan_xyz(scans_hist, odoms_hist, self._angles,
+                                   laser_inc=self._cfg.laser_inc)
+            x = torch.from_numpy(
+                np.asarray(arr, dtype=np.float32).transpose(1, 0, 2))  # (N,T,3)
+        else:
+            arr = cutout(scans_hist, odoms_hist, len(scan),
+                         nsamp=self._nsamp,
+                         laserIncrement=self._cfg.laser_inc)
+            x = torch.from_numpy(np.asarray(arr, dtype=np.float32))    # (N,T,S)
+
+        result = (
+            x,
+            torch.from_numpy(labels),
+            torch.from_numpy(vote_targets),
+        )
+        self._cache[idx] = result
+        return result
+
+
+# ---------------------------------------------------------------------------
 # Training
 # ---------------------------------------------------------------------------
 
-def train_epoch(net, dataset, cfg, optimizer,
-                vote_radius: float, vote_weight: float,
-                subsample: float = 1.0, device: str = "cpu",
-                batch_size: int = 1):
-    """
-    One full training epoch.  Returns (avg_total, avg_class, avg_vote) losses.
+def train_epoch(net, frame_ds: LidarFrameDataset, optimizer,
+                vote_weight: float, subsample: float = 1.0,
+                device: str = "cpu", batch_size: int = 4):
+    """One training epoch using the cached LidarFrameDataset."""
+    if subsample < 1.0:
+        n = max(1, int(len(frame_ds) * subsample))
+        idx = random.sample(range(len(frame_ds)), n)
+        ds = Subset(frame_ds, idx)
+    else:
+        ds = frame_ds
 
-    batch_size frames are accumulated before each optimizer step, so the
-    effective mini-batch has shape (batch_size * N_beams, T, S).  Loss and
-    class-weight statistics are computed jointly across all frames in the
-    batch, which improves gradient quality when individual frames are sparse.
-    """
+    loader = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=0)
+
     net.train()
     total_loss = class_loss = vote_loss = 0.0
     n_steps = 0
+    pbar = tqdm(loader, desc="  train", unit="fr", leave=False, dynamic_ncols=True)
 
-    n_frames = sum(len(d) for d in dataset.det_id)
-    n_total  = max(1, int(n_frames * subsample)) if subsample < 1.0 else n_frames
-    pbar = tqdm(total=n_total, desc="  train", unit="fr",
-                leave=False, dynamic_ncols=True)
-
-    buf_x, buf_labels, buf_votes = [], [], []
-
-    def _optimizer_step():
-        nonlocal total_loss, class_loss, vote_loss, n_steps
-        x_bat = torch.cat(buf_x,      dim=0)
-        l_bat = torch.cat(buf_labels, dim=0)
-        v_bat = torch.cat(buf_votes,  dim=0)
-        logits, vpred = net(x_bat)
-        loss, lc, lv  = compute_loss(logits, vpred, l_bat, v_bat, vote_weight)
-        optimizer.zero_grad()
+    for x, labels, votes in pbar:
+        B, N = x.shape[:2]
+        x_flat = x.reshape(B * N, *x.shape[2:]).to(device)
+        l_flat  = labels.reshape(B * N).to(device)
+        v_flat  = votes.reshape(B * N, 2).to(device)
+        logits, vpred = net(x_flat)
+        loss, lc, lv  = compute_loss(logits, vpred, l_flat, v_flat, vote_weight)
+        optimizer.zero_grad(set_to_none=True)
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
@@ -452,28 +526,7 @@ def train_epoch(net, dataset, cfg, optimizer,
         vote_loss  += lv
         n_steps    += 1
         pbar.set_postfix(loss=f"{total_loss / n_steps:.4f}", refresh=False)
-        buf_x.clear(); buf_labels.clear(); buf_votes.clear()
 
-    # Beam angles are fixed for the entire dataset — compute once.
-    _angles = cfg.angles_fn(dataset.scans[0].shape[1])
-
-    for _, _, scan, scans_hist, odoms_hist, gt_per_class in iter_frames(
-            dataset, cfg, subsample=subsample, shuffle=True):
-        angles = _angles
-        labels, vote_targets = make_targets(scan, angles, gt_per_class,
-                                            vote_collect_radius=vote_radius)
-        buf_x.append(_extract_input(net, scan, scans_hist, odoms_hist,
-                                    angles, cfg, device))
-        buf_labels.append(torch.from_numpy(labels).long().to(device))
-        buf_votes.append(torch.from_numpy(vote_targets).to(device))
-        pbar.update(1)
-        if len(buf_x) >= batch_size:
-            _optimizer_step()
-
-    if buf_x:           # flush the last partial batch
-        _optimizer_step()
-
-    pbar.close()
     n = max(n_steps, 1)
     return total_loss / n, class_loss / n, vote_loss / n
 
@@ -482,56 +535,38 @@ def train_epoch(net, dataset, cfg, optimizer,
 # Evaluation
 # ---------------------------------------------------------------------------
 
-def evaluate_loss(net, dataset, cfg,
-                  vote_radius: float, vote_weight: float,
+def evaluate_loss(net, frame_ds: LidarFrameDataset, vote_weight: float,
                   subsample: float = 1.0, device: str = "cpu",
-                  batch_size: int = 1):
-    """Compute average loss on the given dataset (no gradient)."""
+                  batch_size: int = 4):
+    """Compute average loss on a cached LidarFrameDataset (no gradient)."""
+    if subsample < 1.0:
+        n = max(1, int(len(frame_ds) * min(subsample * 2, 1.0)))
+        idx = random.sample(range(len(frame_ds)), n)
+        ds = Subset(frame_ds, idx)
+    else:
+        ds = frame_ds
+
+    loader = DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=0)
+
     net.eval()
     total_loss = class_loss = vote_loss = 0.0
     n_steps = 0
-
-    n_frames = sum(len(d) for d in dataset.det_id)
-    n_total  = max(1, int(n_frames * subsample)) if subsample < 1.0 else n_frames
-    pbar = tqdm(total=n_total, desc="    val", unit="fr",
-                leave=False, dynamic_ncols=True)
-
-    buf_x, buf_labels, buf_votes = [], [], []
-
-    def _eval_batch():
-        nonlocal total_loss, class_loss, vote_loss, n_steps
-        x_bat = torch.cat(buf_x,      dim=0)
-        l_bat = torch.cat(buf_labels, dim=0)
-        v_bat = torch.cat(buf_votes,  dim=0)
-        logits, vpred = net(x_bat)
-        loss, lc, lv  = compute_loss(logits, vpred, l_bat, v_bat, vote_weight)
-        total_loss += loss.item()
-        class_loss += lc
-        vote_loss  += lv
-        n_steps    += 1
-        pbar.set_postfix(loss=f"{total_loss / n_steps:.4f}", refresh=False)
-        buf_x.clear(); buf_labels.clear(); buf_votes.clear()
-
-    _angles = cfg.angles_fn(dataset.scans[0].shape[1])
+    pbar = tqdm(loader, desc="    val", unit="fr", leave=False, dynamic_ncols=True)
 
     with torch.no_grad():
-        for _, _, scan, scans_hist, odoms_hist, gt_per_class in iter_frames(
-                dataset, cfg, subsample=subsample, shuffle=False):
-            angles = _angles
-            labels, vote_targets = make_targets(scan, angles, gt_per_class,
-                                                vote_collect_radius=vote_radius)
-            buf_x.append(_extract_input(net, scan, scans_hist, odoms_hist,
-                                        angles, cfg, device))
-            buf_labels.append(torch.from_numpy(labels).long().to(device))
-            buf_votes.append(torch.from_numpy(vote_targets).to(device))
-            pbar.update(1)
-            if len(buf_x) >= batch_size:
-                _eval_batch()
+        for x, labels, votes in pbar:
+            B, N = x.shape[:2]
+            x_flat = x.reshape(B * N, *x.shape[2:]).to(device)
+            l_flat  = labels.reshape(B * N).to(device)
+            v_flat  = votes.reshape(B * N, 2).to(device)
+            logits, vpred = net(x_flat)
+            loss, lc, lv  = compute_loss(logits, vpred, l_flat, v_flat, vote_weight)
+            total_loss += loss.item()
+            class_loss += lc
+            vote_loss  += lv
+            n_steps    += 1
+            pbar.set_postfix(loss=f"{total_loss / n_steps:.4f}", refresh=False)
 
-        if buf_x:
-            _eval_batch()
-
-    pbar.close()
     n = max(n_steps, 1)
     return total_loss / n, class_loss / n, vote_loss / n
 
@@ -804,6 +839,15 @@ def train_model(args) -> dict:
     if args.resume:
         start_epoch = load_checkpoint(args.resume, net, optimizer)
 
+    # Build cached frame datasets once — preprocessing is amortised across epochs
+    _input_mode = getattr(net, "INPUT_MODE", "cutout")
+    _nsamp      = getattr(net, "N_SAMP", DrowDetector.N_SAMP)
+    train_frame_ds = LidarFrameDataset(
+        train_ds, cfg, _input_mode, args.vote_radius, _nsamp)
+    val_frame_ds = (LidarFrameDataset(
+        val_ds, cfg, _input_mode, args.vote_radius, _nsamp)
+        if val_ds is not None else None)
+
     n_params = sum(p.numel() for p in net.parameters())
     print(f"Model: {args.detector}  —  {n_params:,} parameters\n")
 
@@ -852,8 +896,8 @@ def train_model(args) -> dict:
     final_epoch = start_epoch
     for epoch in epoch_bar:
         tl, tc, tv = train_epoch(
-            net, train_ds, cfg, optimizer,
-            vote_radius=args.vote_radius, vote_weight=args.vote_weight,
+            net, train_frame_ds, optimizer,
+            vote_weight=args.vote_weight,
             subsample=args.subsample, device=device, batch_size=args.batch_size,
         )
         history["epochs"].append(epoch)
@@ -867,9 +911,9 @@ def train_model(args) -> dict:
         stop = False
         if val_ds is not None:
             vl, vc, vv = evaluate_loss(
-                net, val_ds, cfg,
-                vote_radius=args.vote_radius, vote_weight=args.vote_weight,
-                subsample=min(args.subsample * 2, 1.0), device=device,
+                net, val_frame_ds,
+                vote_weight=args.vote_weight,
+                subsample=args.subsample, device=device,
                 batch_size=args.batch_size,
             )
             history["val_loss"].append(vl)
@@ -1151,8 +1195,7 @@ def main():
             val_split=None,
         ))[:2]
         # Algorithmic detector does not produce logits/votes; skip AUC pipeline.
-        print("(Algorithmic AUC computation via the standard pipeline "
-              "is not supported — use compare_detectors.py instead.)")
+        print("(Algorithmic evaluation is available via evaluate.py --algo)")
         return
 
     # ------------------------------------------------------------------

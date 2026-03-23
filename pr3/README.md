@@ -378,13 +378,7 @@ DirectML is significantly slower than native CUDA.  Running inside WSL2 gives fu
 
 For **AMD GPUs**: WSL2 does not ship the `amdgpu` kernel module, so ROCm is unavailable inside WSL2.  Use DirectML on Windows or native Linux instead.
 
-**One-time setup for NVIDIA** (run from a WSL2 terminal):
-
-```bash
-bash utils/setup_wsl.sh
-```
-
-This creates `utils/.venv_wsl` with a ROCm-enabled PyTorch build targeting your GPU architecture and verifies GPU availability.
+**One-time setup for NVIDIA** (run from a WSL2 terminal): install ROCm, create a venv with a ROCm-enabled PyTorch build, and verify GPU availability.
 
 **Activate and train:**
 
@@ -399,14 +393,9 @@ cd utils && python train.py --detector drspaam --dataset frog --epochs 10
 | ------ | ------- |
 | [`train.py`](#trainpy--unified-training-evaluation-and-tuning) | Train / eval / hyperparameter-tune any detector |
 | [`train_all.py`](#train_allpy--sequential-training-of-all-models) | Train all five learnable detectors in sequence, print summary table |
-| [`train_lightning.py`](#train_lightningpy--lightning-persondetector-trainer) | Train PersonDetector with alternative temporal architectures (Lightning) |
-| [`benchmark.py`](#benchmarkpy--cpu--directml-speed-benchmark) | Measure throughput of all models on CPU and DirectML |
-| [`compare_detectors.py`](#compare_detectorspy--side-by-side-visualisation) | Side-by-side detector comparison with PR statistics |
-| [`visualize.py`](#visualizepy--interactive-scan-animation) | Interactive animated LiDAR scan + GT + detector overlay |
-| [`verify_dataset.py`](#verify_datasetpy--dataset-sanity-check) | GT alignment check and DROW baseline AUC |
-| [`verify_algorithmic.py`](#verify_algorithmicpy--algorithmic-detector-check) | Visual sanity-check for the algorithmic detector |
+| [`evaluate.py`](#evaluatepy--evaluation-and-cpu-benchmark) | AUC evaluation, algorithmic precision/recall, dataset verification, CPU benchmark |
+| [`render_video.py`](#render_videopy--video-renderer) | Render a full sequence to MP4/GIF with scan, GT and any detector(s) |
 | [`training_notebook.ipynb`](#training_notebookipynb--per-model-training-notebook) | Jupyter notebook: train all models, plot loss + AUC |
-| [`setup_wsl.sh`](#setup_wslsh--wsl2-environment-setup) | One-time WSL2 venv setup (AMD ROCm) |
 
 ---
 
@@ -525,104 +514,101 @@ python train.py --detector drspaam --resume out.pth --epochs 10
 
 ---
 
-### `train_lightning.py` — Lightning PersonDetector trainer
+### `evaluate.py` — evaluation and CPU benchmark
 
-Alternative training script using PyTorch Lightning.  Targets the
-**PersonDetector** family, which shares a 1-D CNN spatial encoder with five
-interchangeable temporal aggregation heads:
+Runs the full evaluation pipeline on any dataset split and reports results in
+a unified summary table.  All inference is forced to CPU for reproducible,
+device-independent numbers.
 
-| `--arch` | Temporal module |
-| --- | --- |
-| `mlp` | Flatten T×C → two linear layers |
-| `tcn` | Causal dilated temporal convolutions |
-| `gru` | GRU, last hidden state |
-| `lstm` | LSTM, last hidden state |
-| `transformer` | Multi-head self-attention + mean pooling |
+**Sections (independent, combinable):**
+
+| Flag | What it does |
+| ---- | ------------ |
+| _(default)_ | Algorithmic detector precision / recall / F1 |
+| `--drow` / `--drspaam` / `--fullscan-cnn` / `--spacetime-cnn` / `--fullscan-transformer` | Load checkpoint, compute per-class AUC on CPU |
+| `--verify` | FoV coverage stats + annotation-alignment distance report |
+| `--bench` | Preprocessing + forward/backward throughput benchmark (CPU) |
+| `--no-eval` | Skip all evaluation, benchmark only |
+| `--no-bench` | Skip benchmark, evaluation only |
 
 ```bash
-# Train GRU on FROG
-python train_lightning.py --arch gru --dataset frog --epochs 20
+# Evaluate two trained models on FROG test set + run benchmark
+python evaluate.py --dataset frog --split test \
+    --drspaam checkpoints/drspaam.pth \
+    --fullscan-cnn checkpoints/fscnn.pth \
+    --bench
 
-# Quick check on 10 % of DROW
-python train_lightning.py --arch transformer --dataset drow --subsample 0.1 --epochs 5
+# Dataset verification only (no models needed)
+python evaluate.py --dataset drow --verify --no-bench
+
+# Benchmark only on 720-beam FROG config (no dataset needed)
+python evaluate.py --bench --no-eval --n-beams 720
+
+# Full run: verify + algorithmic + all trained models + benchmark
+python evaluate.py --dataset frog --verify --bench \
+    --drow checkpoints/drow.pth \
+    --drspaam checkpoints/drspaam.pth \
+    --spacetime-cnn checkpoints/spacetime_cnn.pth
+```
+
+**CLI reference:**
+
+```text
+--dataset        drow | frog (default: drow)
+--split          test | train | val (default: test)
+--eval-r         detection match radius in metres (default: 0.5)
+--verify         print FoV coverage + alignment stats
+--no-eval        skip all evaluation (dataset + models)
+--no-bench       skip throughput benchmark
+
+-- NN model checkpoints (each enables AUC evaluation for that model) --
+--drow WEIGHTS
+--drspaam WEIGHTS
+--fullscan-cnn WEIGHTS
+--spacetime-cnn WEIGHTS
+--fullscan-transformer WEIGHTS
+
+-- Benchmark options --
+--n-beams        beams per scan (450=DROW, 720=FROG; default: 450)
+--time-frame     temporal window T (default: 5)
+--warmup         warm-up iterations (default: 5)
+--iters          timed iterations per model (default: 20)
 ```
 
 ---
 
-### `benchmark.py` — CPU / DirectML speed benchmark
+### `render_video.py` — video renderer
 
-Measures preprocessing throughput and per-step latency (eval + train) for all
-eight models across CPU and DirectML backends.
-
-```bash
-python benchmark.py                 # 450-beam DROW config
-python benchmark.py --n-beams 720   # 720-beam FROG config
-python benchmark.py --no-dml        # CPU only
-python benchmark.py --warmup 10 --iters 50
-```
-
-Key findings on RX 9060 XT (DirectML):
-
-- Cutout-based models (drow, drspaam, PersonDet/attn_sum): **~12× speedup** vs CPU in eval, **~9× in train**
-- GRU-based models (fullscan_cnn, fullscan_transformer): **not supported** on DirectML
-- SpaceTimeCNN: 3.7× speedup in eval; CPU is faster for training (too small for DML overhead)
-
----
-
-### `compare_detectors.py` — side-by-side visualisation
-
-Compares any two detectors frame by frame and prints inter-detector agreement statistics.
+Renders a full dataset sequence to an **MP4** (default) or **GIF** file.
+Every frame shows the LiDAR scan, GT annotations per class, and any
+combination of detector outputs enabled via CLI flags.
 
 ```bash
-# Visualise one frame (DROW dataset, seq 1, detection frame 3)
-python compare_detectors.py --seq 1 --det 3
+# FROG test set, algorithmic detector only
+python render_video.py --dataset frog
 
-# Print agreement statistics on the FROG test set
-python compare_detectors.py --dataset frog --stats --no-drow
+# Add a trained DR-SPAAM detector
+python render_video.py --dataset frog --drspaam weights_drspaam_frog.pth
 
-# Save plots for all frames in all sequences
-python compare_detectors.py --all-seqs --outdir plots/
+# Multiple detectors, GIF output
+python render_video.py --dataset frog \
+    --drspaam weights_drspaam_frog.pth \
+    --spacetime-cnn weights_spacetime_cnn_frog.pth \
+    --format gif
+
+# DROW dataset, single sequence, 10 fps
+python render_video.py --dataset drow --seq 0 --fps 10
+
+# No algorithmic detector, NN only, first 300 frames
+python render_video.py --no-algo --drow weights_drow.pth --max-frames 300
 ```
 
----
+**Available detector flags:** `--algo` (on by default, disable with `--no-algo`),
+`--drow`, `--drspaam`, `--fullscan-cnn`, `--spacetime-cnn`, `--fullscan-transformer`
+— each takes a path to a trained checkpoint.
 
-### `visualize.py` — interactive scan animation
-
-Interactive animated visualisation of any DROW or FROG split.  Shows raw scan,
-GT annotations, algorithmic detections and optional NN detections side by side.
-
-```bash
-python visualize.py                          # DROW test, algorithmic only
-python visualize.py --dataset frog           # FROG test set
-python visualize.py --weights out.pth --detector drspaam  # with NN overlay
-```
-
-Keyboard: `Space` play/pause, `→/←` step, `+/-` speed, `r` restart.
-
----
-
-### `verify_dataset.py` — dataset sanity check
-
-Checks that GT annotations are correctly aligned with the laser scan geometry
-and optionally computes the baseline AUC of the pretrained DROW model.
-
-```bash
-python verify_dataset.py            # alignment stats + one plot per sequence
-python verify_dataset.py --auc      # also compute DROW AUC (slow)
-python verify_dataset.py --dataset frog
-```
-
----
-
-### `verify_algorithmic.py` — algorithmic detector check
-
-Runs the rule-based `AlgorithmicDetector` on the test set and saves one
-visualisation frame per sequence for visual inspection.
-
-```bash
-python verify_algorithmic.py
-python verify_algorithmic.py --dataset frog
-```
+Color coding: scan=grey, GT person=green, GT wheelchair=orange, GT walker=purple,
+algorithmic=red triangles, each NN detector gets a distinct colour.
 
 ---
 
@@ -636,18 +622,6 @@ configurable per cell.
 ```bash
 jupyter notebook utils/training_notebook.ipynb
 ```
-
----
-
-### `setup_wsl.sh` — WSL2 environment setup
-
-Creates `utils/.venv_wsl` with a ROCm-enabled PyTorch build for AMD GPUs
-inside WSL2.  Checks for `rocm-smi` and exits with instructions if ROCm is
-not installed.
-
-> Note: only relevant for NVIDIA GPUs or AMD on native Linux.  AMD GPUs
-> inside WSL2 require the `amdgpu` kernel module which is absent from
-> Microsoft's WSL2 kernel — see GPU support notes above.
 
 ## Other
 
