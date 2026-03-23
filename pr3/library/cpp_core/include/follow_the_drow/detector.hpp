@@ -69,6 +69,7 @@ namespace follow_the_drow {
             const std::vector<Tracked> pullAssociatedPeople(std::vector<Point>& detectedPeople, const std::vector<Tracked>& estimatedPrevious);
             const std::vector<Tracked> trackDetectedPeople(const std::vector<Point>& detectedPeople);
             const std::vector<Point> getCurrentlyDetectedPeople();
+            const std::vector<Point> applyNMS(const std::vector<Point>& detections, float nmsThreshold = 0.5f) const;
 
             const std::vector<Point> forward(const std::vector<Point>& latestBottomScan, const std::vector<Point>& latestTopScan, bool topScanReceived, const Point& odometry, bool odometryReceived);
 

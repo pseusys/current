@@ -120,12 +120,29 @@ const std::vector<Tracked> AlgorithmicDetector::trackDetectedPeople(const std::v
     return tracked;
 }
 
+const std::vector<Point> AlgorithmicDetector::applyNMS(const std::vector<Point>& detections, float nmsThreshold) const {
+    std::vector<Point> filtered;
+    for (const Point& detection : detections) {
+        bool keep = true;
+        for (const Point& kept : filtered) {
+            if (detection.distanceTo(kept) < nmsThreshold) {
+                keep = false;
+                break;
+            }
+        }
+        if (keep) {
+            filtered.push_back(detection);
+        }
+    }
+    return filtered;
+}
+
 const std::vector<Point> AlgorithmicDetector::getCurrentlyDetectedPeople() {
     std::vector<Point> current;
     for (int loop = 0; loop < previousPeople.size(); loop++)
         if (previousPeople[loop].frequency == frequencyInit)
             current.push_back(previousPeople[loop]);
-    return current;
+    return applyNMS(current, 0.5f);  // 0.5m threshold
 }
 
 const std::vector<Point> AlgorithmicDetector::forward(const std::vector<Point>& latestBottomScan, const std::vector<Point>& latestTopScan, bool topScanReceived, const Point& odometry, bool odometryReceived) {
