@@ -38,7 +38,7 @@ include = ["follow_the_drow*"]
 
 
 [tool.setuptools.package-data]
-follow_the_drow = ["include/*.pth.tar", "include/DROWv2-data/*/*.bag.*"]
+follow_the_drow = ["include/*.pth.tar", "include/*.pth", "include/DROWv2-data/*/*.bag.*"]
 
 
 [tool.setuptools.dynamic]

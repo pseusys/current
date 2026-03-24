@@ -14,6 +14,9 @@ Sections
 
 Usage
 -----
+  # Evaluate DROW and DR-SPAAM using bundled published weights (no path needed)
+  python evaluate.py --dataset drow --drow --drspaam
+
   # Evaluate trained models on FROG test set, also benchmark
   python evaluate.py --dataset frog --split test
                      --drspaam   checkpoints/drspaam.pth
@@ -227,9 +230,12 @@ def eval_algorithmic(dataset, cfg, eval_r: float = 0.5) -> dict:
 def eval_nn_model(det_name: str, weights_path: Path,
                   dataset, cfg, eval_r: float = 0.5) -> dict:
     """Load checkpoint and compute AUC on CPU."""
-    args = _default_args(detector=det_name, dataset=cfg.name)
-    net  = _build_model(args)
-    load_checkpoint(weights_path, net)
+    if det_name == "drspaam" and weights_path == DrSpaamDetector.DEFAULT_WEIGHTS:
+        net = DrSpaamDetector.load_published()
+    else:
+        args = _default_args(detector=det_name, dataset=cfg.name)
+        net  = _build_model(args)
+        load_checkpoint(weights_path, net)
     net.eval()
     print(f"Evaluating {det_name} on CPU ...")
     aucs = evaluate_auc(net, dataset, cfg, eval_r=eval_r, device="cpu")
@@ -252,9 +258,9 @@ def _fake_scans(n_beams: int, T: int):
     return scans, odoms
 
 
-def _fake_input(input_mode: str, n_beams: int, T: int) -> torch.Tensor:
+def _fake_input(input_mode: str, n_beams: int, T: int, n_samp: int = 48) -> torch.Tensor:
     if input_mode == "cutout":
-        return torch.randn(n_beams, T, 48)
+        return torch.randn(n_beams, T, n_samp)
     return torch.randn(n_beams, T, 3)
 
 
@@ -293,7 +299,8 @@ def bench_model(model: torch.nn.Module, input_mode: str,
                 warmup: int, iters: int) -> Dict[str, Tuple[float, float]]:
     """Benchmark one model on CPU (eval + train pass)."""
     model = model.to("cpu")
-    x = _fake_input(input_mode, n_beams, T)
+    n_samp = getattr(model, "N_SAMP", 48)
+    x = _fake_input(input_mode, n_beams, T, n_samp)
     labels, vote_tgts = _fake_targets(n_beams)
     opt = _make_optimizer(model.parameters(), lr=1e-3,
                           weight_decay=1e-4, using_dml=False)
@@ -328,7 +335,7 @@ def _build_bench_models(T: int) -> List[Tuple[str, torch.nn.Module, str]]:
             DrowDetector(dropout=0.5, time_frame_size=T, verbose=False),
             "cutout"),
         ("DrSpaamDetector",
-            DrSpaamDetector(n_time=T),
+            DrSpaamDetector(dropout=0.5, num_scans=T),
             "cutout"),
         ("FullScanCNN",
             FullScanCNNDetector(n_time=T),
@@ -456,7 +463,17 @@ def main():
                         help="Skip throughput benchmark")
 
     # NN model checkpoints
-    for flag in _NN_MODELS:
+    # --drow and --drspaam accept an optional path; when given without a path
+    # they use the bundled published paper weights (downloaded at pip install time).
+    parser.add_argument("--drow", nargs="?", type=Path,
+                        const=DrowDetector.DEFAULT_WEIGHTS, default=None,
+                        metavar="WEIGHTS",
+                        help="Checkpoint for drow; omit value to use bundled paper weights")
+    parser.add_argument("--drspaam", nargs="?", type=Path,
+                        const=DrSpaamDetector.DEFAULT_WEIGHTS, default=None,
+                        metavar="WEIGHTS",
+                        help="Checkpoint for drspaam; omit value to use bundled paper weights")
+    for flag in [f for f in _NN_MODELS if f not in ("drow", "drspaam")]:
         parser.add_argument(f"--{flag}", type=Path, default=None, metavar="WEIGHTS",
                             help=f"Checkpoint for {flag} (enables AUC evaluation)")
 

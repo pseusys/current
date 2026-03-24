@@ -36,6 +36,7 @@ class DrowDetector(Module, Detector):
     INPUT_MODE = "cutout"
     N_SAMP = 48
     GPU = False  # This is the GPU index, use 0 for first GPU.
+    DEFAULT_WEIGHTS = _DETECTOR_WEIGHTS_PATH  # bundled original DROW paper weights
 
     def __init__(self, dropout: float, time_frame_size: int, verbose: bool, *args, **kwargs):
         Module.__init__(self, *args, **kwargs)

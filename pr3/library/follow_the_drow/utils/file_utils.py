@@ -10,7 +10,8 @@ DROW_DATA_PATH = Path("include/DROWv2-data")
 DROW_TRAIN_SET = Path("train")
 DROW_VALIDATION_SET = Path("val")
 DROW_TEST_SET = Path("test")
-DROW_WEIGHTS_PATH = Path("include/weights.pth.tar")
+DROW_WEIGHTS_PATH   = Path("include/weights.pth.tar")
+DRSPAAM_WEIGHTS_PATH = Path("include/drspaam_weights.pth")
 
 FROG_DATA_PATH = Path("include/FROG-data")
 

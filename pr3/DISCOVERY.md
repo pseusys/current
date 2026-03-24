@@ -91,37 +91,51 @@ The FROG dataset was recorded specifically to address these issues: every scan f
 
 **Reference:** arXiv:2004.14064
 
-DR-SPAAM retains the DROW cutout extraction and per-beam CNN but adds two attention mechanisms that directly address DROW's weaknesses (1) and (2).
+DR-SPAAM retains the DROW cutout extraction and per-beam CNN but replaces the fixed temporal sum with an **auto-regressive spatial attention mechanism** that directly addresses DROW's weaknesses (1) and (2).
 
-#### Spatial attention across the beam dimension
+Our implementation is the official **SpatialDROW** from the RA-L 2022 release, loaded from the published checkpoint `dr_spaam_e40.pth`.
 
-After the per-beam CNN produces a feature vector `f[i]` for each beam, DR-SPAAM adds a **local self-attention layer across the beam dimension**. For beam `i`, the attended feature is:
+#### Architecture: four conv blocks + spatial attention gate
 
-```
-attn_weight[i,j] = softmax( f[i] · f[j]  for j in i-K … i+K )
-f_attended[i]    = Σ_j attn_weight[i,j] * f[j]
-```
-
-Each beam can now "see" its `K ≈ 5` nearest neighbours in the angular dimension. The motivation: if beam `i` looks like the edge of a leg and beam `i+2` looks like the centre of a leg, the attention lets beam `i` incorporate that context when deciding its class.
-
-This is applied **at each timestep independently**, then the attended features are aggregated across T.
-
-**Ablation result: +4 pp AP on wp class from this component alone.**
-
-#### Temporal attention (learned weighted sum)
-
-The fixed sum over T is replaced with a learned scalar attention:
+The per-beam CNN is extended from DROW's two blocks to four, using the same `_conv3x3` (Conv1d + BN + LeakyReLU) building block:
 
 ```
-α_t[i] = softmax( w^T · f_attended_t[i]  for t = 1…T )
-feature[i] = Σ_t α_t[i] * f_attended_t[i]
+Block 1  (1→128,  3 layers) + MaxPool(2)  ↘
+Block 2  (128→256, 3 layers) + MaxPool(2)  → 256-ch feature map per beam (14 pts for S=56)
+                                             ↓ spatial attention gate
+Block 3  (256→512, 3 layers) + MaxPool(2)
+Block 4  (512→128, 2 layers) + AvgPool
+Conv1d heads → logits (1 or 4 classes), votes (2)
 ```
 
-A single linear layer `w ∈ ℝ^C` scores each timestep's feature. This allows the network to down-weight frames where the person was partially occluded, the scan had noise, or the odometry alignment was imperfect.
+#### Auto-regressive spatial attention (the "A" in DR-SPAAM)
 
-**Ablation result: +2 pp AP on wp class from this component alone.**
+After blocks 1–2, each beam has a feature map `f_t[i]` (spatial, not pooled). The temporal aggregation uses an **auto-regressive template** rather than explicit temporal attention weights:
 
-#### Combined result
+```
+template_0 = f_0[:]              ← initialised from first scan in window (detached)
+
+for t = 1…T−1:
+    feat_t[i] = encode(scan_t, beam_i)   ← blocks 1–2
+
+    # spatial attention: beam i attends to ±window/2 neighbours in template
+    attn_weight[i,j] = softmax( embed(feat_t[i]) · embed(template[j])
+                                for j in i−K … i+K )
+    template[i] = α · feat_t[i]  +  (1−α) · Σ_j attn_weight[i,j] · template[j]
+                  ↑ current feat       ↑ attended historical template
+
+final_feature[:] = decode(template[:])   ← blocks 3–4 + heads
+```
+
+Key properties:
+
+- **Stop-gradient on template input**: gradients only flow through the current scan's encode/gate path, not back through the full T-step chain (prevents BPTT instability).
+- **Local angular context** (±5 neighbours, `window_size=11`): beam `i` can observe its closest angular neighbours in the historical template.
+- **Alpha blending** (`alpha=0.5`): the gate blends current features with the attended template, preventing the template from collapsing to a running mean.
+- **56-pt cutouts** (`N_SAMP=56`): published weights use a 56-sample polar window instead of DROW's 48.
+- **Pedestrian-only output**: published weights (`dr_spaam_e40.pth`) output a single sigmoid class (person only). Our training configuration uses 4 classes.
+
+#### Ablation results from the paper
 
 | Component | AP (wp) | Δ vs DROW |
 |---|---|---|
@@ -133,9 +147,9 @@ A single linear layer `w ∈ ℝ^C` scores each timestep's feature. This allows 
 
 #### Limitations of DR-SPAAM
 
-1. **Still uses fixed 48-beam cutouts**: the CNN has no access to raw data beyond 48 beams, and the cutout boundary is hardcoded.
+1. **Still uses fixed 56-beam cutouts**: the CNN has no access to raw data beyond 56 beams, and the cutout boundary is hardcoded.
 2. **Spatial attention operates on compressed features**: neighbouring beams only communicate *after* independent CNN processing. Raw-signal cross-beam context is impossible.
-3. **Local attention only** (K ≈ 5): each beam can see only its closest neighbours. Global scan structure (e.g., two legs of the same person widely separated) is not captured.
+3. **Local attention only** (±5 neighbours): each beam can see only its closest neighbours. Global scan structure (e.g., two legs of the same person widely separated) is not captured.
 4. **Performance-driven design**: DR-SPAAM was developed under real-time constraints (ROS node, embedded hardware). Many architectural choices reflect computational budget rather than theoretical optimality.
 
 ---

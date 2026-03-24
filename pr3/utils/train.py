@@ -6,13 +6,13 @@ Supported detectors
 -------------------
   algorithmic          — AlgorithmicDetector (rule-based; eval-only)
   drow                 — DrowDetector         (original DROW WNet3xLF2p)
-  drspaam              — DrSpaamDetector      (DR-SPAAM: SpatialAttention + TemporalAttention)
+  drspaam              — DrSpaamDetector      (DR-SPAAM: auto-regressive spatial attention, official SpatialDROW)
   fullscan_cnn         — FullScanCNNDetector  (dilated CNN over beams + GRU)
   spacetime_cnn        — SpaceTimeCNNDetector (2-D conv over N_beams×T grid)
   fullscan_transformer — FullScanTransformerDetector (dilated CNN + beam attn + GRU)
 
 Cutout-based detectors (drow, drspaam) consume:
-  cutout(scans_hist, odoms_hist, N, nsamp=48)  →  (N_beams, T, 48)
+  cutout(scans_hist, odoms_hist, N, nsamp=48/56)  →  (N_beams, T, N_SAMP)
 
 Full-scan detectors (fullscan_cnn, spacetime_cnn, fullscan_transformer) consume:
   aligned_scan_xyz(scans_hist, odoms_hist, angles)  →  (T, N_beams, 3)
@@ -266,7 +266,7 @@ def _build_model(args):
     if det == "drow":
         return DrowDetector(dropout=dr, time_frame_size=tf, verbose=False)
     if det == "drspaam":
-        return DrSpaamDetector(n_time=tf, dropout=dr)
+        return DrSpaamDetector(dropout=dr, num_scans=tf)
     if det == "fullscan_cnn":
         return FullScanCNNDetector(n_time=tf, backbone_channels=bc,
                                    hidden=hid, dropout=dr)
@@ -604,8 +604,15 @@ def evaluate_auc(net, dataset, cfg, eval_r: float = 0.5,
                 x_bat = torch.stack(buf_x, dim=0)   # (B, N_beams, T, S)
             else:
                 x_bat = torch.cat(buf_x, dim=0)     # (B*N_beams, T, S)
-            logits, vpred = net(x_bat)              # always (B*N_beams, 4/2)
-            confs_np = F.softmax(logits, dim=-1).cpu().numpy()
+            logits, vpred = net(x_bat)              # always (B*N_beams, n_cls/2)
+            if logits.shape[-1] == 1:
+                # pedestrian_only published weights: sigmoid + expand to 4-class
+                prob  = torch.sigmoid(logits)
+                confs = torch.zeros(logits.shape[0], 4, device=logits.device)
+                confs[:, 3] = prob[:, 0]
+                confs_np = confs.cpu().numpy()
+            else:
+                confs_np = F.softmax(logits, dim=-1).cpu().numpy()
             votes_np = vpred.cpu().numpy()
             n_beams  = buf_x[0].shape[0]            # beams per frame
             for i, (scan_i, wc_i, wa_i, wp_i) in enumerate(buf_meta):

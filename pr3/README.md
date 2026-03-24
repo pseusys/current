@@ -78,7 +78,7 @@ This library can be installed (for example) with this command:
 pip3 install ./library
 ```
 
-> NB! During installation, the DROW dataset (measures, annotations and model weights) will be downloaded and included into the library distribution.
+> NB! During installation, the DROW dataset (measures, annotations and model weights) **and** the DR-SPAAM published weights (`dr_spaam_e40.pth`, RA-L 2022) will be downloaded and included into the library distribution.
 
 **Important note**: the detectors in this library do not perform detection for single scans.
 They use sets of scans (they were called "temporal cutouts" in the paper), consisting of 5 scans and one annotation.
@@ -436,7 +436,7 @@ and Optuna-based hyperparameter search.
 | --- | --- | --- |
 | `algorithmic` | Rule-based (eval only) | — |
 | `drow` | DROW WNet3xLF2p | yes |
-| `drspaam` | DR-SPAAM: SpatialAttention + TemporalAttention | yes |
+| `drspaam` | DR-SPAAM official SpatialDROW (auto-regressive spatial attention, 56-pt cutouts) | yes |
 | `fullscan_cnn` | Dilated 1D CNN over full scan + GRU | no (GRU) |
 | `spacetime_cnn` | 2D conv over (beams × time) space-time grid | yes |
 | `fullscan_transformer` | Dilated CNN + beam self-attention + GRU | no (GRU) |
@@ -532,7 +532,10 @@ device-independent numbers.
 | `--no-bench` | Skip benchmark, evaluation only |
 
 ```bash
-# Evaluate two trained models on FROG test set + run benchmark
+# DROW and DR-SPAAM with bundled paper weights (no training required)
+python evaluate.py --dataset drow --drow --drspaam
+
+# Evaluate trained models on FROG test set + run benchmark
 python evaluate.py --dataset frog --split test \
     --drspaam checkpoints/drspaam.pth \
     --fullscan-cnn checkpoints/fscnn.pth \
@@ -562,8 +565,8 @@ python evaluate.py --dataset frog --verify --bench \
 --no-bench       skip throughput benchmark
 
 -- NN model checkpoints (each enables AUC evaluation for that model) --
---drow WEIGHTS
---drspaam WEIGHTS
+--drow [WEIGHTS]     omit value to use bundled paper weights (DROW WNet3xLF2p)
+--drspaam [WEIGHTS]  omit value to use bundled paper weights (DR-SPAAM RA-L 2022)
 --fullscan-cnn WEIGHTS
 --spacetime-cnn WEIGHTS
 --fullscan-transformer WEIGHTS
