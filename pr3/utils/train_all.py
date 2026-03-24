@@ -41,12 +41,18 @@ from train import (  # noqa: E402
 # Models that cannot run on DirectML (GRU kernel missing)
 _GRU_MODELS = {"fullscan_cnn", "fullscan_transformer"}
 
-# Canonical training order (DROW and DR-SPAAM use published weights, not trained)
+# Canonical training order (DROW and DR-SPAAM use published weights, not trained;
+# Li2Former has no published weights — auto-skipped if no local checkpoint)
 _ALL_DETECTORS = [
     "fullscan_cnn",
     "spacetime_cnn",
     "fullscan_transformer",
+    "li2former",
 ]
+
+# Detectors that are skipped by default when no local checkpoint exists
+# (no published weights available; train individually with train.py first)
+_NO_PUBLISHED_WEIGHTS = {"li2former"}
 
 
 def _parse() -> argparse.Namespace:
@@ -55,7 +61,7 @@ def _parse() -> argparse.Namespace:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    p.add_argument("--dataset",      choices=["drow", "frog"], default="frog")
+    p.add_argument("--dataset",      choices=["drow", "frog", "jrdb"], default="frog")
     p.add_argument("--train-split",  default="train")
     p.add_argument("--val-split",    default="val")
     p.add_argument("--test-split",   default="test",
@@ -107,6 +113,17 @@ def main():
         print(f"\n{'='*60}")
         print(f"  [{todo.index(det)+1}/{len(todo)}]  {det}")
         print(f"{'='*60}\n")
+
+        # Auto-skip detectors that have no published weights if no local
+        # checkpoint exists.  Train individually first:
+        #   python train.py --detector li2former
+        ckpt_path = cli.out_dir / f"{det}.pth"
+        if det in _NO_PUBLISHED_WEIGHTS and not ckpt_path.exists():
+            print(f"  [SKIP] {det} — no published weights and no local checkpoint found.")
+            print(f"         Train from scratch first:")
+            print(f"           python train.py --detector {det} --dataset {cli.dataset}")
+            summaries.append((det, None, None, None))
+            continue
 
         args = _default_args(
             detector=det,

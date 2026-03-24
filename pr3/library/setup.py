@@ -6,9 +6,11 @@ from setuptools import setup
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 
 VERSION = "0.0.1"
-DROW_DATA      = "https://github.com/VisualComputingInstitute/DROW/releases/download/v2/DROWv2-data.zip"
-DROW_WEIGHTS   = "https://github.com/VisualComputingInstitute/DROW/releases/download/v2/final-WNet3xLF2p-T5-odom.rot-trainval-50ep.pth.tar"
+DROW_DATA       = "https://github.com/VisualComputingInstitute/DROW/releases/download/v2/DROWv2-data.zip"
+DROW_WEIGHTS    = "https://github.com/VisualComputingInstitute/DROW/releases/download/v2/final-WNet3xLF2p-T5-odom.rot-trainval-50ep.pth.tar"
 DRSPAAM_WEIGHTS = "https://github.com/VisualComputingInstitute/DR-SPAAM-Detector/releases/download/v1.1/dr_spaam_e40.pth"
+LFE_PEAKS_WEIGHTS = "https://robotics.upo.es/~famozur/onnx/LFE-Peaks.onnx"
+LFE_PPN_WEIGHTS   = "https://robotics.upo.es/~famozur/onnx/LFE-PPN.onnx"
 
 ext_modules = [
     Pybind11Extension(
@@ -29,6 +31,8 @@ if not include_dir.exists():
         archive.extractall(include_dir)
     urlretrieve(DROW_WEIGHTS, include_dir / Path("weights.pth.tar"))
     urlretrieve(DRSPAAM_WEIGHTS, include_dir / Path("drspaam_weights.pth"))
+    urlretrieve(LFE_PEAKS_WEIGHTS, include_dir / Path("lfe_peaks.onnx"))
+    urlretrieve(LFE_PPN_WEIGHTS,   include_dir / Path("lfe_ppn.onnx"))
     open(include_dir / Path("__init__.py"), "w").close()
 
 setup(

@@ -24,6 +24,7 @@ dependencies = [
     "scikit-learn~=1.2",
     "matplotlib~=3.7",
     "h5py~=3.7",
+    "onnxruntime>=1.16",
     "certifi",
 ]
 dynamic = ["version"]
@@ -38,7 +39,7 @@ include = ["follow_the_drow*"]
 
 
 [tool.setuptools.package-data]
-follow_the_drow = ["include/*.pth.tar", "include/*.pth", "include/DROWv2-data/*/*.bag.*"]
+follow_the_drow = ["include/*.pth.tar", "include/*.pth", "include/*.onnx", "include/DROWv2-data/*/*.bag.*"]
 
 
 [tool.setuptools.dynamic]

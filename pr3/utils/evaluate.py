@@ -49,9 +49,12 @@ from follow_the_drow.detectors import (
     AlgorithmicDetector,
     DrowDetector,
     DrSpaamDetector,
+    Li2FormerDetector,
     FullScanCNNDetector,
     SpaceTimeCNNDetector,
     FullScanTransformerDetector,
+    LFEPeaksDetector,
+    LFEPPNDetector,
 )
 from follow_the_drow.utils.drow_utils import (
     laser_angles, laser_minimum, laser_maximum, laser_increment,
@@ -79,6 +82,18 @@ def _load_dataset(args):
             fov_min=FROG_Dataset.LASER_MIN_ANGLE,
             fov_max=FROG_Dataset.LASER_MAX_ANGLE,
             laser_inc=FROG_Dataset.LASER_INCREMENT,
+        )
+    elif args.dataset == "jrdb":
+        from follow_the_drow.datasets import JRDB_Dataset, jrdb_laser_angles
+        print(f"Loading JRDB dataset (split='{args.split}') ...")
+        print("  NOTE: JRDB requires manual download — see JRDB_Dataset docstring.")
+        ds = JRDB_Dataset(split=args.split)
+        cfg = SimpleNamespace(
+            name="jrdb",
+            angles_fn=jrdb_laser_angles,
+            fov_min=JRDB_Dataset.LASER_MIN_ANGLE,
+            fov_max=JRDB_Dataset.LASER_MAX_ANGLE,
+            laser_inc=JRDB_Dataset.LASER_INCREMENT,
         )
     else:
         from follow_the_drow.datasets import DROW_Dataset
@@ -247,6 +262,106 @@ def eval_nn_model(det_name: str, weights_path: Path,
     return aucs
 
 
+def eval_lfe_model(
+    det_name:    str,
+    detector,
+    dataset,
+    cfg,
+    eval_r:      float = 0.5,
+) -> dict:
+    """
+    Evaluate an LFE-style detector (raw scan input, ONNX) and compute AUC.
+
+    LFE detectors operate on full raw scan vectors rather than cutouts, so
+    they bypass the standard evaluate_auc pipeline and use their own loop.
+
+    Returns the same dict as eval_nn_model:
+      {"agnostic": float, "wc": float, "wa": float, "wp": float}
+    """
+    from scipy.spatial.distance import cdist
+    from sklearn.metrics import auc as sklearn_auc
+
+    n_beams = dataset.scans[0].shape[1]
+    angles  = cfg.angles_fn(n_beams)
+
+    # Collect all (confidence, detected_x, detected_y) and GT per frame
+    all_scores_wp:    List[float] = []
+    all_match_wp:     List[int]   = []
+    all_scores_any:   List[float] = []
+    all_match_any:    List[int]   = []
+
+    for seq in range(len(dataset.det_id)):
+        for det_idx in range(len(dataset.det_id[seq])):
+            iscan = dataset.idet2iscan[seq][det_idx]
+            scan  = dataset.scans[seq][iscan]
+
+            detections = detector.detect(scan, angles)
+            if not detections:
+                continue
+
+            scores = np.array([d[0] for d in detections], dtype=np.float32)
+            det_xy = np.array([[d[1], d[2]] for d in detections], dtype=np.float32)
+
+            gt_wp  = np.array(
+                [project_cartesian_from_polar(r, p)
+                 for r, p in dataset.det_wp[seq][det_idx]],
+                dtype=np.float32,
+            ) if dataset.det_wp[seq][det_idx] else np.empty((0, 2), np.float32)
+
+            gt_any = np.array(
+                [project_cartesian_from_polar(r, p)
+                 for r, p in (dataset.det_wc[seq][det_idx]
+                              + dataset.det_wa[seq][det_idx]
+                              + dataset.det_wp[seq][det_idx])],
+                dtype=np.float32,
+            ) if (dataset.det_wc[seq][det_idx]
+                  + dataset.det_wa[seq][det_idx]
+                  + dataset.det_wp[seq][det_idx]) else np.empty((0, 2), np.float32)
+
+            for scores_list, gt, match_list in [
+                (all_scores_wp,  gt_wp,  all_match_wp),
+                (all_scores_any, gt_any, all_match_any),
+            ]:
+                if len(gt) == 0:
+                    for s in scores:
+                        scores_list.append(float(s))
+                        match_list.append(0)
+                    continue
+                dists   = cdist(det_xy, gt)
+                matched = np.min(dists, axis=1) < eval_r
+                for s, m in zip(scores, matched):
+                    scores_list.append(float(s))
+                    match_list.append(int(m))
+
+    def _auc_from_lists(scores, matches):
+        if not scores:
+            return float("nan")
+        arr_s = np.array(scores)
+        arr_m = np.array(matches, dtype=float)
+        order  = np.argsort(-arr_s)
+        arr_s, arr_m = arr_s[order], arr_m[order]
+        tp_cum = np.cumsum(arr_m)
+        prec   = tp_cum / (np.arange(len(arr_m)) + 1)
+        recall = tp_cum / max(arr_m.sum(), 1)
+        try:
+            return float(sklearn_auc(recall, prec))
+        except Exception:
+            return float("nan")
+
+    aucs = {
+        "agnostic": _auc_from_lists(all_scores_any, all_match_any),
+        "wc":       float("nan"),   # LFE is class-agnostic
+        "wa":       float("nan"),
+        "wp":       _auc_from_lists(all_scores_wp,  all_match_wp),
+    }
+
+    print(f"Evaluating {det_name} (ONNX) on CPU ...")
+    print(f"  Agnostic (any) : {aucs['agnostic']:.1%}")
+    print(f"  Person    (wp) : {aucs['wp']:.1%}  (wc/wa: n/a — class-agnostic)")
+    print()
+    return aucs
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # 4. Throughput benchmark (CPU only)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -336,6 +451,9 @@ def _build_bench_models(T: int) -> List[Tuple[str, torch.nn.Module, str]]:
             "cutout"),
         ("DrSpaamDetector",
             DrSpaamDetector(dropout=0.5, num_scans=T),
+            "cutout"),
+        ("Li2FormerDetector",
+            Li2FormerDetector(dropout=0.5, num_scans=T),
             "cutout"),
         ("FullScanCNN",
             FullScanCNNDetector(n_time=T),
@@ -429,12 +547,20 @@ def print_summary(algo_stats: Optional[dict],
 # CLI
 # ──────────────────────────────────────────────────────────────────────────────
 
+# PyTorch cutout/full-scan models evaluated via evaluate_auc
 _NN_MODELS = {
     "drow":                 "drow",
     "drspaam":              "drspaam",
+    "li2former":            "li2former",
     "fullscan-cnn":         "fullscan_cnn",
     "spacetime-cnn":        "spacetime_cnn",
     "fullscan-transformer": "fullscan_transformer",
+}
+
+# ONNX-based models evaluated via eval_lfe_model
+_LFE_MODELS = {
+    "lfe-peaks": ("lfe_peaks", LFEPeaksDetector),
+    "lfe-ppn":   ("lfe_ppn",   LFEPPNDetector),
 }
 
 
@@ -446,7 +572,7 @@ def main():
     )
 
     # Dataset
-    parser.add_argument("--dataset", choices=["drow", "frog"], default="drow",
+    parser.add_argument("--dataset", choices=["drow", "frog", "jrdb"], default="drow",
                         help="Dataset to evaluate on (default: drow)")
     parser.add_argument("--split",   choices=["test", "train", "val"],
                         default="test",
@@ -477,6 +603,16 @@ def main():
         parser.add_argument(f"--{flag}", type=Path, default=None, metavar="WEIGHTS",
                             help=f"Checkpoint for {flag} (enables AUC evaluation)")
 
+    # LFE ONNX models — accept optional path; default to bundled ONNX weights
+    parser.add_argument("--lfe-peaks", nargs="?", type=Path,
+                        const=LFEPeaksDetector.DEFAULT_WEIGHTS, default=None,
+                        metavar="ONNX",
+                        help="LFE-Peaks ONNX model; omit value to use bundled weights")
+    parser.add_argument("--lfe-ppn", nargs="?", type=Path,
+                        const=LFEPPNDetector.DEFAULT_WEIGHTS, default=None,
+                        metavar="ONNX",
+                        help="LFE-PPN ONNX model; omit value to use bundled weights")
+
     # Benchmark options
     parser.add_argument("--n-beams",    type=int, default=450,
                         help="Beams per scan for benchmark (450=DROW, 720=FROG; default: 450)")
@@ -489,10 +625,17 @@ def main():
 
     args = parser.parse_args()
 
-    # Collect which NN models to evaluate
+    # Collect which PyTorch NN models to evaluate
     nn_weights = {
         _NN_MODELS[flag]: getattr(args, flag.replace("-", "_"))
         for flag in _NN_MODELS
+        if getattr(args, flag.replace("-", "_")) is not None
+    }
+
+    # Collect which LFE ONNX models to evaluate
+    lfe_weights = {
+        det_name: (cls, getattr(args, flag.replace("-", "_")))
+        for flag, (det_name, cls) in _LFE_MODELS.items()
         if getattr(args, flag.replace("-", "_")) is not None
     }
 
@@ -517,12 +660,22 @@ def main():
         print("=== AlgorithmicDetector ===\n")
         algo_stats = eval_algorithmic(dataset, cfg, eval_r=args.eval_r)
 
-        # 3. NN models
+        # 3. NN models (cutout / full-scan, PyTorch)
         for det_name, weights_path in nn_weights.items():
             print(f"=== {det_name} ===\n")
             try:
                 nn_results[det_name] = eval_nn_model(
                     det_name, weights_path, dataset, cfg, eval_r=args.eval_r)
+            except Exception as exc:
+                print(f"  [ERROR] {exc}\n")
+
+        # 4. LFE ONNX models
+        for det_name, (cls, onnx_path) in lfe_weights.items():
+            print(f"=== {det_name} ===\n")
+            try:
+                detector = cls(onnx_path=onnx_path)
+                nn_results[det_name] = eval_lfe_model(
+                    det_name, detector, dataset, cfg, eval_r=args.eval_r)
             except Exception as exc:
                 print(f"  [ERROR] {exc}\n")
 

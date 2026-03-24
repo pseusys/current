@@ -78,7 +78,7 @@ This library can be installed (for example) with this command:
 pip3 install ./library
 ```
 
-> NB! During installation, the DROW dataset (measures, annotations and model weights) **and** the DR-SPAAM published weights (`dr_spaam_e40.pth`, RA-L 2022) will be downloaded and included into the library distribution.
+> NB! During installation, the DROW dataset (measures, annotations and model weights), the DR-SPAAM published weights (`dr_spaam_e40.pth`, RA-L 2022) **and** the LFE-Peaks / LFE-PPN ONNX weights (`lfe_peaks.onnx`, `lfe_ppn.onnx`) will be downloaded and included into the library distribution.
 
 **Important note**: the detectors in this library do not perform detection for single scans.
 They use sets of scans (they were called "temporal cutouts" in the paper), consisting of 5 scans and one annotation.
@@ -392,7 +392,7 @@ cd utils && python train.py --detector spacetime_cnn --dataset frog --epochs 10
 | Script | Purpose |
 | ------ | ------- |
 | [`train.py`](#trainpy--unified-training-evaluation-and-tuning) | Train / eval / hyperparameter-tune any detector |
-| [`train_all.py`](#train_allpy--sequential-training-of-all-custom-models) | Train all three custom detectors in sequence, print summary table |
+| [`train_all.py`](#train_allpy--sequential-training-of-all-custom-models) | Train all four custom detectors in sequence, print summary table |
 | [`evaluate.py`](#evaluatepy--evaluation-and-cpu-benchmark) | AUC evaluation, algorithmic precision/recall, dataset verification, CPU benchmark |
 | [`render_video.py`](#render_videopy--video-renderer) | Render a full sequence to MP4/GIF with scan, GT and any detector(s) |
 | [`training_notebook.ipynb`](#training_notebookipynb--per-model-training-notebook) | Jupyter notebook: train all models, plot loss + AUC |
@@ -401,20 +401,27 @@ cd utils && python train.py --detector spacetime_cnn --dataset frog --epochs 10
 
 ### `train_all.py` — sequential training of all custom models
 
-Trains the three custom full-scan detectors (`fullscan_cnn`, `spacetime_cnn`,
-`fullscan_transformer`) in order and prints a summary table with final val-loss,
-best AUC and elapsed time per model.  GRU-based models are automatically forced
-to CPU when DirectML is active.
+Trains the four custom full-scan detectors (`fullscan_cnn`, `spacetime_cnn`,
+`fullscan_transformer`, `li2former`) in order and prints a summary table with
+final val-loss, best AUC and elapsed time per model.  GRU-based models are
+automatically forced to CPU when DirectML is active.
 
 DROW and DR-SPAAM are not included — they use published pre-trained weights
 (see `evaluate.py --drow --drspaam`).
 
+> **Li2Former note:** `li2former` has no published weights and is automatically
+> skipped if no local checkpoint exists under `--out-dir`.  Train it first with
+> `python train.py --detector li2former --dataset frog`, then re-run `train_all.py`.
+
 ```bash
-# All three models, FROG, 30 epochs, early stopping (default)
+# All four models, FROG, 30 epochs, early stopping (default)
 python train_all.py
 
 # Override common settings
-python train_all.py --epochs 50 --patience 10 --dataset drow --out-dir runs/
+python train_all.py --epochs 50 --patience 10 --dataset frog --out-dir runs/
+
+# Use JRDB dataset
+python train_all.py --dataset jrdb
 
 # Quick smoke-test (5 % of data)
 python train_all.py --epochs 3 --subsample 0.05
@@ -429,7 +436,7 @@ Checkpoints are saved to `checkpoints/<detector>.pth` (configurable via `--out-d
 
 ### `train.py` — unified training, evaluation and tuning
 
-Trains and evaluates any of the four custom person detectors on DROW or FROG data.
+Trains and evaluates any of the five custom person detectors on DROW, FROG or JRDB data.
 Supports early stopping, LR scheduling, architecture hyperparameter tuning
 and Optuna-based hyperparameter search.
 
@@ -444,12 +451,19 @@ and Optuna-based hyperparameter search.
 | `fullscan_cnn` | Dilated 1D CNN over full scan + GRU | no (GRU) |
 | `spacetime_cnn` | 2D conv over (beams × time) space-time grid | yes |
 | `fullscan_transformer` | Dilated CNN + beam self-attention + GRU | no (GRU) |
+| `li2former` | ConvBackbone + Transformer + binary cls head | yes |
 
 **Usage examples:**
 
 ```bash
 # Train FullScanCNN on FROG for 30 epochs with early stopping
 python train.py --detector fullscan_cnn --dataset frog --epochs 30 --patience 5
+
+# Train Li2Former from scratch (no published weights available)
+python train.py --detector li2former --dataset frog --epochs 30 --lr 1e-4
+
+# Train on JRDB dataset
+python train.py --detector spacetime_cnn --dataset jrdb --epochs 30
 
 # Cosine LR decay, AUC check every 5 epochs
 python train.py --detector spacetime_cnn --epochs 50 --lr-schedule cosine --auc-every 5
@@ -472,9 +486,10 @@ python train.py --detector spacetime_cnn --resume out.pth --epochs 10
 ```text
 -- Detector / dataset --
 --detector            choices: algorithmic,
-                               fullscan_cnn, spacetime_cnn, fullscan_transformer
+                               fullscan_cnn, spacetime_cnn, fullscan_transformer,
+                               li2former
                                (default: fullscan_cnn)
---dataset             drow or frog (default: frog)
+--dataset             drow | frog | jrdb (default: frog)
 --train-split         training split name (default: train)
 --val-split           validation split; '' to disable (default: val)
 
@@ -529,7 +544,9 @@ device-independent numbers.
 | Flag | What it does |
 | ---- | ------------ |
 | _(default)_ | Algorithmic detector precision / recall / F1 |
-| `--drow` / `--drspaam` / `--fullscan-cnn` / `--spacetime-cnn` / `--fullscan-transformer` | Load checkpoint, compute per-class AUC on CPU |
+| `--drow` / `--drspaam` | Load bundled paper weights, compute per-class AUC on CPU |
+| `--fullscan-cnn` / `--spacetime-cnn` / `--fullscan-transformer` / `--li2former` | Load checkpoint, compute per-class AUC on CPU |
+| `--lfe-peaks` / `--lfe-ppn` | Load bundled ONNX weights (LFE, Amodeo et al. 2025), compute AUC on CPU |
 | `--verify` | FoV coverage stats + annotation-alignment distance report |
 | `--bench` | Preprocessing + forward/backward throughput benchmark (CPU) |
 | `--no-eval` | Skip all evaluation, benchmark only |
@@ -539,11 +556,19 @@ device-independent numbers.
 # DROW and DR-SPAAM with bundled paper weights (no training required)
 python evaluate.py --dataset drow --drow --drspaam
 
+# LFE-Peaks and LFE-PPN with bundled ONNX weights (no training required)
+python evaluate.py --dataset frog --lfe-peaks --lfe-ppn
+
 # Evaluate trained models on FROG test set + run benchmark
 python evaluate.py --dataset frog --split test \
     --drspaam checkpoints/drspaam.pth \
     --fullscan-cnn checkpoints/fscnn.pth \
+    --li2former checkpoints/li2former.pth \
     --bench
+
+# Evaluate on JRDB test set
+python evaluate.py --dataset jrdb --split test \
+    --drspaam --li2former checkpoints/li2former.pth
 
 # Dataset verification only (no models needed)
 python evaluate.py --dataset drow --verify --no-bench
@@ -553,15 +578,17 @@ python evaluate.py --bench --no-eval --n-beams 720
 
 # Full run: verify + algorithmic + all trained models + benchmark
 python evaluate.py --dataset frog --verify --bench \
-    --drow checkpoints/drow.pth \
-    --drspaam checkpoints/drspaam.pth \
-    --spacetime-cnn checkpoints/spacetime_cnn.pth
+    --drow --drspaam \
+    --fullscan-cnn checkpoints/fullscan_cnn.pth \
+    --spacetime-cnn checkpoints/spacetime_cnn.pth \
+    --li2former checkpoints/li2former.pth \
+    --lfe-peaks --lfe-ppn
 ```
 
 **CLI reference:**
 
 ```text
---dataset        drow | frog (default: drow)
+--dataset        drow | frog | jrdb (default: drow)
 --split          test | train | val (default: test)
 --eval-r         detection match radius in metres (default: 0.5)
 --verify         print FoV coverage + alignment stats
@@ -569,14 +596,19 @@ python evaluate.py --dataset frog --verify --bench \
 --no-bench       skip throughput benchmark
 
 -- NN model checkpoints (each enables AUC evaluation for that model) --
---drow [WEIGHTS]     omit value to use bundled paper weights (DROW WNet3xLF2p)
---drspaam [WEIGHTS]  omit value to use bundled paper weights (DR-SPAAM RA-L 2022)
+--drow [WEIGHTS]             omit value to use bundled paper weights (DROW WNet3xLF2p)
+--drspaam [WEIGHTS]          omit value to use bundled paper weights (DR-SPAAM RA-L 2022)
 --fullscan-cnn WEIGHTS
 --spacetime-cnn WEIGHTS
 --fullscan-transformer WEIGHTS
+--li2former WEIGHTS          no published weights — train with train.py first
+
+-- ONNX models (LFE, Amodeo et al. 2025) --
+--lfe-peaks [WEIGHTS]        omit value to use bundled ONNX weights
+--lfe-ppn [WEIGHTS]          omit value to use bundled ONNX weights
 
 -- Benchmark options --
---n-beams        beams per scan (450=DROW, 720=FROG; default: 450)
+--n-beams        beams per scan (450=DROW, 541=JRDB, 720=FROG; default: 450)
 --time-frame     temporal window T (default: 5)
 --warmup         warm-up iterations (default: 5)
 --iters          timed iterations per model (default: 20)
@@ -629,12 +661,17 @@ algorithmic=red triangles, each NN detector gets a distinct colour.
 
 ### `training_notebook.ipynb` — per-model training notebook
 
-Jupyter notebook that trains all three custom detectors on FROG (default)
+Jupyter notebook that trains all four custom detectors on FROG (default)
 and produces two plots per model: training/validation loss curve and
 validation AUC-by-class curve.  Models, epochs and hyperparameters are
 configurable per cell.
 
 > DROW and DR-SPAAM use published pre-trained weights — see `evaluate.py --drow --drspaam`.
+>
+> **Li2Former preparation step:** Model 4 (Li2Former) has no published weights.
+> Run the preparation cell in the notebook (or `train.py --detector li2former`)
+> before the final comparison cell — the comparison skips Li2Former automatically
+> if its checkpoint is absent.
 
 ```bash
 jupyter notebook utils/training_notebook.ipynb
@@ -661,6 +698,18 @@ Contains many sequences, each sequence has:
 3. `.bag.wa` file - 1st column contains unique index, second - array of **walker** detections.
 4. `.bag.wc` file - 1st column contains unique index, second - array of **wheelchair** detections.
 5. `.bag.wp` file - 1st column contains unique index, second - array of **person** detections.
+
+### JRDB dataset
+
+The JRDB dataset (Martin-Martin et al.) uses a SICK LMS 500 laser scanner with
+**541 beams** and a **270° FoV** (0.5°/beam, `linspace(-135°, +135°, 541)`).
+Annotations are dense (every frame), adapted to DROW format by the DR-SPAAM authors.
+
+> **Manual download required.** JRDB requires a free registration at
+> [jrdb.erc.monash.edu](https://jrdb.erc.monash.edu) before data can be downloaded.
+> After downloading, extract the data into `library/follow_the_drow/include/JRDB-data/`
+> following the directory structure expected by `JRDB_Dataset`.  The library will raise
+> a `FileNotFoundError` with step-by-step instructions if the data is not found.
 
 ### RobAIR FoV
 

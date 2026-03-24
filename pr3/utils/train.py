@@ -189,6 +189,7 @@ def _make_optimizer(params, lr: float, weight_decay: float,
 from follow_the_drow.detectors import (
     AlgorithmicDetector, DrowDetector, DrSpaamDetector,
     FullScanCNNDetector, SpaceTimeCNNDetector, FullScanTransformerDetector,
+    Li2FormerDetector,
     DETECTOR_REGISTRY,
 )
 from follow_the_drow.utils.drow_utils import (
@@ -218,6 +219,22 @@ def _setup_datasets(args):
             fov_min=FROG_Dataset.LASER_MIN_ANGLE,
             fov_max=FROG_Dataset.LASER_MAX_ANGLE,
             laser_inc=FROG_Dataset.LASER_INCREMENT,
+        )
+    elif args.dataset == "jrdb":
+        from follow_the_drow.datasets import JRDB_Dataset, jrdb_laser_angles
+        print(f"Loading JRDB split ('{args.train_split}') …")
+        print("  NOTE: JRDB requires manual download — see JRDB_Dataset docstring.")
+        train_ds = JRDB_Dataset(split=args.train_split)
+        val_ds = None
+        if args.val_split:
+            print(f"Loading JRDB val split ('{args.val_split}') …")
+            val_ds = JRDB_Dataset(split=args.val_split)
+        cfg = SimpleNamespace(
+            name="jrdb",
+            angles_fn=jrdb_laser_angles,
+            fov_min=JRDB_Dataset.LASER_MIN_ANGLE,
+            fov_max=JRDB_Dataset.LASER_MAX_ANGLE,
+            laser_inc=JRDB_Dataset.LASER_INCREMENT,
         )
     else:
         from follow_the_drow.datasets import DROW_Dataset
@@ -268,6 +285,8 @@ def _build_model(args):
         return DrowDetector(dropout=dr, time_frame_size=tf, verbose=False)
     if det == "drspaam":
         return DrSpaamDetector(dropout=dr, num_scans=tf)
+    if det == "li2former":
+        return Li2FormerDetector(dropout=dr, num_scans=tf)
     if det == "fullscan_cnn":
         return FullScanCNNDetector(n_time=tf, backbone_channels=bc,
                                    hidden=hid, dropout=dr)
@@ -276,7 +295,7 @@ def _build_model(args):
     if det == "fullscan_transformer":
         return FullScanTransformerDetector(n_time=tf, backbone_channels=bc,
                                            n_heads=nh, hidden=hid, dropout=dr)
-    raise ValueError(f"'{det}' cannot be trained (algorithmic is eval-only)")
+    raise ValueError(f"'{det}' cannot be trained (algorithmic and LFE detectors are eval-only)")
 
 
 # ---------------------------------------------------------------------------
@@ -333,21 +352,35 @@ def compute_loss(logits: torch.Tensor, votes: torch.Tensor,
                  labels: torch.Tensor, vote_targets: torch.Tensor,
                  vote_weight: float = 0.02):
     """
-    logits       : (N, 4)  raw class logits
+    logits       : (N, C)  raw class logits; C=4 for multi-class, C=1 for binary
     votes        : (N, 2)  predicted vote offsets
-    labels       : (N,)    int64 target class indices
+    labels       : (N,)    int64 target class indices  (0=bg, 1=wc, 2=wa, 3=wp)
     vote_targets : (N, 2)  target vote offsets
+
+    Binary mode (C=1, e.g. Li2Former): any non-background beam is treated as
+    positive; loss is binary cross-entropy with class-balanced pos_weight.
     """
     n_pos = int((labels > 0).sum())
     n_neg = int((labels == 0).sum())
-    if n_pos > 0 and n_neg > 0:
-        pos_weight = float(n_neg) / float(n_pos)
-        weight = torch.ones(4, device=logits.device)
-        weight[1:] = pos_weight
-    else:
-        weight = None
 
-    l_class = F.cross_entropy(logits, labels, weight=weight)
+    if logits.shape[-1] == 1:
+        # Binary classification: background (0) vs. any person (1)
+        binary_labels = (labels > 0).float()
+        pos_weight = (
+            torch.tensor([float(n_neg) / float(n_pos)], device=logits.device)
+            if n_pos > 0 and n_neg > 0 else None
+        )
+        l_class = F.binary_cross_entropy_with_logits(
+            logits.squeeze(-1), binary_labels, pos_weight=pos_weight
+        )
+    else:
+        if n_pos > 0 and n_neg > 0:
+            pos_weight = float(n_neg) / float(n_pos)
+            weight = torch.ones(logits.shape[-1], device=logits.device)
+            weight[1:] = pos_weight
+        else:
+            weight = None
+        l_class = F.cross_entropy(logits, labels, weight=weight)
 
     pos_mask = labels > 0
     if pos_mask.any():
@@ -1106,8 +1139,12 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    # Trainable detectors — DROW and DR-SPAAM use published weights, not trained here
-    _TRAINABLE = ["algorithmic", "fullscan_cnn", "spacetime_cnn", "fullscan_transformer"]
+    # Trainable detectors — DROW/DR-SPAAM use published weights, LFE detectors are ONNX-only
+    _TRAINABLE = [
+        "algorithmic",
+        "li2former",
+        "fullscan_cnn", "spacetime_cnn", "fullscan_transformer",
+    ]
     parser.add_argument(
         "--detector",
         choices=_TRAINABLE,
@@ -1115,7 +1152,7 @@ def main():
         help="Detector to train/evaluate (default: fullscan_cnn)",
     )
     # Dataset
-    parser.add_argument("--dataset",     choices=["drow", "frog"], default="frog")
+    parser.add_argument("--dataset",     choices=["drow", "frog", "jrdb"], default="frog")
     parser.add_argument("--train-split", default="train",
                         help="Training split (default: train)")
     parser.add_argument("--val-split",   default="val",
