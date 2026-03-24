@@ -384,7 +384,7 @@ For **AMD GPUs**: WSL2 does not ship the `amdgpu` kernel module, so ROCm is unav
 
 ```bash
 source utils/.venv_wsl/bin/activate
-cd utils && python train.py --detector drspaam --dataset frog --epochs 10
+cd utils && python train.py --detector spacetime_cnn --dataset frog --epochs 10
 ```
 
 ### Script index
@@ -392,22 +392,25 @@ cd utils && python train.py --detector drspaam --dataset frog --epochs 10
 | Script | Purpose |
 | ------ | ------- |
 | [`train.py`](#trainpy--unified-training-evaluation-and-tuning) | Train / eval / hyperparameter-tune any detector |
-| [`train_all.py`](#train_allpy--sequential-training-of-all-models) | Train all five learnable detectors in sequence, print summary table |
+| [`train_all.py`](#train_allpy--sequential-training-of-all-custom-models) | Train all three custom detectors in sequence, print summary table |
 | [`evaluate.py`](#evaluatepy--evaluation-and-cpu-benchmark) | AUC evaluation, algorithmic precision/recall, dataset verification, CPU benchmark |
 | [`render_video.py`](#render_videopy--video-renderer) | Render a full sequence to MP4/GIF with scan, GT and any detector(s) |
 | [`training_notebook.ipynb`](#training_notebookipynb--per-model-training-notebook) | Jupyter notebook: train all models, plot loss + AUC |
 
 ---
 
-### `train_all.py` — sequential training of all models
+### `train_all.py` — sequential training of all custom models
 
-Trains all five learnable detectors in order (`drow`, `drspaam`, `fullscan_cnn`,
-`spacetime_cnn`, `fullscan_transformer`) and prints a summary table with final
-val-loss, best AUC and elapsed time per model.  GRU-based models are
-automatically forced to CPU when DirectML is active.
+Trains the three custom full-scan detectors (`fullscan_cnn`, `spacetime_cnn`,
+`fullscan_transformer`) in order and prints a summary table with final val-loss,
+best AUC and elapsed time per model.  GRU-based models are automatically forced
+to CPU when DirectML is active.
+
+DROW and DR-SPAAM are not included — they use published pre-trained weights
+(see `evaluate.py --drow --drspaam`).
 
 ```bash
-# All models, FROG, 30 epochs, early stopping (default)
+# All three models, FROG, 30 epochs, early stopping (default)
 python train_all.py
 
 # Override common settings
@@ -416,8 +419,8 @@ python train_all.py --epochs 50 --patience 10 --dataset drow --out-dir runs/
 # Quick smoke-test (5 % of data)
 python train_all.py --epochs 3 --subsample 0.05
 
-# Skip specific models
-python train_all.py --skip drow fullscan_cnn
+# Skip a specific model
+python train_all.py --skip fullscan_cnn
 ```
 
 Checkpoints are saved to `checkpoints/<detector>.pth` (configurable via `--out-dir`).
@@ -426,17 +429,18 @@ Checkpoints are saved to `checkpoints/<detector>.pth` (configurable via `--out-d
 
 ### `train.py` — unified training, evaluation and tuning
 
-Trains and evaluates any of the six person detectors on DROW or FROG data.
+Trains and evaluates any of the four custom person detectors on DROW or FROG data.
 Supports early stopping, LR scheduling, architecture hyperparameter tuning
 and Optuna-based hyperparameter search.
+
+> DROW and DR-SPAAM use published pre-trained weights and are not trainable here —
+> use `evaluate.py --drow --drspaam` to evaluate them.
 
 **Supported detectors:**
 
 | `--detector` | Architecture | DirectML |
 | --- | --- | --- |
 | `algorithmic` | Rule-based (eval only) | — |
-| `drow` | DROW WNet3xLF2p | yes |
-| `drspaam` | DR-SPAAM official SpatialDROW (auto-regressive spatial attention, 56-pt cutouts) | yes |
 | `fullscan_cnn` | Dilated 1D CNN over full scan + GRU | no (GRU) |
 | `spacetime_cnn` | 2D conv over (beams × time) space-time grid | yes |
 | `fullscan_transformer` | Dilated CNN + beam self-attention + GRU | no (GRU) |
@@ -444,32 +448,32 @@ and Optuna-based hyperparameter search.
 **Usage examples:**
 
 ```bash
-# Train DR-SPAAM on FROG for 30 epochs with early stopping
-python train.py --detector drspaam --dataset frog --epochs 30 --patience 5
+# Train FullScanCNN on FROG for 30 epochs with early stopping
+python train.py --detector fullscan_cnn --dataset frog --epochs 30 --patience 5
 
 # Cosine LR decay, AUC check every 5 epochs
-python train.py --detector drspaam --epochs 50 --lr-schedule cosine --auc-every 5
+python train.py --detector spacetime_cnn --epochs 50 --lr-schedule cosine --auc-every 5
 
 # Tune FullScanTransformer architecture (30 trials × 10 epochs each)
 python train.py --detector fullscan_transformer --tune --tune-trials 30 --tune-epochs 10
 
 # Quick development run (5 % of frames)
-python train.py --detector drspaam --subsample 0.05 --epochs 2
+python train.py --detector fullscan_cnn --subsample 0.05 --epochs 2
 
 # Evaluate a saved checkpoint
-python train.py --detector drspaam --weights out.pth --eval-only
+python train.py --detector fullscan_cnn --weights out.pth --eval-only
 
 # Resume training
-python train.py --detector drspaam --resume out.pth --epochs 10
+python train.py --detector spacetime_cnn --resume out.pth --epochs 10
 ```
 
 **Full CLI reference:**
 
 ```text
 -- Detector / dataset --
---detector            choices: algorithmic, drow, drspaam,
+--detector            choices: algorithmic,
                                fullscan_cnn, spacetime_cnn, fullscan_transformer
-                               (default: drspaam)
+                               (default: fullscan_cnn)
 --dataset             drow or frog (default: frog)
 --train-split         training split name (default: train)
 --val-split           validation split; '' to disable (default: val)
@@ -625,10 +629,12 @@ algorithmic=red triangles, each NN detector gets a distinct colour.
 
 ### `training_notebook.ipynb` — per-model training notebook
 
-Jupyter notebook that trains all five learnable detectors on FROG (default)
+Jupyter notebook that trains all three custom detectors on FROG (default)
 and produces two plots per model: training/validation loss curve and
 validation AUC-by-class curve.  Models, epochs and hyperparameters are
 configurable per cell.
+
+> DROW and DR-SPAAM use published pre-trained weights — see `evaluate.py --drow --drspaam`.
 
 ```bash
 jupyter notebook utils/training_notebook.ipynb

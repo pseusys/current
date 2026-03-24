@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 """
-Unified training and evaluation script for all six person detectors.
+Training and evaluation script for the three custom full-scan person detectors.
 
-Supported detectors
+DROW and DR-SPAAM use published pre-trained weights and are not trained here;
+use evaluate.py --drow / --drspaam to evaluate them.
+
+Trainable detectors
 -------------------
-  algorithmic          — AlgorithmicDetector (rule-based; eval-only)
-  drow                 — DrowDetector         (original DROW WNet3xLF2p)
-  drspaam              — DrSpaamDetector      (DR-SPAAM: auto-regressive spatial attention, official SpatialDROW)
   fullscan_cnn         — FullScanCNNDetector  (dilated CNN over beams + GRU)
   spacetime_cnn        — SpaceTimeCNNDetector (2-D conv over N_beams×T grid)
   fullscan_transformer — FullScanTransformerDetector (dilated CNN + beam attn + GRU)
 
-Cutout-based detectors (drow, drspaam) consume:
-  cutout(scans_hist, odoms_hist, N, nsamp=48/56)  →  (N_beams, T, N_SAMP)
+Eval-only
+---------
+  algorithmic          — AlgorithmicDetector (rule-based; see evaluate.py)
 
-Full-scan detectors (fullscan_cnn, spacetime_cnn, fullscan_transformer) consume:
+All detectors consume full-scan input:
   aligned_scan_xyz(scans_hist, odoms_hist, angles)  →  (T, N_beams, 3)
   transposed to (N_beams, T, 3)
 
-Both types produce:
+All detectors produce:
   logits : (N_beams, 4)   raw class logits  [bg, wc, wa, wp]
   votes  : (N_beams, 2)   vote offsets (dx, dy) in window space
 
@@ -29,20 +30,20 @@ Training losses
 
 Usage
 -----
-  # Train DR-SPAAM on FROG for 10 epochs
-  python train.py --detector drspaam --dataset frog --epochs 10
+  # Train full-scan CNN on FROG for 10 epochs
+  python train.py --detector fullscan_cnn --dataset frog --epochs 10
 
-  # Train full-scan CNN on DROW, evaluate every 5 epochs
+  # Train on DROW, evaluate AUC every 5 epochs
   python train.py --detector fullscan_cnn --dataset drow --auc-every 5
 
   # Evaluate a saved checkpoint
-  python train.py --detector drspaam --dataset frog --weights out.pth --eval-only
+  python train.py --detector fullscan_cnn --weights out.pth --eval-only
 
   # Resume training
-  python train.py --detector drspaam --resume out.pth --epochs 5
+  python train.py --detector spacetime_cnn --resume out.pth --epochs 5
 
   # Train with early stopping and cosine LR schedule
-  python train.py --detector drspaam --epochs 50 --patience 10 --lr-schedule cosine
+  python train.py --detector fullscan_cnn --epochs 50 --patience 10 --lr-schedule cosine
 
   # Tune FullScanTransformer architecture
   python train.py --detector fullscan_transformer --backbone-channels 128 --hidden 256 --n-heads 4
@@ -724,7 +725,7 @@ def _default_args(**overrides) -> SimpleNamespace:
     active.
     """
     defaults = dict(
-        detector="drspaam",
+        detector="fullscan_cnn",
         dataset="frog",
         train_split="train",
         val_split="val",
@@ -1105,12 +1106,13 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    # Detector selection
+    # Trainable detectors — DROW and DR-SPAAM use published weights, not trained here
+    _TRAINABLE = ["algorithmic", "fullscan_cnn", "spacetime_cnn", "fullscan_transformer"]
     parser.add_argument(
         "--detector",
-        choices=list(DETECTOR_REGISTRY),
-        default="drspaam",
-        help="Detector to train/evaluate (default: drspaam)",
+        choices=_TRAINABLE,
+        default="fullscan_cnn",
+        help="Detector to train/evaluate (default: fullscan_cnn)",
     )
     # Dataset
     parser.add_argument("--dataset",     choices=["drow", "frog"], default="frog")

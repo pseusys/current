@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Train all learnable detectors sequentially.
+Train all three custom full-scan detectors sequentially.
 
+DROW and DR-SPAAM use published pre-trained weights and are excluded.
 Calls train_model() from train.py for each detector and collects the final
 val-loss and AUC results in a summary table.
 
@@ -11,7 +12,7 @@ supported on that backend.
 
 Usage
 -----
-  # All models, FROG, 30 epochs, early stopping with patience 5
+  # All three models, FROG, 30 epochs, early stopping with patience 5
   python train_all.py
 
   # Override common settings
@@ -20,8 +21,8 @@ Usage
   # Quick smoke-test (5 % of data)
   python train_all.py --epochs 3 --subsample 0.05
 
-  # Skip specific models
-  python train_all.py --skip drow fullscan_cnn
+  # Skip a specific model
+  python train_all.py --skip fullscan_cnn
 """
 
 import argparse
@@ -40,10 +41,8 @@ from train import (  # noqa: E402
 # Models that cannot run on DirectML (GRU kernel missing)
 _GRU_MODELS = {"fullscan_cnn", "fullscan_transformer"}
 
-# Canonical training order
+# Canonical training order (DROW and DR-SPAAM use published weights, not trained)
 _ALL_DETECTORS = [
-    "drow",
-    "drspaam",
     "fullscan_cnn",
     "spacetime_cnn",
     "fullscan_transformer",
@@ -94,7 +93,7 @@ def main():
     todo = [d for d in _ALL_DETECTORS if d not in skip]
 
     print(f"\n{'='*60}")
-    print(f"  Training {len(todo)} model(s) on {cli.dataset.upper()} "
+    print(f"  Training {len(todo)} full-scan model(s) on {cli.dataset.upper()} "
           f"— {cli.epochs} epochs, patience={cli.patience}")
     print(f"  Models : {', '.join(todo)}")
     print(f"  Output : {cli.out_dir.resolve()}")
