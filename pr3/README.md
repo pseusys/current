@@ -370,7 +370,7 @@ Device selection is automatic (in order of priority):
 
 3. **CPU** — fallback when no GPU is available.
 
-> **DirectML limitations**: GRU-based models (`fullscan_cnn`, `fullscan_transformer`) are not supported on DirectML due to a missing `aten::_thnn_fused_gru_cell` kernel.  Use `force_cpu=True` (notebook) or CPU-only training for those models.
+> **DirectML limitations**: `fullscan_cnn` is not supported on DirectML due to a missing `aten::_thnn_fused_gru_cell` kernel (GRU).  Use `force_cpu=True` (notebook) or CPU-only training for that model.  All other custom detectors (`spacetime_cnn`, `fullscan_transformer`, `li2former`) are DirectML-compatible.
 
 #### Training on WSL2 (NVIDIA GPUs only)
 
@@ -450,7 +450,7 @@ and Optuna-based hyperparameter search.
 | `algorithmic` | Rule-based (eval only) | — |
 | `fullscan_cnn` | Dilated 1D CNN over full scan + GRU | no (GRU) |
 | `spacetime_cnn` | 2D conv over (beams × time) space-time grid | yes |
-| `fullscan_transformer` | Dilated CNN + beam self-attention + GRU | no (GRU) |
+| `fullscan_transformer` | Dilated CNN + beam-PE + self-attention + mean-pool | yes |
 | `li2former` | ConvBackbone + Transformer + binary cls head | yes |
 
 **Usage examples:**

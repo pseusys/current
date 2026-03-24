@@ -434,7 +434,13 @@ def bench_model(model: torch.nn.Module, input_mode: str,
         pos  = labels > 0
         lv   = (F.mse_loss(vpred[pos], vote_tgts[pos])
                 if pos.any() else vpred.new_tensor(0.0))
-        loss = F.cross_entropy(logits, labels) + 0.02 * lv
+        if logits.shape[-1] == 1:
+            # Binary logit output (e.g. Li2Former) — use BCE
+            lc = F.binary_cross_entropy_with_logits(
+                logits.squeeze(-1), (labels > 0).float())
+        else:
+            lc = F.cross_entropy(logits, labels)
+        loss = lc + 0.02 * lv
         opt.zero_grad(set_to_none=True)
         loss.backward()
         opt.step()

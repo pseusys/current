@@ -9,7 +9,7 @@ Trainable detectors
 -------------------
   fullscan_cnn         — FullScanCNNDetector  (dilated CNN over beams + GRU)
   spacetime_cnn        — SpaceTimeCNNDetector (2-D conv over N_beams×T grid)
-  fullscan_transformer — FullScanTransformerDetector (dilated CNN + beam attn + GRU)
+  fullscan_transformer — FullScanTransformerDetector (dilated CNN + beam-PE + attn + mean-pool)
 
 Eval-only
 ---------
@@ -269,16 +269,18 @@ def _build_model(args):
     Supports architecture tuning for the three full-scan models:
       --dropout           applied to all models (default 0.5)
       --backbone-channels DilatedScanBackbone output channels (FullScanCNN/Transformer)
-      --hidden            GRU hidden size (FullScanCNN/Transformer)
+      --hidden            GRU hidden size (FullScanCNN only)
       --n-heads           BeamSelfAttention heads (FullScanTransformer)
-      --out-channels      final channels (SpaceTimeCNN)
+      --channels          internal channel width (SpaceTimeCNN; default 96)
+      --n-spatial-stages  spatial inception stages 1–4 (SpaceTimeCNN; default 3)
     """
     det = args.detector
     dr  = getattr(args, "dropout",           0.5)
     bc  = getattr(args, "backbone_channels", 64)
     hid = getattr(args, "hidden",            128)
     nh  = getattr(args, "n_heads",           8)
-    oc  = getattr(args, "out_channels",      128)
+    ch  = getattr(args, "channels",          96)
+    nss = getattr(args, "n_spatial_stages",  3)
     tf  = getattr(args, "time_frame",        5)
 
     if det == "drow":
@@ -291,10 +293,11 @@ def _build_model(args):
         return FullScanCNNDetector(n_time=tf, backbone_channels=bc,
                                    hidden=hid, dropout=dr)
     if det == "spacetime_cnn":
-        return SpaceTimeCNNDetector(n_time=tf, out_channels=oc, dropout=dr)
+        return SpaceTimeCNNDetector(n_time=tf, channels=ch,
+                                    n_spatial_stages=nss, dropout=dr)
     if det == "fullscan_transformer":
         return FullScanTransformerDetector(n_time=tf, backbone_channels=bc,
-                                           n_heads=nh, hidden=hid, dropout=dr)
+                                           n_heads=nh, dropout=dr)
     raise ValueError(f"'{det}' cannot be trained (algorithmic and LFE detectors are eval-only)")
 
 
@@ -753,9 +756,8 @@ def _default_args(**overrides) -> SimpleNamespace:
 
     Notes
     -----
-    GRU-based models (fullscan_cnn, fullscan_transformer) are not compatible
-    with DirectML.  Pass force_cpu=True for those models when DirectML is
-    active.
+    GRU-based models (fullscan_cnn) are not compatible with DirectML.
+    Pass force_cpu=True for that model when DirectML is active.
     """
     defaults = dict(
         detector="fullscan_cnn",
@@ -775,7 +777,8 @@ def _default_args(**overrides) -> SimpleNamespace:
         backbone_channels=64,
         hidden=128,
         n_heads=8,
-        out_channels=128,
+        channels=96,
+        n_spatial_stages=3,
         # regularisation / scheduling
         patience=5,
         lr_schedule="plateau",
@@ -1049,8 +1052,9 @@ def tune_model(args) -> dict:
     Parameters tuned for every model:
         lr, weight_decay, dropout
     Additional parameters for full-scan models:
-        backbone_channels, hidden          (fullscan_cnn / fullscan_transformer)
-        out_channels                       (spacetime_cnn)
+        backbone_channels                  (fullscan_cnn / fullscan_transformer)
+        hidden                             (fullscan_cnn only)
+        channels, n_spatial_stages         (spacetime_cnn)
         n_heads                            (fullscan_transformer)
     """
     try:
@@ -1079,16 +1083,17 @@ def tune_model(args) -> dict:
         if det in ("fullscan_cnn", "fullscan_transformer"):
             t.backbone_channels = trial.suggest_categorical(
                 "backbone_channels", [32, 64, 128])
+        if det == "fullscan_cnn":
             t.hidden = trial.suggest_categorical(
                 "hidden", [64, 128, 256])
         if det == "spacetime_cnn":
-            t.out_channels = trial.suggest_categorical(
-                "out_channels", [64, 128, 256])
+            t.channels         = trial.suggest_categorical("channels", [72, 96, 120])
+            t.n_spatial_stages = trial.suggest_int("n_spatial_stages", 2, 4)
         if det == "fullscan_transformer":
             t.n_heads = trial.suggest_categorical("n_heads", [4, 8])
 
-        # GRU-based models cannot run on DirectML — force CPU inside trials
-        t.force_cpu = det in ("fullscan_cnn", "fullscan_transformer")
+        # fullscan_cnn uses GRU which cannot run on DirectML — force CPU inside trials
+        t.force_cpu = (det == "fullscan_cnn")
 
         # Shorter run; skip AUC inside trials (expensive)
         t.epochs    = tune_epochs
@@ -1177,11 +1182,15 @@ def main():
                         help="Conv channels in DilatedScanBackbone "
                              "(FullScanCNN/Transformer; default: 64)")
     parser.add_argument("--hidden",      type=int,   default=128,
-                        help="GRU hidden size (FullScanCNN/Transformer; default: 128)")
+                        help="GRU hidden size (FullScanCNN; default: 128)")
     parser.add_argument("--n-heads",     type=int,   default=8,
                         help="Attention heads (FullScanTransformer; default: 8)")
-    parser.add_argument("--out-channels",type=int,   default=128,
-                        help="Output channels (SpaceTimeCNN; default: 128)")
+    parser.add_argument("--channels",        type=int, default=96,
+                        help="Internal channel width (SpaceTimeCNN; default: 96, "
+                             "must be divisible by 3×8=24 for GroupNorm)")
+    parser.add_argument("--n-spatial-stages", type=int, default=3,
+                        help="Spatial inception stages 1–4 (SpaceTimeCNN; default: 3). "
+                             "Beam RF: 3→17, 4→49, 5→177, 6→689 beams.")
     # Regularisation / scheduling
     parser.add_argument("--patience",    type=int,   default=0,
                         help="Early-stopping patience in epochs (0=disabled). "
