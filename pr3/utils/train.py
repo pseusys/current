@@ -889,7 +889,7 @@ def train_model(args) -> dict:
         else:
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
                 optimizer, patience=max(3, args.epochs // 10),
-                factor=0.5, verbose=True)
+                factor=0.5)
     else:
         scheduler = None
 

@@ -1,18 +1,26 @@
 # Follow the DROW
 
-This project studies DROW person detector and algorithmic detector performance.
+A research framework for person detection on knee-height 2D LiDAR data, benchmarking neural-network and rule-based detectors across three public datasets and deploying the full pipeline on a mobile robot.
 
-It also contains a pipeline for using different data sources and detectors as ROS nodes.
-
-Finally, it suggests another neural network architectures that might perform better than DROW detector neural network.
+The project evaluates the published [DROW (ICRA 2016 / IROS 2018)](https://arxiv.org/abs/1804.02463) and [DR-SPAAM (RA-L 2022)](https://arxiv.org/abs/2004.14064) detectors alongside two ONNX baselines ([LFE-Peaks / LFE-PPN, Amodeo et al. 2025](https://arxiv.org/abs/2306.08531)), a C++ rule-based detector, and three novel full-scan architectures introduced here: **FullScanCNN**, **SpaceTimeCNN**, and **FullScanTransformer**. A central finding is that DROW's benchmark scores are substantially limited by annotation quality issues in the original dataset; the denser FROG dataset closes this gap and reveals the true capability of learned detectors.
 
 ## Contents of the repository
 
 This repository consists of several parts:
 
-1. Library - a library of detectors, datasets and other utilities, written in python and c++ with interoperability means.
-2. ROS system - a system for running data source, detectors and visualization pipeline in ROS nodes inside of a Docker container (using library).
-3. Research part - Jupyter notebooks for visualization and testing library detectors properties and performance.
+1. **Library** — Python and C++ library of nine detector implementations, three dataset loaders, and preprocessing utilities.
+2. **ROS system** — ROS Noetic nodes for real-time data ingestion, detection, single-target tracking, visualisation, and dataset annotation, deployable in Docker on a laptop or directly on the robot.
+3. **Research utilities** — unified training, evaluation, hyperparameter tuning, and video-rendering scripts covering all detector types across three datasets.
+4. **Notebooks** — interactive exploration of detector behaviour, architecture comparisons, and dataset properties.
+
+## Research Contributions
+
+- **Annotation quality analysis** — the DROW training set carries sparse ground-truth labels (valid annotations cover only ~20 s out of each 3-minute sequence), introducing systematic false-negative label noise that explains a large share of the observed performance deficit of neural detectors vs. the algorithmic baseline on the DROW benchmark.
+- **Novel full-scan architectures** — three new detectors that replace the fixed-size cutout with whole-scan input and a richer `(r, x, y)` coordinate representation: **FullScanCNNDetector** (dilated 1D CNN + GRU), **SpaceTimeCNNDetector** (2D space-time convolution), and **FullScanTransformerDetector** (dilated CNN + global beam self-attention).
+- **FROG and JRDB dataset support** — loaders for the FROG dataset (720-beam, dense per-frame annotations, specifically designed to address DROW's annotation limitations) and the JRDB dataset (541-beam, 270° FoV, dense), providing three independent evaluation benchmarks.
+- **Unified pipeline** — a single training/evaluation stack (`train.py` / `evaluate.py`) covering nine detector types: two published neural baselines, two ONNX models, one C++ rule-based detector, and three novel architectures.
+- **ROS deployment** — end-to-end detection pipeline (data ingestion → detection → single-target tracking → follow-me behaviour) validated on the RobAIR mobile robot platform.
+- **Data re-annotation tooling** — an interactive RViz-based annotator node for manual correction of DROW-format dataset labels.
 
 ## Library
 
@@ -70,52 +78,48 @@ The library includes:
 
 ### Python library
 
-Python library is located inside of the `library/follow_the_drow` directory.
-
-This library can be installed (for example) with this command:
+The Python library is located in `library/follow_the_drow/` and can be installed with:
 
 ```bash
-pip3 install ./library
+pip install ./library
 ```
 
-> NB! During installation, the DROW dataset (measures, annotations and model weights), the DR-SPAAM published weights (`dr_spaam_e40.pth`, RA-L 2022) **and** the LFE-Peaks / LFE-PPN ONNX weights (`lfe_peaks.onnx`, `lfe_ppn.onnx`) will be downloaded and included into the library distribution.
+During installation, the DROW dataset and weights, DR-SPAAM weights (`dr_spaam_e40.pth`, RA-L 2022), LFE-Peaks/LFE-PPN ONNX weights, and the FROG dataset archive are downloaded automatically (~2 GB total). JRDB requires a separate free registration; see [Notes — JRDB dataset](#jrdb-dataset).
 
-**Important note**: the detectors in this library do not perform detection for single scans.
-They use sets of scans (they were called "temporal cutouts" in the paper), consisting of 5 scans and one annotation.
-There are several reasons for that.
-First of all, by combining data from 5 consecutive scans authors of the DROW paper intended to reflect temporal dependencies.
-Secondly, the authors didn't annotate every scan by hand, they annotated every fifth scan instead.
+**Important:** most detectors operate on temporal windows of T consecutive odometry-aligned scans (default T=5), not single-scan inputs. LFE detectors are the exception — they are single-scan only.
 
-The library includes:
+**Datasets:**
 
-1. `DROW_Dataset` class.
-   This class represents DROW dataset data source.
-   It loads DROW dataset from file in its constructor.
-   Its `get_scan` method extracts temporal cutout from dataset.
-   `TIME_FRAME` constant stores the measures to annotations rate (5 for DROW dataset).
-2. `LiveDataset` class.
-   This class represents a live data source with kind of similar interface.
-   Unlike DROW dataset, live data source uses two lidar scans.
-   It uses queues to store last several scans (5 in this case in order to match DROW dataset time frame).
-   It has `get_bottom_scan` and `get_top_scan` methods for retrieving last temporal cutout from bottom and top laser respectively.
-   It also has `push_measure` method for pushing new scans to queues.
-3. `Detector` class.
-   This is a base class for detectors.
-   Its `init` method is the preferred constructor for child classes.
-   Method `forward_one` can be used for performing detection of one temporal cutout.
-   Method `forward_all` can be used for performing detection of all temporal cutouts from dataset.
-4. `AlgorithmicDetector` class.
-   This class is a wrapper for C++ library class `PythonDetectorFactory`.
-   It creates algorithmic detector, acts as a proxy for `forward_one` method and provides TQDM loops for implementation of `forward_all` method.
-5. `DrowDetector` class.
-   This class contains neural network of architecture provided by the DROW paper.
-   It doesn't use GPU (unless static variable `GPU` is set).
-   It loads model weights from file published together with DROW paper during initialization.
-6. `drow_utils` file contains utility methods used by the DROW paper authors.
-7. `file_utils` file contains paths to downloaded and stored DROW dataset and weights, it also contains function for caching slow function results.
-8. `generic_utils` file contains generic base classes and functions.
-9. `plot_utils` file contains plotting utility functions (for matplotlib library).
-10. `torch_utils` file contains neural network utility functions (for pytorch library).
+| Class | Format | Beams | Annotations |
+| ----- | ------ | ----- | ----------- |
+| `DROW_Dataset` | `.csv` + `.odom2` + `.wa`/`.wc`/`.wp` | 450 | Sparse (every 5th frame); 3 classes |
+| `FROG_Dataset` | HDF5 | 720 | Dense (every frame); 1 class — directly addresses DROW annotation gaps |
+| `JRDB_Dataset` | DROW-compatible | 541 | Dense (every frame); 1 class |
+| `LiveDataset` | ROS topics (queue) | variable | — maintains a T-scan sliding window for real-time use |
+
+**Detectors (accessible via `DETECTOR_REGISTRY`):**
+
+| Key | Class | Architecture | Weights |
+| --- | ----- | ------------ | ------- |
+| `algorithmic` | `AlgorithmicDetector` | C++ rule-based clustering + tracking | none |
+| `drow` | `DrowDetector` | CNN cutout, fixed temporal sum (ICRA 2016 / IROS 2018) | bundled |
+| `drspaam` | `DrSpaamDetector` | CNN cutout + spatial attention (RA-L 2022) | bundled |
+| `fullscan_cnn` | `FullScanCNNDetector` | Dilated 1D CNN + GRU, full scan, `(r, x, y)` input | train locally |
+| `spacetime_cnn` | `SpaceTimeCNNDetector` | 2D space-time CNN, full scan, `(r, x, y)` input | train locally |
+| `fullscan_transformer` | `FullScanTransformerDetector` | Dilated CNN + global beam self-attention | train locally |
+| `li2former` | `Li2FormerDetector` | CNN backbone + temporal Transformer (Yang et al. TIM 2024) | train locally |
+| `lfe_peaks` | `LFEPeaksDetector` | 1-D U-Net FCN + peak detection, ONNX (Amodeo et al. FRAI 2025) | bundled |
+| `lfe_ppn` | `LFEPPNDetector` | 1-D U-Net FCN + region proposals, ONNX (Amodeo et al. FRAI 2025) | bundled |
+
+Architecture rationale and design decisions for each detector are documented in [DISCOVERY.md](./DISCOVERY.md).
+
+**Utilities:**
+
+- `drow_utils` — preprocessing: odometry alignment, cutout extraction, full-scan `(r, x, y)` coordinate representation, vote accumulation, peak detection.
+- `file_utils` — paths to bundled datasets and weights; result caching helpers.
+- `generic_utils` — base classes (`Logging`).
+- `plot_utils` — matplotlib helpers for scan visualisation.
+- `torch_utils` — device selection (CUDA → DirectML → CPU).
 
 ## ROS ecosystem
 
@@ -263,7 +267,7 @@ Since the data is divided into two topics, its partial enabling and disabling ca
 
 ### Algorithmic detector node
 
-Algorithmic detector performs algorithmic petection of people on scan data.
+Algorithmic detector performs algorithmic detection of people on scan data.
 It accepts data from "raw data" topic and publishes detection data to algorithmic "detection topic" as a `detection.msg` message.
 It uses clustering and tracking for person detection, algorithm is provided in `follow_the_drow` library.
 
@@ -289,7 +293,7 @@ As the last argument the constructor accepts `verbose` flag for node output cont
 
 ### DROW detector node
 
-DROW detector performs petection of people on scan data using neural network designed and trained by DROW paper authors.
+DROW detector performs detection of people on scan data using the neural network designed and trained by DROW paper authors.
 It accepts data from "raw data" topic and publishes detection data to DROW "detection topic" as a `detection.msg` message.
 The neural network is described in [this paper](https://arxiv.org/abs/1804.02463), support code and architecture are provided in `follow_the_drow` library.
 
@@ -725,14 +729,8 @@ Here, it was decided to lower this number to 10Hz for compatibility reasons.
 
 ## Future development ideas
 
-1. In the DROW paper translation odometry data was not used while calculating scans - using it might improve performance.
-2. Add possibility for recording bag files (add configurations to launch file and `conf.env`, store bag files in `out` directory).
-3. DROW detector uses stored hyperparameters that produce the most accurate result - same can be applied to algorithmic detector, different sets of best hyperparameters can be saved and loaded for 1 and 2 lidars cases.
-4. The DROW dataset is very poorly annotated - it can be re-annotated (by and or algoritmically) in order to improve real world performance.
-5. The DROW detector neural network uses complicated "temporal cutouts" system in order to receive temporal data - it can be simplified (and probably improved) by using recurrent neural network.
-6. The DROW detector neural network uses complicated "votes" system in order to calculate human positions - this can be simplified (and probably improved) by using a different neural network architecture:
-
-Let `n` be the ray count.
-Then neural network input shape will be `n` floats - `n` distances for `n` laser measures (or `2n` for 2 lidars).
-The output shape will be `n` floats - each of them will be a **probability of the laser measurement to hit a person**.
-Then the output data will be converted to coordinates using laser data.
+1. **Translation odometry** — the DROW paper applies only rotation correction when aligning historical scans; incorporating translation (which is currently ignored) could improve alignment for robots moving at higher speeds.
+2. **Bag file recording** — add ROS bag recording to the launch configuration so live sessions can be captured for later replay and offline evaluation.
+3. **Algorithmic detector hyperparameter presets** — store and auto-load tuned parameter sets for the 1-lidar and 2-lidar cases, analogous to how published weights are bundled for neural detectors.
+4. **Systematic DROW re-annotation** — the annotation quality analysis (see [DISCOVERY.md](./DISCOVERY.md)) identified large gaps in DROW labels. Algorithmic or semi-automatic re-annotation could produce a denser ground-truth signal and allow fairer comparison on that benchmark.
+5. **Multi-target tracking** — the current `PersonTracker` node follows a single selected person; extending it to maintain an ID-consistent multi-person track set would enable richer follow-me and crowd-monitoring scenarios.

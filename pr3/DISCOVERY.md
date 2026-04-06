@@ -308,18 +308,89 @@ This is the most expressive beam-level architecture in the family: the Transform
 
 ---
 
+---
+
+### 4. Li2Former (Li2FormerDetector)
+
+**Reference:** Yang et al., IEEE Transactions on Instrumentation and Measurement, 2024 — DOI: 10.1109/TIM.2024.3420353
+
+Li2Former retains the cutout-based input representation but replaces DR-SPAAM's spatial attention with a **temporal Transformer** that attends over T consecutive cutouts per beam independently.
+
+#### Architecture
+
+```
+For each (beam, timestep) pair — cutout width P = 64 samples:
+
+  _ConvBackbone(1 → d_model=512):
+    Stage 1: Conv1d(1→64)×2  + Conv1d(64→128)  + MaxPool(2)   → P/2 positions
+    Stage 2: Conv1d(128→128)×2 + Conv1d(128→256) + MaxPool(2)  → P/4 positions
+    Stage 3: Conv1d(256→256)×2 + Conv1d(256→512) + AdaptiveAvgPool(1) → 1 position
+    → (B*N*T, 512) feature vector per (beam, timestep)
+
+Reshape to (B*N, T, 512)
++ Sinusoidal positional encoding over T timesteps
+TransformerEncoder(d_model=512, nhead=8, 1 layer)  ← temporal self-attention
+Mean-pool over T  → (B*N, 512)
+
+Classification head : Linear(512 → 1)            binary person logit
+Regression head     : Linear(512 → 1024) → ReLU → Linear(1024 → 2)  vote offsets
+```
+
+#### Key properties
+
+- **Temporal attention, not spatial**: DR-SPAAM attends across neighbouring beams at a fixed timestep; Li2Former attends across T timesteps for a single beam. The two mechanisms are complementary.
+- **Wider cutout** (P=64 vs. 48 for DROW, 56 for DR-SPAAM): more angular context per beam.
+- **Binary output** (person vs. background): the sigmoid probability is placed in the pedestrian slot for compatibility with the unified evaluation pipeline.
+- **No published weights**: must be trained from scratch using `train.py --detector li2former`.
+
+---
+
+### 5. LFE-Peaks and LFE-PPN (LFEPeaksDetector, LFEPPNDetector)
+
+**Reference:** Amodeo, Pérez-Higueras, Merino, Caballero — Frontiers in Robotics and AI, 2025 (arXiv:2306.08531)
+
+The LFE detectors are inference-only ONNX baselines from the FROG benchmark paper. They differ from all other detectors in two important ways: they operate on a **single scan with no temporal context**, and they use a **1-D U-Net FCN** (the LFE backbone) applied directly to the normalised raw scan vector rather than cutout windows.
+
+#### Architecture
+
+Both detectors share the LFE backbone:
+
+```
+Input: (1, N=720, 1)   — normalised range vector  (1.0 = near, 0.0 = far)
+1-D U-Net FCN (encoder-decoder with skip connections)
+→ per-beam probability map (1, N, 1)
+```
+
+They differ only in the detection head:
+
+| Variant | Head | Post-processing |
+|---|---|---|
+| **LFE-Peaks** | Per-beam sigmoid probability | `scipy.find_peaks` on the 1-D probability map |
+| **LFE-PPN** | Anchor grid: N/6 sectors × 31 depth anchors × 3 outputs | Anchor decoding + greedy distance-based NMS |
+
+#### Key constraints
+
+- **Single-scan only**: no odometry, no temporal history.
+- **Trained on 720-beam FROG scans**: inference on 450-beam DROW scans requires zero-padding (accuracy may degrade).
+- **Class-agnostic**: person confidence only — no wheelchair/walker distinction.
+- **ONNX inference only**: weights are bundled automatically; re-training is not supported within this framework.
+
+---
+
 ### Architecture comparison
 
-| Architecture | Beam communication | Temporal | Scale-aware input |
+| Architecture | Beam communication | Temporal | Input representation |
 |---|---|---|---|
-| DrowDetector | None | Fixed sum | No (polar only) |
-| DrSpaamDetector | Local (±3 beams, auto-regressive) | Learned scalar | No |
-| FullScanCNNDetector | Local → grows (dilated, ±15 beams) | GRU | **(r, x, y)** |
-| SpaceTimeCNNDetector | Local (spatial + temporal jointly) | Implicit | **(r, x, y)** |
-| FullScanTransformerDetector | **Global** | GRU | **(r, x, y)** |
+| DrowDetector | None (per-beam cutout) | Fixed sum | Polar range only |
+| DrSpaamDetector | Local (±5 beams, auto-regressive) | Learned blending | Polar range only |
+| FullScanCNNDetector | Local → growing (dilated, up to ±15 beams) | GRU | **(r, x, y)** full scan |
+| SpaceTimeCNNDetector | Local (spatial + temporal jointly) | Implicit (2D conv) | **(r, x, y)** full scan |
+| FullScanTransformerDetector | **Global** (all N beams) | GRU | **(r, x, y)** full scan |
+| Li2FormerDetector | None (per-beam cutout) | Transformer (T steps) | Polar range only |
+| LFEPeaksDetector / LFEPPNDetector | **Global** (U-Net, full scan) | None (single scan) | Normalised range only |
 
-All five detectors are implemented in `follow_the_drow.detectors` and trainable via `train.py`:
+All detectors except LFE are accessible via `follow_the_drow.detectors.DETECTOR_REGISTRY` and trainable (where weights are not bundled) via `train.py`:
 
 ```bash
-python train.py --detector drow|drspaam|fullscan_cnn|spacetime_cnn|fullscan_transformer
+python train.py --detector drow|drspaam|fullscan_cnn|spacetime_cnn|fullscan_transformer|li2former
 ```
